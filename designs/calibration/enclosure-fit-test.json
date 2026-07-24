@@ -1,0 +1,29 @@
+{
+  "name": "enclosure-fit-test",
+  "type": "enclosure",
+  "parameters": {
+    "width": 45.0,
+    "depth": 35.0,
+    "height": 14.0,
+    "wall": 2.0,
+    "floor": 2.0,
+
+    "lid_thickness": 2.0,
+    "lid_clearance": 0.25,
+    "lid_lip_height": 3.0,
+    "lid_lip_wall": 1.5,
+
+    "corner_radius": 3.0,
+
+    "cable_slot_width": 8.0,
+    "cable_slot_height": 4.0,
+
+    "mounting_hole_diameter": 2.5,
+    "mounting_hole_spacing_x": 24.0,
+    "mounting_hole_spacing_y": 16.0,
+
+    "label": "FIT 0.25",
+    "label_size": 3.5,
+    "label_height": 0.5
+  }
+}
