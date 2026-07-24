@@ -19,6 +19,10 @@ from zcad.generators.gridfinity.bin import (
     GridfinityBinParameters,
     build_gridfinity_bin,
 )
+from zcad.generators.gridfinity.fit_coupon import (
+    GridfinityFitCouponParameters,
+    build_gridfinity_fit_coupon,
+)
 from zcad.generators.tolerance_coupon import (
     ToleranceCouponParameters,
     build_tolerance_coupon,
@@ -91,6 +95,11 @@ def generate_parts(
 
     if design_type == "fit_coupon":
         return {"main": build_fit_coupon(FitCouponParameters(**raw_parameters))}
+
+    if design_type == "gridfinity_fit_coupon":
+        return build_gridfinity_fit_coupon(
+            GridfinityFitCouponParameters(**raw_parameters)
+        )
 
     if design_type == "gridfinity_bin":
         return {"main": build_gridfinity_bin(GridfinityBinParameters(**raw_parameters))}

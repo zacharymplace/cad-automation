@@ -1,0 +1,7 @@
+{
+  "name": "gridfinity-compatibility-fit",
+  "type": "gridfinity_fit_coupon",
+  "parameters": {
+    "plate_thickness": 6.0
+  }
+}
