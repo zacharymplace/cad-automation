@@ -20,7 +20,7 @@ jobs:
         with:
           repository: zacharymplace/zcad-core
           token: ${{ secrets.ZCAD_CORE_TOKEN }}
-          ref: v0.1.0
+          ref: v0.1.1
           path: zcad-core
 
       - uses: actions/setup-python@v5

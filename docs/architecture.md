@@ -16,7 +16,7 @@ The core owns product-independent CAD infrastructure:
 - STEP and STL export services
 
 The core follows semantic versioning. `cad-automation` currently supports
-`zcad-core` versions `>=0.1,<0.2`.
+`zcad-core` versions `>=0.1.1,<0.2`.
 
 ## `cad-automation`
 

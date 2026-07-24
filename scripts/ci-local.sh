@@ -61,7 +61,7 @@ print("zcad-core:", core.version, zcad_core.__file__)
 requirements = set(product.requires or [])
 
 if not any(
-    requirement.startswith("zcad-core<0.2,>=0.1")
+    requirement.startswith("zcad-core<0.2,>=0.1.1")
     for requirement in requirements
 ):
     raise SystemExit(
