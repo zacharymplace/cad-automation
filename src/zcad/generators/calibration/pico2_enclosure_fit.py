@@ -20,6 +20,11 @@ from zcad_core.hardware import (
     get_reference_oled_128x64,
 )
 
+from zcad.assemblies import (
+    Pico2OledAssemblyParameters,
+    build_pico2_oled_assembly,
+)
+
 
 @dataclass(frozen=True)
 class Pico2EnclosureFitParameters:
@@ -121,12 +126,14 @@ class Pico2EnclosureFitParameters:
         bezel_width_mm = window_width_mm + (2 * self.display_bezel_wall_mm)
         bezel_height_mm = window_height_mm + (2 * self.display_bezel_wall_mm)
 
-        if abs(self.display_center_x_mm) + (bezel_width_mm / 2) > (
+        display_component = self.device_assembly.get("display")
+
+        if abs(display_component.placement.x_mm) + (bezel_width_mm / 2) > (
             self.outer_width_mm / 2
         ):
             raise ValueError("display bezel does not fit within lid width")
 
-        if abs(self.display_center_y_mm) + (bezel_height_mm / 2) > (
+        if abs(display_component.placement.y_mm) + (bezel_height_mm / 2) > (
             self.outer_depth_mm / 2
         ):
             raise ValueError("display bezel does not fit within lid depth")
@@ -135,18 +142,64 @@ class Pico2EnclosureFitParameters:
             raise ValueError("label_text must not be empty")
 
     @property
-    def inner_width_mm(self) -> float:
-        """Return hardware-derived enclosure cavity width."""
-        board = get_raspberry_pi_pico2()
+    def assembly_parameters(
+        self,
+    ) -> Pico2OledAssemblyParameters:
+        """Return authoritative device-component placements."""
         display = get_reference_oled_128x64()
 
-        board_required_width_mm = board.board_width_mm + (2 * self.board_clearance_mm)
+        return Pico2OledAssemblyParameters(
+            board_x_mm=0.0,
+            board_y_mm=0.0,
+            board_z_mm=(self.floor_mm + self.standoff_height_mm),
+            display_x_mm=self.display_center_x_mm,
+            display_y_mm=self.display_center_y_mm,
+            display_z_mm=(self.body_height_mm - display.module_depth_mm),
+        )
 
-        display_required_width_mm = (
-            display.module_width_mm
-            + (2 * self.display_module_clearance_mm)
-            + (2 * self.lid_clearance_mm)
-            + (2 * self.lid_lip_wall_mm)
+    @property
+    def device_assembly(self):
+        """Return the placed Pico 2 and OLED assembly."""
+        return build_pico2_oled_assembly(self.assembly_parameters)
+
+    def _required_component_span_mm(
+        self,
+        *,
+        identifier: str,
+        axis: str,
+        clearance_mm: float,
+    ) -> float:
+        """Return centered span required by one component."""
+        component = self.device_assembly.get(identifier)
+
+        if axis == "x":
+            center_mm = component.placement.x_mm
+            dimension_mm = float(component.metadata["width_mm"])
+        elif axis == "y":
+            center_mm = component.placement.y_mm
+            dimension_mm = float(component.metadata["depth_mm"])
+        else:
+            raise ValueError(f"Unsupported assembly axis: {axis}")
+
+        return 2 * (abs(center_mm) + (dimension_mm / 2) + clearance_mm)
+
+    @property
+    def inner_width_mm(self) -> float:
+        """Return assembly-derived enclosure cavity width."""
+        board_required_width_mm = self._required_component_span_mm(
+            identifier="board",
+            axis="x",
+            clearance_mm=self.board_clearance_mm,
+        )
+
+        display_required_width_mm = self._required_component_span_mm(
+            identifier="display",
+            axis="x",
+            clearance_mm=(
+                self.display_module_clearance_mm
+                + self.lid_clearance_mm
+                + self.lid_lip_wall_mm
+            ),
         )
 
         return max(
@@ -156,17 +209,21 @@ class Pico2EnclosureFitParameters:
 
     @property
     def inner_depth_mm(self) -> float:
-        """Return hardware-derived enclosure cavity depth."""
-        board = get_raspberry_pi_pico2()
-        display = get_reference_oled_128x64()
+        """Return assembly-derived enclosure cavity depth."""
+        board_required_depth_mm = self._required_component_span_mm(
+            identifier="board",
+            axis="y",
+            clearance_mm=self.board_clearance_mm,
+        )
 
-        board_required_depth_mm = board.board_length_mm + (2 * self.board_clearance_mm)
-
-        display_required_depth_mm = (
-            display.module_height_mm
-            + (2 * self.display_module_clearance_mm)
-            + (2 * self.lid_clearance_mm)
-            + (2 * self.lid_lip_wall_mm)
+        display_required_depth_mm = self._required_component_span_mm(
+            identifier="display",
+            axis="y",
+            clearance_mm=(
+                self.display_module_clearance_mm
+                + self.lid_clearance_mm
+                + self.lid_lip_wall_mm
+            ),
         )
 
         return max(
@@ -217,6 +274,7 @@ def _build_body(
 ) -> cq.Workplane:
     """Build the refined open enclosure body."""
     board = get_raspberry_pi_pico2()
+    board_component = parameters.device_assembly.get("board")
 
     body = cq.Workplane("XY").box(
         parameters.outer_width_mm,
@@ -254,9 +312,7 @@ def _build_body(
         hole_clearance_mm=(parameters.mounting_hole_clearance_mm),
     )
 
-    board_top_z_mm = (
-        parameters.floor_mm + parameters.standoff_height_mm + board.board_thickness_mm
-    )
+    board_top_z_mm = board_component.placement.z_mm + board.board_thickness_mm
 
     cutout_parameters = ConnectorCutoutParameters.from_connector(
         connector=board.usb_connector,
@@ -333,13 +389,14 @@ def _build_lid(
         lid = lid.edges(">Z").fillet(parameters.exterior_edge_fillet_mm)
 
     display = get_reference_oled_128x64()
+    display_component = parameters.device_assembly.get("display")
 
     window = DisplayWindowParameters.from_display(
         display=display,
         panel_base_z_mm=(parameters.lid_lip_height_mm),
         panel_thickness_mm=(parameters.lid_thickness_mm),
-        x=parameters.display_center_x_mm,
-        y=parameters.display_center_y_mm,
+        x=display_component.placement.x_mm,
+        y=display_component.placement.y_mm,
         window_clearance_mm=(parameters.display_window_clearance_mm),
         corner_radius_mm=(parameters.display_window_corner_radius_mm),
     )

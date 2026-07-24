@@ -111,13 +111,87 @@ def test_lid_contains_display_window() -> None:
     assert lid.Volume() < (full_plate_volume_mm3 + 2000.0)
 
 
-def test_display_bezel_must_fit_lid() -> None:
-    parameters = Pico2EnclosureFitParameters(
-        display_center_x_mm=100.0,
+def test_shifted_display_expands_enclosure() -> None:
+    centered = Pico2EnclosureFitParameters(
+        display_center_x_mm=0.0,
+    )
+    shifted = Pico2EnclosureFitParameters(
+        display_center_x_mm=20.0,
     )
 
-    with pytest.raises(
-        ValueError,
-        match="display bezel",
-    ):
-        build_pico2_enclosure_fit(parameters)
+    build_pico2_enclosure_fit(centered)
+    shifted_parts = build_pico2_enclosure_fit(shifted)
+
+    assert shifted.inner_width_mm > centered.inner_width_mm
+    assert shifted.outer_width_mm > centered.outer_width_mm
+
+    assert shifted_parts["body"].val().BoundingBox().xlen == pytest.approx(
+        shifted.outer_width_mm
+    )
+
+    assert shifted_parts["lid"].val().BoundingBox().xlen == pytest.approx(
+        shifted.outer_width_mm
+    )
+
+
+def test_enclosure_exposes_authoritative_assembly() -> None:
+    parameters = Pico2EnclosureFitParameters(
+        display_center_x_mm=2.0,
+        display_center_y_mm=7.0,
+    )
+
+    assembly = parameters.device_assembly
+
+    board = assembly.get("board")
+    display = assembly.get("display")
+
+    assert board.placement.z_mm == pytest.approx(
+        parameters.floor_mm + parameters.standoff_height_mm
+    )
+
+    assert display.placement.x_mm == pytest.approx(2.0)
+    assert display.placement.y_mm == pytest.approx(7.0)
+
+    assert display.placement.z_mm == pytest.approx(
+        parameters.body_height_mm - float(display.metadata["height_mm"])
+    )
+
+
+def test_enclosure_width_comes_from_assembly() -> None:
+    parameters = Pico2EnclosureFitParameters(
+        display_center_x_mm=5.0,
+    )
+
+    display = parameters.device_assembly.get("display")
+
+    expected_display_width_mm = 2 * (
+        abs(display.placement.x_mm)
+        + (float(display.metadata["width_mm"]) / 2)
+        + parameters.display_module_clearance_mm
+        + parameters.lid_clearance_mm
+        + parameters.lid_lip_wall_mm
+    )
+
+    assert parameters.inner_width_mm == pytest.approx(expected_display_width_mm)
+
+
+def test_display_window_follows_assembly_placement() -> None:
+    centered = build_pico2_enclosure_fit(
+        Pico2EnclosureFitParameters(
+            display_center_x_mm=0.0,
+        )
+    )["lid"]
+
+    shifted = build_pico2_enclosure_fit(
+        Pico2EnclosureFitParameters(
+            display_center_x_mm=3.0,
+        )
+    )["lid"]
+
+    centered_bounds = centered.val().BoundingBox()
+    shifted_bounds = shifted.val().BoundingBox()
+
+    assert centered.val().isValid()
+    assert shifted.val().isValid()
+
+    assert shifted_bounds.xlen > (centered_bounds.xlen)
