@@ -1,0 +1,29 @@
+{
+  "name": "default-enclosure",
+  "type": "enclosure",
+  "parameters": {
+    "width": 100.0,
+    "depth": 70.0,
+    "height": 30.0,
+    "wall": 3.0,
+    "floor": 3.0,
+
+    "lid_thickness": 3.0,
+    "lid_clearance": 0.25,
+    "lid_lip_height": 4.0,
+    "lid_lip_wall": 2.0,
+
+    "corner_radius": 4.0,
+
+    "cable_slot_width": 14.0,
+    "cable_slot_height": 8.0,
+
+    "mounting_hole_diameter": 3.2,
+    "mounting_hole_spacing_x": 60.0,
+    "mounting_hole_spacing_y": 35.0,
+
+    "label": "Z$ ELECTRONICS",
+    "label_size": 6.0,
+    "label_height": 0.6
+  }
+}

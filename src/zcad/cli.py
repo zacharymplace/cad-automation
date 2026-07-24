@@ -3,9 +3,14 @@
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import cadquery as cq
 
+from zcad.generators.enclosure import (
+    EnclosureParameters,
+    build_enclosure,
+)
 from zcad.generators.fit_coupon import (
     FitCouponParameters,
     build_fit_coupon,
@@ -19,69 +24,162 @@ from zcad.generators.tray import (
     build_tray,
 )
 
+ModelParts = dict[str, cq.Workplane]
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+
+def read_design(
+    path: Path,
+) -> dict[str, Any]:
+    """Read a design specification."""
+    if not path.is_file():
+        raise FileNotFoundError(f"Design file does not exist: {path}")
+
+    with path.open(
+        encoding="utf-8",
+    ) as handle:
+        design = json.load(handle)
+
+    required = {
+        "name",
+        "type",
+        "parameters",
+    }
+
+    missing = required.difference(design)
+
+    if missing:
+        raise ValueError(
+            "Design is missing required fields: " + ", ".join(sorted(missing))
+        )
+
+    if not isinstance(
+        design["parameters"],
+        dict,
+    ):
+        raise ValueError("parameters must be a JSON object")
+
+    return design
+
+
+def generate_parts(
+    design: dict[str, Any],
+) -> ModelParts:
+    """Generate one or more named model parts."""
+    design_type = design["type"]
+    raw_parameters = design["parameters"]
+
+    if design_type == "tray":
+        return {"main": build_tray(TrayParameters(**raw_parameters))}
+
+    if design_type == "tolerance_coupon":
+        return {
+            "main": build_tolerance_coupon(ToleranceCouponParameters(**raw_parameters))
+        }
+
+    if design_type == "fit_coupon":
+        return {"main": build_fit_coupon(FitCouponParameters(**raw_parameters))}
+
+    if design_type == "enclosure":
+        return build_enclosure(EnclosureParameters(**raw_parameters))
+
+    raise ValueError(f"Unsupported design type: {design_type}")
+
+
+def output_stem(
+    design_name: str,
+    part_name: str,
+    part_count: int,
+) -> str:
+    """Determine a stable export filename."""
+    if part_count == 1 and part_name == "main":
+        return design_name
+
+    return f"{design_name}-{part_name}"
+
+
+def export_parts(
+    *,
+    design_name: str,
+    parts: ModelParts,
+    output_directory: Path,
+) -> None:
+    """Validate and export every generated part."""
+    if not parts:
+        raise ValueError("Generator returned no parts")
+
+    output_directory.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    print(f"Generated: {design_name}")
+    print(f"Part count: {len(parts)}")
+
+    for part_name, model in parts.items():
+        solid = model.val()
+
+        if not solid.isValid():
+            raise ValueError(f"Part is invalid: {part_name}")
+
+        bounds = solid.BoundingBox()
+        stem = output_stem(
+            design_name,
+            part_name,
+            len(parts),
+        )
+
+        step_path = output_directory / f"{stem}.step"
+        stl_path = output_directory / f"{stem}.stl"
+
+        cq.exporters.export(
+            model,
+            str(step_path),
+        )
+        cq.exporters.export(
+            model,
+            str(stl_path),
+        )
+
+        print()
+        print(f"Part: {part_name}")
+        print(f"Valid solid: {solid.isValid()}")
+        print(f"Volume: {solid.Volume():.2f} mm^3")
+        print(f"Bounds: {bounds.xlen:.2f} × {bounds.ylen:.2f} × {bounds.zlen:.2f} mm")
+        print(f"STEP: {step_path}")
+        print(f"STL:  {stl_path}")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Create the command-line parser."""
+    parser = argparse.ArgumentParser(
+        description=("Generate parametric CAD models from JSON specifications.")
+    )
+
     parser.add_argument(
         "design",
         type=Path,
     )
+
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("exports"),
     )
-    args = parser.parse_args()
 
-    with args.design.open(
-        encoding="utf-8",
-    ) as handle:
-        design = json.load(handle)
+    return parser
 
-    design_type = design["type"]
 
-    if design_type == "tray":
-        parameters = TrayParameters(**design["parameters"])
-        model = build_tray(parameters)
-    elif design_type == "tolerance_coupon":
-        parameters = ToleranceCouponParameters(**design["parameters"])
-        model = build_tolerance_coupon(parameters)
-    elif design_type == "fit_coupon":
-        parameters = FitCouponParameters(**design["parameters"])
-        model = build_fit_coupon(parameters)
-    else:
-        raise ValueError(f"Unsupported design type: {design_type}")
-    solid = model.val()
+def main() -> None:
+    """Run the CAD generation command."""
+    args = build_parser().parse_args()
+    design = read_design(args.design)
+    parts = generate_parts(design)
 
-    if not solid.isValid():
-        raise ValueError("Generated geometry is invalid")
-
-    args.output.mkdir(
-        parents=True,
-        exist_ok=True,
+    export_parts(
+        design_name=design["name"],
+        parts=parts,
+        output_directory=args.output,
     )
-
-    name = design["name"]
-    step_path = args.output / f"{name}.step"
-    stl_path = args.output / f"{name}.stl"
-
-    cq.exporters.export(
-        model,
-        str(step_path),
-    )
-    cq.exporters.export(
-        model,
-        str(stl_path),
-    )
-
-    bounds = solid.BoundingBox()
-
-    print(f"Generated: {name}")
-    print(f"Valid solid: {solid.isValid()}")
-    print(f"Volume: {solid.Volume():.2f} mm^3")
-    print(f"Bounds: {bounds.xlen:.2f} × {bounds.ylen:.2f} × {bounds.zlen:.2f} mm")
-    print(f"STEP: {step_path}")
-    print(f"STL:  {stl_path}")
 
 
 if __name__ == "__main__":
