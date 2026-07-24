@@ -28,6 +28,10 @@ from zcad.profiles.loading import (
     load_material_profile,
     load_printer_profile,
 )
+from zcad.validation.profile_rules import (
+    raise_for_validation_errors,
+    validate_design_and_parts,
+)
 
 ModelParts = dict[str, cq.Workplane]
 
@@ -224,6 +228,18 @@ def main() -> None:
 
     printer_profile = load_printer_profile(args.printer_profile)
     material_profile = load_material_profile(args.material_profile)
+
+    validation_issues = validate_design_and_parts(
+        design_type=design["type"],
+        parameters=design["parameters"],
+        parts=parts,
+        printer_profile=printer_profile,
+    )
+
+    for issue in validation_issues:
+        print(f"{issue.severity.upper()}: [{issue.code}] {issue.message}")
+
+    raise_for_validation_errors(validation_issues)
 
     export_parts(
         design_name=design["name"],
