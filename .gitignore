@@ -7,3 +7,6 @@ __pycache__/
 
 exports/*
 !exports/.gitkeep
+
+# Python package build metadata
+*.egg-info/
