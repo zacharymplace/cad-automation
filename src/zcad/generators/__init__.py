@@ -1,0 +1,1 @@
+"""Reusable parametric generators."""

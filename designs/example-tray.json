@@ -1,0 +1,12 @@
+{
+  "name": "example-tray",
+  "type": "tray",
+  "parameters": {
+    "width": 120,
+    "depth": 80,
+    "height": 30,
+    "wall": 3,
+    "floor": 3,
+    "corner_radius": 5
+  }
+}
