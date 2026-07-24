@@ -6,6 +6,10 @@ from pathlib import Path
 
 import cadquery as cq
 
+from zcad.generators.tolerance_coupon import (
+    ToleranceCouponParameters,
+    build_tolerance_coupon,
+)
 from zcad.generators.tray import (
     TrayParameters,
     build_tray,
@@ -30,21 +34,20 @@ def main() -> None:
     ) as handle:
         design = json.load(handle)
 
-    if design["type"] != "tray":
-        raise ValueError(
-            f"Unsupported design type: {design['type']}"
-        )
+    design_type = design["type"]
 
-    parameters = TrayParameters(
-        **design["parameters"]
-    )
-    model = build_tray(parameters)
+    if design_type == "tray":
+        parameters = TrayParameters(**design["parameters"])
+        model = build_tray(parameters)
+    elif design_type == "tolerance_coupon":
+        parameters = ToleranceCouponParameters(**design["parameters"])
+        model = build_tolerance_coupon(parameters)
+    else:
+        raise ValueError(f"Unsupported design type: {design_type}")
     solid = model.val()
 
     if not solid.isValid():
-        raise ValueError(
-            "Generated geometry is invalid"
-        )
+        raise ValueError("Generated geometry is invalid")
 
     args.output.mkdir(
         parents=True,
@@ -69,12 +72,7 @@ def main() -> None:
     print(f"Generated: {name}")
     print(f"Valid solid: {solid.isValid()}")
     print(f"Volume: {solid.Volume():.2f} mm^3")
-    print(
-        "Bounds: "
-        f"{bounds.xlen:.2f} × "
-        f"{bounds.ylen:.2f} × "
-        f"{bounds.zlen:.2f} mm"
-    )
+    print(f"Bounds: {bounds.xlen:.2f} × {bounds.ylen:.2f} × {bounds.zlen:.2f} mm")
     print(f"STEP: {step_path}")
     print(f"STL:  {stl_path}")
 

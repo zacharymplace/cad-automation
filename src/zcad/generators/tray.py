@@ -25,29 +25,19 @@ class TrayParameters:
 
         for name, value in values.items():
             if value <= 0:
-                raise ValueError(
-                    f"{name} must be greater than zero"
-                )
+                raise ValueError(f"{name} must be greater than zero")
 
         if self.corner_radius < 0:
-            raise ValueError(
-                "corner_radius cannot be negative"
-            )
+            raise ValueError("corner_radius cannot be negative")
 
         if self.width <= self.wall * 2:
-            raise ValueError(
-                "width must exceed twice the wall thickness"
-            )
+            raise ValueError("width must exceed twice the wall thickness")
 
         if self.depth <= self.wall * 2:
-            raise ValueError(
-                "depth must exceed twice the wall thickness"
-            )
+            raise ValueError("depth must exceed twice the wall thickness")
 
         if self.height <= self.floor:
-            raise ValueError(
-                "height must exceed floor thickness"
-            )
+            raise ValueError("height must exceed floor thickness")
 
 
 def build_tray(
@@ -75,8 +65,6 @@ def build_tray(
     model = outer.cut(inner)
 
     if parameters.corner_radius > 0:
-        model = model.edges("|Z").fillet(
-            parameters.corner_radius
-        )
+        model = model.edges("|Z").fillet(parameters.corner_radius)
 
     return model

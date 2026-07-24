@@ -1,0 +1,25 @@
+{
+  "name": "default-tolerance-coupon",
+  "type": "tolerance_coupon",
+  "parameters": {
+    "hole_diameters": [
+      2.8,
+      3.0,
+      3.2,
+      3.4,
+      3.6
+    ],
+    "slot_widths": [
+      2.8,
+      3.0,
+      3.2,
+      3.4,
+      3.6
+    ],
+    "plate_thickness": 4,
+    "cell_width": 18,
+    "cell_height": 18,
+    "margin": 5,
+    "corner_radius": 3
+  }
+}
