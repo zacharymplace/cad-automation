@@ -19,6 +19,10 @@ from zcad_core.validation.profile_rules import (
     validate_design_and_parts,
 )
 
+from zcad.generators.calibration.insert_boss_coupon import (
+    InsertBossCouponParameters,
+    build_insert_boss_coupon,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -87,6 +91,13 @@ def generate_parts(
     """Generate one or more named model parts."""
     design_type = design["type"]
     raw_parameters = design["parameters"]
+
+    if design_type == "insert_boss_coupon":
+        return {
+            "main": build_insert_boss_coupon(
+                InsertBossCouponParameters(**raw_parameters)
+            )
+        }
 
     if design_type == "tray":
         return {"main": build_tray(TrayParameters(**raw_parameters))}

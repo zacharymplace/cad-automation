@@ -1,0 +1,11 @@
+{
+  "name": "insert-boss-coupon",
+  "type": "insert_boss_coupon",
+  "parameters": {
+    "width_mm": 120.0,
+    "depth_mm": 30.0,
+    "base_height_mm": 3.0,
+    "label_size_mm": 5.0,
+    "emboss_height_mm": 0.6
+  }
+}
