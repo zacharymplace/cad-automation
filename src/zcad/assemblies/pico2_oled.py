@@ -1,16 +1,13 @@
-"""Reusable Raspberry Pi Pico 2 and OLED device assembly."""
+"""Raspberry Pi Pico 2 and OLED product assembly adapter."""
 
 from dataclasses import dataclass
 
 from zcad_core.assemblies import (
-    ClearanceEnvelope,
-    ClearancePolicy,
     DeviceAssembly,
     InterferenceReport,
     Placement,
-    build_board_edge_connector_component,
-    build_rectangular_hardware_component,
-    component_pair,
+    analyze_board_display_assembly,
+    build_board_display_assembly,
 )
 from zcad_core.hardware import (
     get_raspberry_pi_pico2,
@@ -34,7 +31,7 @@ class Pico2OledAssemblyParameters:
     usb_access_clearance_mm: float = 2.0
 
     def validate(self) -> None:
-        """Validate component elevations."""
+        """Validate product placement and clearance parameters."""
         if self.board_z_mm < 0:
             raise ValueError("board_z_mm must not be negative")
 
@@ -51,66 +48,30 @@ class Pico2OledAssemblyParameters:
 def build_pico2_oled_assembly(
     parameters: Pico2OledAssemblyParameters | None = None,
 ) -> DeviceAssembly:
-    """Build the reusable Pico 2, USB, and OLED device assembly."""
+    """Build the Pico 2, USB, and OLED product assembly."""
     resolved = parameters if parameters is not None else Pico2OledAssemblyParameters()
 
     resolved.validate()
 
-    board = get_raspberry_pi_pico2()
-    display = get_reference_oled_128x64()
-    connector = board.usb_connector
+    board_placement = Placement(
+        x_mm=resolved.board_x_mm,
+        y_mm=resolved.board_y_mm,
+        z_mm=resolved.board_z_mm,
+    )
+    display_placement = Placement(
+        x_mm=resolved.display_x_mm,
+        y_mm=resolved.display_y_mm,
+        z_mm=resolved.display_z_mm,
+    )
 
-    return DeviceAssembly(
-        (
-            build_rectangular_hardware_component(
-                identifier="board",
-                hardware_identifier=board.identifier,
-                kind="pcb",
-                width_mm=board.board_width_mm,
-                depth_mm=board.board_length_mm,
-                height_mm=board.board_thickness_mm,
-                placement=Placement(
-                    x_mm=resolved.board_x_mm,
-                    y_mm=resolved.board_y_mm,
-                    z_mm=resolved.board_z_mm,
-                ),
-                clearance_envelope=ClearanceEnvelope(
-                    positive_z_mm=resolved.board_display_clearance_mm,
-                ),
-            ),
-            build_board_edge_connector_component(
-                identifier="usb_connector",
-                connector=connector,
-                board_width_mm=board.board_width_mm,
-                board_length_mm=board.board_length_mm,
-                board_thickness_mm=board.board_thickness_mm,
-                board_placement=Placement(
-                    x_mm=resolved.board_x_mm,
-                    y_mm=resolved.board_y_mm,
-                    z_mm=resolved.board_z_mm,
-                ),
-                clearance_envelope=ClearanceEnvelope.for_edge(
-                    edge=connector.board_edge,
-                    clearance_mm=resolved.usb_access_clearance_mm,
-                ),
-            ),
-            build_rectangular_hardware_component(
-                identifier="display",
-                hardware_identifier=display.identifier,
-                kind="display",
-                width_mm=display.module_width_mm,
-                depth_mm=display.module_height_mm,
-                height_mm=display.module_depth_mm,
-                placement=Placement(
-                    x_mm=resolved.display_x_mm,
-                    y_mm=resolved.display_y_mm,
-                    z_mm=resolved.display_z_mm,
-                ),
-                metadata={
-                    "mount_style": display.mount_style,
-                },
-            ),
-        )
+    return build_board_display_assembly(
+        board=get_raspberry_pi_pico2(),
+        display=get_reference_oled_128x64(),
+        board_placement=board_placement,
+        display_placement=display_placement,
+        board_display_clearance_mm=(resolved.board_display_clearance_mm),
+        connector_access_clearance_mm=(resolved.usb_access_clearance_mm),
+        connector_identifier="usb_connector",
     )
 
 
@@ -119,35 +80,18 @@ def analyze_pico2_oled_assembly(
     *,
     minimum_board_display_clearance_mm: float = 0.5,
 ) -> InterferenceReport:
-    """Analyze attachment and board-to-display policies."""
-    if minimum_board_display_clearance_mm < 0:
-        raise ValueError("minimum_board_display_clearance_mm must not be negative")
+    """Analyze Pico 2 attachment and display-clearance policy."""
+    try:
+        return analyze_board_display_assembly(
+            assembly,
+            minimum_board_display_clearance_mm=(minimum_board_display_clearance_mm),
+            connector_identifier="usb_connector",
+        )
+    except ValueError as error:
+        if "board-display assembly must contain exactly" not in str(error):
+            raise
 
-    expected_identifiers = {
-        "board",
-        "usb_connector",
-        "display",
-    }
-    actual_identifiers = set(assembly.identifiers)
-
-    if actual_identifiers != expected_identifiers:
         raise ValueError(
             "Pico 2 OLED assembly must contain exactly "
             "board, usb_connector, and display components"
-        )
-
-    return assembly.analyze_interference(
-        allowed_contact_pairs=(
-            component_pair(
-                "board",
-                "usb_connector",
-            ),
-        ),
-        clearance_policy=ClearancePolicy(
-            component_envelopes={
-                "board": ClearanceEnvelope(
-                    positive_z_mm=(minimum_board_display_clearance_mm),
-                ),
-            }
-        ),
-    )
+        ) from error
