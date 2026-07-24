@@ -1,0 +1,12 @@
+{
+  "name": "gridfinity-inspired-empty-bin-1x1",
+  "type": "gridfinity_bin",
+  "parameters": {
+    "cells_x": 1,
+    "cells_y": 1,
+    "height_units": 3,
+    "wall": 2.0,
+    "floor": 2.0,
+    "corner_radius": 3.0
+  }
+}
