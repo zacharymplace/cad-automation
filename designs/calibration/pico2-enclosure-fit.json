@@ -17,8 +17,17 @@
     "exterior_edge_fillet_mm": 0.6,
     "usb_width_clearance_mm": 0.6,
     "usb_height_clearance_mm": 0.6,
-    "label_text": "PICO 2",
-    "label_size_mm": 5.0,
-    "label_height_mm": 0.5
+    "label_text": "PICO 2 OLED",
+    "label_size_mm": 4.0,
+    "label_height_mm": 0.5,
+    "display_module_clearance_mm": 0.5,
+    "display_window_clearance_mm": 0.4,
+    "display_window_corner_radius_mm": 1.0,
+    "display_bezel_wall_mm": 1.5,
+    "display_bezel_height_mm": 0.8,
+    "display_center_x_mm": 0.0,
+    "display_center_y_mm": 6.0,
+    "label_x_mm": 0.0,
+    "label_y_mm": -18.0
   }
 }

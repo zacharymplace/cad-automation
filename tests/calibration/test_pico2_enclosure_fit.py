@@ -43,7 +43,10 @@ def test_lid_matches_body_footprint() -> None:
 
     assert lid_bounds.xlen == pytest.approx(body_bounds.xlen)
     assert lid_bounds.ylen == pytest.approx(body_bounds.ylen)
-    assert lid_bounds.zlen == pytest.approx(parameters.lid_height_mm)
+    assert parameters.lid_height_mm == pytest.approx(
+        parameters.lid_lip_height_mm + parameters.lid_thickness_mm
+    )
+    assert lid_bounds.zlen == pytest.approx(parameters.lid_overall_height_mm)
 
 
 def test_corner_radius_can_be_disabled() -> None:
@@ -78,5 +81,43 @@ def test_excessive_corner_radius_is_rejected() -> None:
     with pytest.raises(
         ValueError,
         match="corner_radius_mm",
+    ):
+        build_pico2_enclosure_fit(parameters)
+
+
+def test_display_expands_enclosure_width() -> None:
+    parameters = Pico2EnclosureFitParameters()
+    board_only_width_mm = (
+        21.0 + (2 * parameters.board_clearance_mm) + (2 * parameters.wall_mm)
+    )
+
+    assert parameters.outer_width_mm > board_only_width_mm
+
+
+def test_lid_contains_display_window() -> None:
+    parameters = Pico2EnclosureFitParameters()
+    parts = build_pico2_enclosure_fit(parameters)
+
+    lid = parts["lid"].val()
+
+    full_plate_volume_mm3 = (
+        parameters.outer_width_mm
+        * parameters.outer_depth_mm
+        * parameters.lid_thickness_mm
+    )
+
+    assert lid.isValid()
+    assert lid.Volume() > 0
+    assert lid.Volume() < (full_plate_volume_mm3 + 2000.0)
+
+
+def test_display_bezel_must_fit_lid() -> None:
+    parameters = Pico2EnclosureFitParameters(
+        display_center_x_mm=100.0,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="display bezel",
     ):
         build_pico2_enclosure_fit(parameters)

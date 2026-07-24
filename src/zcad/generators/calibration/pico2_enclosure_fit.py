@@ -5,14 +5,19 @@ from dataclasses import dataclass
 import cadquery as cq
 from zcad_core.features import (
     ConnectorCutoutParameters,
+    DisplayBezelParameters,
+    DisplayWindowParameters,
     add_board_standoffs,
+    add_display_bezel,
     cut_connector_opening,
+    cut_display_window,
 )
 from zcad_core.features.labels import (
     add_embossed_label,
 )
 from zcad_core.hardware import (
     get_raspberry_pi_pico2,
+    get_reference_oled_128x64,
 )
 
 
@@ -40,8 +45,18 @@ class Pico2EnclosureFitParameters:
     usb_width_clearance_mm: float = 0.6
     usb_height_clearance_mm: float = 0.6
 
-    label_text: str = "PICO 2"
-    label_size_mm: float = 5.0
+    display_module_clearance_mm: float = 0.5
+    display_window_clearance_mm: float = 0.4
+    display_window_corner_radius_mm: float = 1.0
+    display_bezel_wall_mm: float = 1.5
+    display_bezel_height_mm: float = 0.8
+    display_center_x_mm: float = 0.0
+    display_center_y_mm: float = 6.0
+
+    label_text: str = "PICO 2 OLED"
+    label_x_mm: float = 0.0
+    label_y_mm: float = -18.0
+    label_size_mm: float = 4.0
     label_height_mm: float = 0.5
 
     def validate(self) -> None:
@@ -56,6 +71,9 @@ class Pico2EnclosureFitParameters:
             "lid_thickness_mm": self.lid_thickness_mm,
             "lid_lip_height_mm": self.lid_lip_height_mm,
             "lid_lip_wall_mm": self.lid_lip_wall_mm,
+            "display_module_clearance_mm": (self.display_module_clearance_mm),
+            "display_bezel_wall_mm": (self.display_bezel_wall_mm),
+            "display_bezel_height_mm": (self.display_bezel_height_mm),
             "label_size_mm": self.label_size_mm,
             "label_height_mm": self.label_height_mm,
         }
@@ -71,6 +89,8 @@ class Pico2EnclosureFitParameters:
             "exterior_edge_fillet_mm": (self.exterior_edge_fillet_mm),
             "usb_width_clearance_mm": (self.usb_width_clearance_mm),
             "usb_height_clearance_mm": (self.usb_height_clearance_mm),
+            "display_window_clearance_mm": (self.display_window_clearance_mm),
+            "display_window_corner_radius_mm": (self.display_window_corner_radius_mm),
         }
 
         for name, value in nonnegative_values.items():
@@ -89,22 +109,70 @@ class Pico2EnclosureFitParameters:
         if self.exterior_edge_fillet_mm >= (self.wall_mm):
             raise ValueError("exterior_edge_fillet_mm must be smaller than wall_mm")
 
+        display = get_reference_oled_128x64()
+
+        window_width_mm = display.active_width_mm + (
+            2 * self.display_window_clearance_mm
+        )
+        window_height_mm = display.active_height_mm + (
+            2 * self.display_window_clearance_mm
+        )
+
+        bezel_width_mm = window_width_mm + (2 * self.display_bezel_wall_mm)
+        bezel_height_mm = window_height_mm + (2 * self.display_bezel_wall_mm)
+
+        if abs(self.display_center_x_mm) + (bezel_width_mm / 2) > (
+            self.outer_width_mm / 2
+        ):
+            raise ValueError("display bezel does not fit within lid width")
+
+        if abs(self.display_center_y_mm) + (bezel_height_mm / 2) > (
+            self.outer_depth_mm / 2
+        ):
+            raise ValueError("display bezel does not fit within lid depth")
+
         if not self.label_text.strip():
             raise ValueError("label_text must not be empty")
 
     @property
     def inner_width_mm(self) -> float:
-        """Return usable enclosure cavity width."""
+        """Return hardware-derived enclosure cavity width."""
         board = get_raspberry_pi_pico2()
+        display = get_reference_oled_128x64()
 
-        return board.board_width_mm + (2 * self.board_clearance_mm)
+        board_required_width_mm = board.board_width_mm + (2 * self.board_clearance_mm)
+
+        display_required_width_mm = (
+            display.module_width_mm
+            + (2 * self.display_module_clearance_mm)
+            + (2 * self.lid_clearance_mm)
+            + (2 * self.lid_lip_wall_mm)
+        )
+
+        return max(
+            board_required_width_mm,
+            display_required_width_mm,
+        )
 
     @property
     def inner_depth_mm(self) -> float:
-        """Return usable enclosure cavity depth."""
+        """Return hardware-derived enclosure cavity depth."""
         board = get_raspberry_pi_pico2()
+        display = get_reference_oled_128x64()
 
-        return board.board_length_mm + (2 * self.board_clearance_mm)
+        board_required_depth_mm = board.board_length_mm + (2 * self.board_clearance_mm)
+
+        display_required_depth_mm = (
+            display.module_height_mm
+            + (2 * self.display_module_clearance_mm)
+            + (2 * self.lid_clearance_mm)
+            + (2 * self.lid_lip_wall_mm)
+        )
+
+        return max(
+            board_required_depth_mm,
+            display_required_depth_mm,
+        )
 
     @property
     def outer_width_mm(self) -> float:
@@ -125,6 +193,11 @@ class Pico2EnclosureFitParameters:
     def lid_height_mm(self) -> float:
         """Return structural lid height including the locating lip."""
         return self.lid_lip_height_mm + self.lid_thickness_mm
+
+    @property
+    def lid_overall_height_mm(self) -> float:
+        """Return total lid height including the raised display bezel."""
+        return self.lid_height_mm + self.display_bezel_height_mm
 
 
 def _fillet_vertical_edges(
@@ -259,13 +332,41 @@ def _build_lid(
     if parameters.exterior_edge_fillet_mm > 0:
         lid = lid.edges(">Z").fillet(parameters.exterior_edge_fillet_mm)
 
+    display = get_reference_oled_128x64()
+
+    window = DisplayWindowParameters.from_display(
+        display=display,
+        panel_base_z_mm=(parameters.lid_lip_height_mm),
+        panel_thickness_mm=(parameters.lid_thickness_mm),
+        x=parameters.display_center_x_mm,
+        y=parameters.display_center_y_mm,
+        window_clearance_mm=(parameters.display_window_clearance_mm),
+        corner_radius_mm=(parameters.display_window_corner_radius_mm),
+    )
+
+    lid = cut_display_window(
+        lid,
+        parameters=window,
+    )
+
+    bezel = DisplayBezelParameters.from_window(
+        window=window,
+        bezel_wall_mm=(parameters.display_bezel_wall_mm),
+        bezel_height_mm=(parameters.display_bezel_height_mm),
+    )
+
+    lid = add_display_bezel(
+        lid,
+        parameters=bezel,
+    )
+
     label_base_z_mm = parameters.lid_lip_height_mm + parameters.lid_thickness_mm
 
     return add_embossed_label(
         lid,
         text=parameters.label_text,
-        x=0.0,
-        y=0.0,
+        x=parameters.label_x_mm,
+        y=parameters.label_y_mm,
         base_height=label_base_z_mm,
         text_size=parameters.label_size_mm,
         emboss_height=parameters.label_height_mm,
