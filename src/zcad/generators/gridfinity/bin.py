@@ -50,7 +50,7 @@ def build_gridfinity_bin(
 
     width = specification.cell_width(parameters.cells_x)
     depth = specification.cell_depth(parameters.cells_y)
-    height = parameters.height_units * specification.base_height
+    height = parameters.height_units * specification.height_unit
 
     if width <= 2 * parameters.wall:
         raise ValueError("Bin width must exceed twice the wall thickness")
