@@ -1,0 +1,14 @@
+{
+  "name": "pico2-mount-coupon",
+  "type": "pico2_mount_coupon",
+  "parameters": {
+    "board_edge_clearance_mm": 5.0,
+    "base_height_mm": 2.0,
+    "standoff_height_mm": 3.0,
+    "standoff_radial_wall_mm": 1.5,
+    "mounting_hole_clearance_mm": 0.5,
+    "label_text": "PICO 2",
+    "label_size_mm": 4.0,
+    "emboss_height_mm": 0.5
+  }
+}

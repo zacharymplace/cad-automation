@@ -23,6 +23,10 @@ from zcad.generators.calibration.insert_boss_coupon import (
     InsertBossCouponParameters,
     build_insert_boss_coupon,
 )
+from zcad.generators.calibration.pico2_mount_coupon import (
+    Pico2MountCouponParameters,
+    build_pico2_mount_coupon,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -96,6 +100,13 @@ def generate_parts(
         return {
             "main": build_insert_boss_coupon(
                 InsertBossCouponParameters(**raw_parameters)
+            )
+        }
+
+    if design_type == "pico2_mount_coupon":
+        return {
+            "main": build_pico2_mount_coupon(
+                Pico2MountCouponParameters(**raw_parameters)
             )
         }
 
