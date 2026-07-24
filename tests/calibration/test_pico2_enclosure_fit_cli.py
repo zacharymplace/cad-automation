@@ -1,3 +1,5 @@
+"""CLI tests for the Pico 2 enclosure assembly."""
+
 from pathlib import Path
 
 from zcad.cli import (
@@ -6,9 +8,14 @@ from zcad.cli import (
 )
 
 
-def test_cli_generates_pico2_enclosure() -> None:
+def test_cli_generates_body_and_lid() -> None:
     design = read_design(Path("designs/calibration/pico2-enclosure-fit.json"))
 
     parts = generate_parts(design)
 
-    assert parts["main"].val().isValid()
+    assert set(parts) == {
+        "body",
+        "lid",
+    }
+    assert parts["body"].val().isValid()
+    assert parts["lid"].val().isValid()

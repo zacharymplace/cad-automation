@@ -1,5 +1,22 @@
 {
   "name": "pico2-enclosure-fit",
   "type": "pico2_enclosure_fit",
-  "parameters": {}
+  "parameters": {
+    "wall_mm": 2.0,
+    "floor_mm": 2.0,
+    "internal_height_mm": 8.0,
+    "board_clearance_mm": 2.0,
+    "standoff_height_mm": 3.0,
+    "standoff_radial_wall_mm": 1.5,
+    "mounting_hole_clearance_mm": 0.5,
+    "lid_thickness_mm": 2.0,
+    "lid_clearance_mm": 0.25,
+    "lid_lip_height_mm": 2.5,
+    "lid_lip_wall_mm": 1.2,
+    "usb_width_clearance_mm": 0.6,
+    "usb_height_clearance_mm": 0.6,
+    "label_text": "PICO 2",
+    "label_size_mm": 5.0,
+    "label_height_mm": 0.5
+  }
 }

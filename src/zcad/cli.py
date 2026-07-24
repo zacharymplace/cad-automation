@@ -108,11 +108,7 @@ def generate_parts(
         }
 
     if design_type == "pico2_enclosure_fit":
-        return {
-            "main": build_pico2_enclosure_fit(
-                Pico2EnclosureFitParameters(**raw_parameters)
-            )
-        }
+        return build_pico2_enclosure_fit(Pico2EnclosureFitParameters(**raw_parameters))
 
     if design_type == "pico2_mount_coupon":
         return {
