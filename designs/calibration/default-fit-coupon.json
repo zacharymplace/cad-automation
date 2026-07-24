@@ -1,0 +1,19 @@
+{
+  "name": "default-fit-coupon",
+  "type": "fit_coupon",
+  "parameters": {
+    "nominal_diameter": 8.0,
+    "clearances": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4
+    ],
+    "plate_thickness": 5.0,
+    "peg_height": 10.0,
+    "cell_width": 20.0,
+    "margin": 5.0,
+    "corner_radius": 3.0
+  }
+}

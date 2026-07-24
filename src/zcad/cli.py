@@ -6,6 +6,10 @@ from pathlib import Path
 
 import cadquery as cq
 
+from zcad.generators.fit_coupon import (
+    FitCouponParameters,
+    build_fit_coupon,
+)
 from zcad.generators.tolerance_coupon import (
     ToleranceCouponParameters,
     build_tolerance_coupon,
@@ -42,6 +46,9 @@ def main() -> None:
     elif design_type == "tolerance_coupon":
         parameters = ToleranceCouponParameters(**design["parameters"])
         model = build_tolerance_coupon(parameters)
+    elif design_type == "fit_coupon":
+        parameters = FitCouponParameters(**design["parameters"])
+        model = build_fit_coupon(parameters)
     else:
         raise ValueError(f"Unsupported design type: {design_type}")
     solid = model.val()
