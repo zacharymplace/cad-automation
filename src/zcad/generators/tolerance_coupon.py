@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 import cadquery as cq
 
+from zcad.features.holes import add_through_holes
+from zcad.features.labels import add_embossed_label
+
 
 @dataclass(frozen=True)
 class ToleranceCouponParameters:
@@ -91,32 +94,28 @@ def build_tolerance_coupon(
     for index, diameter in enumerate(parameters.hole_diameters):
         x_position = left_edge + index * parameters.cell_width
 
-        model = (
-            model.faces(">Z")
-            .workplane()
-            .pushPoints([(x_position, upper_y)])
-            .hole(diameter)
+        model = add_through_holes(
+            model,
+            points=[
+                (
+                    x_position,
+                    upper_y,
+                )
+            ],
+            diameter=diameter,
         )
 
         label_y = upper_y - parameters.cell_height / 2 + parameters.label_size
 
-        label = (
-            cq.Workplane("XY")
-            .workplane(offset=parameters.plate_thickness / 2)
-            .center(
-                x_position,
-                label_y,
-            )
-            .text(
-                f"H{diameter:.1f}",
-                parameters.label_size,
-                parameters.label_height,
-                halign="center",
-                valign="center",
-            )
+        model = add_embossed_label(
+            model,
+            text=f"H{diameter:.1f}",
+            x=x_position,
+            y=label_y,
+            base_height=parameters.plate_thickness,
+            text_size=parameters.label_size,
+            emboss_height=parameters.label_height,
         )
-
-        model = model.union(label)
 
     slot_length = parameters.cell_height * 0.65
 
@@ -141,22 +140,14 @@ def build_tolerance_coupon(
 
         label_y = lower_y - parameters.cell_height / 2 + parameters.label_size
 
-        label = (
-            cq.Workplane("XY")
-            .workplane(offset=parameters.plate_thickness / 2)
-            .center(
-                x_position,
-                label_y,
-            )
-            .text(
-                f"S{slot_width:.1f}",
-                parameters.label_size,
-                parameters.label_height,
-                halign="center",
-                valign="center",
-            )
+        model = add_embossed_label(
+            model,
+            text=f"S{slot_width:.1f}",
+            x=x_position,
+            y=label_y,
+            base_height=parameters.plate_thickness,
+            text_size=parameters.label_size,
+            emboss_height=parameters.label_height,
         )
-
-        model = model.union(label)
 
     return model
