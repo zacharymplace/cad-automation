@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Code-driven parametric CAD generators"
 requires-python = ">=3.11"
 dependencies = [
-  "cadquery",
+  "cadquery>=2.8,<3",
+  "zcad-core>=0.1,<0.2",
 ]
 
 [project.optional-dependencies]

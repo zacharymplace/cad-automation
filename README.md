@@ -38,3 +38,17 @@ Generated manufacturing files are written to `exports/`.
 - `STEP` is the authoritative exchange format.
 - `STL` is the derived printing format.
 - `JSON` is the authoritative design input.
+## Architecture
+
+This repository contains ZCAD product generators and CLI orchestration.
+Reusable CAD infrastructure lives in the separate `zcad-core` repository.
+
+See [docs/architecture.md](docs/architecture.md) for ownership boundaries and
+local development setup.
+
+Bootstrap both editable packages with:
+
+```bash
+./scripts/bootstrap-dev.sh
+```
+
