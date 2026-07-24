@@ -77,3 +77,140 @@ def test_assembly_compound_is_valid() -> None:
 
     assert compound.isValid()
     assert len(compound.Solids()) == 2
+
+
+def test_default_assembly_passes_clearance_policy() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = build_pico2_oled_assembly()
+
+    report = analyze_pico2_oled_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=0.5,
+    )
+
+    assert not report.has_findings
+
+
+def test_board_display_collision_is_reported() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            display_z_mm=3.5,
+        )
+    )
+
+    report = analyze_pico2_oled_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=0.5,
+    )
+
+    assert len(report.collisions) == 1
+    assert not report.clearance_violations
+
+    assert report.collisions[0].pair == {
+        "board",
+        "display",
+    }
+
+
+def test_insufficient_board_display_clearance_is_reported() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            display_z_mm=4.25,
+        )
+    )
+
+    report = analyze_pico2_oled_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=0.5,
+    )
+
+    assert not report.collisions
+    assert len(report.clearance_violations) == 1
+
+    finding = report.clearance_violations[0]
+
+    assert finding.measured_clearance_mm == pytest.approx(0.25)
+    assert finding.required_clearance_mm == pytest.approx(0.5)
+
+
+def test_exact_board_display_clearance_passes() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            display_z_mm=4.5,
+        )
+    )
+
+    report = analyze_pico2_oled_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=0.5,
+    )
+
+    assert not report.has_findings
+
+
+def test_negative_clearance_policy_is_rejected() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = build_pico2_oled_assembly()
+
+    with pytest.raises(
+        ValueError,
+        match="minimum_board_display_clearance_mm",
+    ):
+        analyze_pico2_oled_assembly(
+            assembly,
+            minimum_board_display_clearance_mm=-0.1,
+        )
+
+
+def test_clearance_policy_rejects_wrong_component_set() -> None:
+    import cadquery as cq
+    from zcad_core.assemblies import (
+        AssemblyComponent,
+        DeviceAssembly,
+    )
+
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = DeviceAssembly(
+        (
+            AssemblyComponent(
+                identifier="board",
+                geometry=cq.Workplane("XY").box(
+                    10.0,
+                    10.0,
+                    1.0,
+                    centered=(
+                        True,
+                        True,
+                        False,
+                    ),
+                ),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="exactly board and display",
+    ):
+        analyze_pico2_oled_assembly(assembly)

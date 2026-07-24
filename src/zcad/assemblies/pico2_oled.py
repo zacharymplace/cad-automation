@@ -6,6 +6,7 @@ import cadquery as cq
 from zcad_core.assemblies import (
     AssemblyComponent,
     DeviceAssembly,
+    InterferenceReport,
     Placement,
 )
 from zcad_core.hardware import (
@@ -105,4 +106,29 @@ def build_pico2_oled_assembly(
                 },
             ),
         )
+    )
+
+
+def analyze_pico2_oled_assembly(
+    assembly: DeviceAssembly,
+    *,
+    minimum_board_display_clearance_mm: float = 0.5,
+) -> InterferenceReport:
+    """Analyze the Pico 2 board-to-display clearance policy."""
+    if minimum_board_display_clearance_mm < 0:
+        raise ValueError("minimum_board_display_clearance_mm must not be negative")
+
+    expected_identifiers = {
+        "board",
+        "display",
+    }
+    actual_identifiers = set(assembly.identifiers)
+
+    if actual_identifiers != expected_identifiers:
+        raise ValueError(
+            "Pico 2 OLED assembly must contain exactly board and display components"
+        )
+
+    return assembly.analyze_interference(
+        minimum_clearance_mm=(minimum_board_display_clearance_mm)
     )
