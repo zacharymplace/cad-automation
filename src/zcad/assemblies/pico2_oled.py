@@ -1,11 +1,12 @@
 """Reusable Raspberry Pi Pico 2 and OLED device assembly."""
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 import cadquery as cq
 from zcad_core.assemblies import (
     AssemblyComponent,
     ClearanceEnvelope,
+    ClearancePolicy,
     DeviceAssembly,
     InterferenceReport,
     Placement,
@@ -138,19 +139,12 @@ def analyze_pico2_oled_assembly(
             "Pico 2 OLED assembly must contain exactly board and display components"
         )
 
-    board = assembly.get("board")
-    display = assembly.get("display")
-
-    policy_assembly = DeviceAssembly(
-        (
-            replace(
-                board,
-                clearance_envelope=ClearanceEnvelope(
+    return assembly.analyze_interference(
+        clearance_policy=ClearancePolicy(
+            component_envelopes={
+                "board": ClearanceEnvelope(
                     positive_z_mm=(minimum_board_display_clearance_mm),
                 ),
-            ),
-            display,
+            }
         )
     )
-
-    return policy_assembly.analyze_interference()

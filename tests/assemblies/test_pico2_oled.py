@@ -259,3 +259,31 @@ def test_negative_embedded_clearance_is_rejected() -> None:
         match="board_display_clearance_mm",
     ):
         build_pico2_oled_assembly(parameters)
+
+
+def test_policy_wrapper_does_not_mutate_assembly() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            display_z_mm=4.5,
+            board_display_clearance_mm=0.5,
+        )
+    )
+
+    board = assembly.get("board")
+    embedded_envelope = board.clearance_envelope
+
+    report = analyze_pico2_oled_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=2.0,
+    )
+
+    assert len(report.clearance_violations) == 1
+    assert report.clearance_violations[0].required_clearance_mm == pytest.approx(2.0)
+
+    assert assembly.get("board") is board
+    assert board.clearance_envelope is embedded_envelope
+    assert embedded_envelope.positive_z_mm == pytest.approx(0.5)
