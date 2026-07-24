@@ -32,6 +32,7 @@ class Pico2OledAssemblyParameters:
     display_z_mm: float = 8.0
 
     board_display_clearance_mm: float = 0.5
+    usb_access_clearance_mm: float = 2.0
 
     def validate(self) -> None:
         """Validate component elevations."""
@@ -43,6 +44,35 @@ class Pico2OledAssemblyParameters:
 
         if self.board_display_clearance_mm < 0:
             raise ValueError("board_display_clearance_mm must not be negative")
+
+        if self.usb_access_clearance_mm < 0:
+            raise ValueError("usb_access_clearance_mm must not be negative")
+
+
+def _connector_access_envelope(
+    *,
+    connector: RectangularConnectorSpec,
+    clearance_mm: float,
+) -> ClearanceEnvelope:
+    """Return outward access clearance for one board-edge connector."""
+    if connector.board_edge == "negative_x":
+        return ClearanceEnvelope(
+            negative_x_mm=clearance_mm,
+        )
+
+    if connector.board_edge == "positive_x":
+        return ClearanceEnvelope(
+            positive_x_mm=clearance_mm,
+        )
+
+    if connector.board_edge == "negative_y":
+        return ClearanceEnvelope(
+            negative_y_mm=clearance_mm,
+        )
+
+    return ClearanceEnvelope(
+        positive_y_mm=clearance_mm,
+    )
 
 
 def _build_board_proxy() -> cq.Workplane:
@@ -191,6 +221,12 @@ def build_pico2_oled_assembly(
                     "depth_mm": connector.depth_mm,
                     "height_mm": connector.height_mm,
                 },
+                clearance_envelope=(
+                    _connector_access_envelope(
+                        connector=connector,
+                        clearance_mm=(resolved.usb_access_clearance_mm),
+                    )
+                ),
             ),
             AssemblyComponent(
                 identifier="display",

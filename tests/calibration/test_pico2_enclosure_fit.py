@@ -5,6 +5,7 @@ import pytest
 
 from zcad.generators.calibration.pico2_enclosure_fit import (
     Pico2EnclosureFitParameters,
+    _analyze_usb_access_clearance,
     _connector_cutout_parameters,
     build_pico2_enclosure_fit,
 )
@@ -297,3 +298,39 @@ def test_usb_cutout_elevation_follows_standoff_height() -> None:
     higher_cutout = _connector_cutout_parameters(higher)
 
     assert higher_cutout.bottom_z_mm == pytest.approx(lower_cutout.bottom_z_mm + 1.0)
+
+
+def test_default_usb_access_clearance_meets_wall() -> None:
+    parameters = Pico2EnclosureFitParameters()
+
+    report = _analyze_usb_access_clearance(parameters)
+
+    assert not report.has_findings
+
+
+def test_larger_usb_access_clearance_expands_enclosure_depth() -> None:
+    default = Pico2EnclosureFitParameters(
+        usb_access_clearance_mm=2.0,
+    )
+    larger = Pico2EnclosureFitParameters(
+        usb_access_clearance_mm=4.0,
+    )
+
+    assert larger.inner_depth_mm > default.inner_depth_mm
+    assert larger.outer_depth_mm > default.outer_depth_mm
+
+    report = _analyze_usb_access_clearance(larger)
+
+    assert not report.has_findings
+
+
+def test_negative_usb_access_clearance_is_rejected() -> None:
+    parameters = Pico2EnclosureFitParameters(
+        usb_access_clearance_mm=-0.1,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="usb_access_clearance_mm",
+    ):
+        build_pico2_enclosure_fit(parameters)

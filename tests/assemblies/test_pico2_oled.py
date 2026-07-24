@@ -342,3 +342,29 @@ def test_generic_analysis_requires_attachment_exception() -> None:
     )
 
     assert not report.has_findings
+
+
+def test_usb_connector_carries_outward_access_envelope() -> None:
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            usb_access_clearance_mm=3.0,
+        )
+    )
+
+    connector = assembly.get("usb_connector")
+    envelope = connector.clearance_envelope
+
+    assert envelope.negative_y_mm == pytest.approx(3.0)
+    assert envelope.positive_y_mm == pytest.approx(0.0)
+
+
+def test_negative_usb_access_clearance_is_rejected() -> None:
+    parameters = Pico2OledAssemblyParameters(
+        usb_access_clearance_mm=-0.1,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="usb_access_clearance_mm",
+    ):
+        build_pico2_oled_assembly(parameters)

@@ -3,6 +3,12 @@
 from dataclasses import dataclass
 
 import cadquery as cq
+from zcad_core.assemblies import (
+    AssemblyComponent,
+    DeviceAssembly,
+    InterferenceReport,
+    Placement,
+)
 from zcad_core.features import (
     ConnectorCutoutParameters,
     DisplayBezelParameters,
@@ -50,6 +56,7 @@ class Pico2EnclosureFitParameters:
 
     usb_width_clearance_mm: float = 0.6
     usb_height_clearance_mm: float = 0.6
+    usb_access_clearance_mm: float = 2.0
 
     display_module_clearance_mm: float = 0.5
     display_window_clearance_mm: float = 0.4
@@ -96,6 +103,7 @@ class Pico2EnclosureFitParameters:
             "exterior_edge_fillet_mm": (self.exterior_edge_fillet_mm),
             "usb_width_clearance_mm": (self.usb_width_clearance_mm),
             "usb_height_clearance_mm": (self.usb_height_clearance_mm),
+            "usb_access_clearance_mm": (self.usb_access_clearance_mm),
             "display_window_clearance_mm": (self.display_window_clearance_mm),
             "display_window_corner_radius_mm": (self.display_window_corner_radius_mm),
             "board_display_clearance_mm": self.board_display_clearance_mm,
@@ -168,6 +176,17 @@ class Pico2EnclosureFitParameters:
                 f"{finding.required_clearance_mm:.3f} mm required"
             )
 
+        access_report = _analyze_usb_access_clearance(self)
+
+        if access_report.has_findings:
+            finding = access_report.findings[0]
+
+            raise ValueError(
+                "Pico 2 USB access clearance is insufficient: "
+                f"{finding.measured_clearance_mm:.3f} mm measured, "
+                f"{finding.required_clearance_mm:.3f} mm required"
+            )
+
     @property
     def assembly_parameters(
         self,
@@ -193,6 +212,7 @@ class Pico2EnclosureFitParameters:
                 minimum_display_z_mm,
             ),
             board_display_clearance_mm=(self.board_display_clearance_mm),
+            usb_access_clearance_mm=(self.usb_access_clearance_mm),
         )
 
     @property
@@ -264,9 +284,16 @@ class Pico2EnclosureFitParameters:
             ),
         )
 
+        connector_required_depth_mm = self._required_component_span_mm(
+            identifier="usb_connector",
+            axis="y",
+            clearance_mm=(self.usb_access_clearance_mm),
+        )
+
         return max(
             board_required_depth_mm,
             display_required_depth_mm,
+            connector_required_depth_mm,
         )
 
     @property
@@ -305,6 +332,42 @@ def _fillet_vertical_edges(
         return model
 
     return model.edges("|Z").fillet(radius_mm)
+
+
+def _negative_y_wall_proxy(
+    parameters: Pico2EnclosureFitParameters,
+) -> AssemblyComponent:
+    """Return a narrow proxy for the enclosure negative-Y wall."""
+    return AssemblyComponent(
+        identifier="negative_y_wall",
+        geometry=cq.Workplane("XY").box(
+            parameters.inner_width_mm,
+            parameters.wall_mm,
+            parameters.body_height_mm,
+            centered=(True, True, False),
+        ),
+        placement=Placement(
+            y_mm=-((parameters.inner_depth_mm / 2) + (parameters.wall_mm / 2)),
+        ),
+        metadata={
+            "kind": "enclosure_wall",
+            "edge": "negative_y",
+        },
+    )
+
+
+def _analyze_usb_access_clearance(
+    parameters: Pico2EnclosureFitParameters,
+) -> InterferenceReport:
+    """Validate USB access clearance against the enclosure wall."""
+    connector = parameters.device_assembly.get("usb_connector")
+
+    return DeviceAssembly(
+        (
+            connector,
+            _negative_y_wall_proxy(parameters),
+        )
+    ).analyze_interference()
 
 
 def _connector_cutout_parameters(
