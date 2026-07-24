@@ -18,7 +18,8 @@ jobs:
       - name: Check out zcad-core
         uses: actions/checkout@v4
         with:
-          repository: REPLACE_WITH_OWNER/zcad-core
+          repository: zacharymplace/zcad-core
+          token: ${{ secrets.ZCAD_CORE_TOKEN }}
           ref: v0.1.0
           path: zcad-core
 
