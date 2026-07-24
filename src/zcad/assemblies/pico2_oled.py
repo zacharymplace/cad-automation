@@ -10,10 +10,10 @@ from zcad_core.assemblies import (
     DeviceAssembly,
     InterferenceReport,
     Placement,
+    build_board_edge_connector_component,
     component_pair,
 )
 from zcad_core.hardware import (
-    RectangularConnectorSpec,
     get_raspberry_pi_pico2,
     get_reference_oled_128x64,
 )
@@ -73,80 +73,6 @@ def _build_display_proxy() -> cq.Workplane:
     )
 
 
-def _build_connector_proxy(
-    connector: RectangularConnectorSpec,
-) -> cq.Workplane:
-    """Build a connector-body proxy from catalog metadata."""
-    connector.validate()
-
-    if connector.board_edge in {
-        "negative_y",
-        "positive_y",
-    }:
-        size_x_mm = connector.width_mm
-        size_y_mm = connector.depth_mm
-    else:
-        size_x_mm = connector.depth_mm
-        size_y_mm = connector.width_mm
-
-    return cq.Workplane("XY").box(
-        size_x_mm,
-        size_y_mm,
-        connector.height_mm,
-        centered=(True, True, False),
-    )
-
-
-def _connector_placement(
-    *,
-    parameters: Pico2OledAssemblyParameters,
-    connector: RectangularConnectorSpec,
-) -> Placement:
-    """Return connector placement relative to the placed board."""
-    board = get_raspberry_pi_pico2()
-
-    if connector.board_edge == "negative_y":
-        connector_x_mm = parameters.board_x_mm + connector.center_offset_mm
-        connector_y_mm = (
-            parameters.board_y_mm
-            - (board.board_length_mm / 2)
-            + (connector.depth_mm / 2)
-        )
-    elif connector.board_edge == "positive_y":
-        connector_x_mm = parameters.board_x_mm + connector.center_offset_mm
-        connector_y_mm = (
-            parameters.board_y_mm
-            + (board.board_length_mm / 2)
-            - (connector.depth_mm / 2)
-        )
-    elif connector.board_edge == "negative_x":
-        connector_x_mm = (
-            parameters.board_x_mm
-            - (board.board_width_mm / 2)
-            + (connector.depth_mm / 2)
-        )
-        connector_y_mm = parameters.board_y_mm + connector.center_offset_mm
-    else:
-        connector_x_mm = (
-            parameters.board_x_mm
-            + (board.board_width_mm / 2)
-            - (connector.depth_mm / 2)
-        )
-        connector_y_mm = parameters.board_y_mm + connector.center_offset_mm
-
-    connector_z_mm = (
-        parameters.board_z_mm
-        + board.board_thickness_mm
-        + connector.bottom_offset_from_board_top_mm
-    )
-
-    return Placement(
-        x_mm=connector_x_mm,
-        y_mm=connector_y_mm,
-        z_mm=connector_z_mm,
-    )
-
-
 def build_pico2_oled_assembly(
     parameters: Pico2OledAssemblyParameters | None = None,
 ) -> DeviceAssembly:
@@ -180,21 +106,17 @@ def build_pico2_oled_assembly(
                     positive_z_mm=(resolved.board_display_clearance_mm),
                 ),
             ),
-            AssemblyComponent(
+            build_board_edge_connector_component(
                 identifier="usb_connector",
-                geometry=_build_connector_proxy(connector),
-                placement=_connector_placement(
-                    parameters=resolved,
-                    connector=connector,
+                connector=connector,
+                board_width_mm=board.board_width_mm,
+                board_length_mm=board.board_length_mm,
+                board_thickness_mm=board.board_thickness_mm,
+                board_placement=Placement(
+                    x_mm=resolved.board_x_mm,
+                    y_mm=resolved.board_y_mm,
+                    z_mm=resolved.board_z_mm,
                 ),
-                metadata={
-                    "kind": "connector",
-                    "hardware_identifier": (connector.identifier),
-                    "board_edge": connector.board_edge,
-                    "width_mm": connector.width_mm,
-                    "depth_mm": connector.depth_mm,
-                    "height_mm": connector.height_mm,
-                },
                 clearance_envelope=ClearanceEnvelope.for_edge(
                     edge=connector.board_edge,
                     clearance_mm=resolved.usb_access_clearance_mm,
