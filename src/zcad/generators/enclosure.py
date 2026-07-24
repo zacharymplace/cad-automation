@@ -3,7 +3,12 @@
 from dataclasses import dataclass
 
 import cadquery as cq
+from zcad_core.features import (
+    InsertBossParameters,
+    add_heat_set_insert_boss,
+)
 from zcad_core.features.labels import add_embossed_label
+from zcad_core.hardware import get_fastener
 
 
 @dataclass(frozen=True)
@@ -34,6 +39,10 @@ class EnclosureParameters:
     label_size: float = 6.0
     label_height: float = 0.6
 
+    corner_insert_fastener: str | None = None
+    corner_insert_wall_mm: float = 1.8
+    corner_insert_edge_offset_mm: float = 10.0
+
     def validate(self) -> None:
         positive_values = {
             "width": self.width,
@@ -63,6 +72,12 @@ class EnclosureParameters:
 
         if not self.label.strip():
             raise ValueError("label cannot be empty")
+
+        if self.corner_insert_wall_mm <= 0:
+            raise ValueError("corner_insert_wall_mm must be greater than zero")
+
+        if self.corner_insert_edge_offset_mm <= 0:
+            raise ValueError("corner_insert_edge_offset_mm must be greater than zero")
 
         if self.width <= 2 * self.wall:
             raise ValueError("width must exceed twice the wall thickness")
@@ -184,7 +199,49 @@ def _build_body(
         .extrude(parameters.floor + 2)
     )
 
-    return body.cut(hole_cutter)
+    body = body.cut(hole_cutter)
+
+    if parameters.corner_insert_fastener is None:
+        return body
+
+    fastener = get_fastener(
+        parameters.corner_insert_fastener,
+    )
+
+    boss_radius = (
+        fastener.heat_set_insert_diameter_mm + 2 * parameters.corner_insert_wall_mm
+    ) / 2
+
+    x = parameters.width / 2 - parameters.wall - parameters.corner_insert_edge_offset_mm
+    y = parameters.depth / 2 - parameters.wall - parameters.corner_insert_edge_offset_mm
+
+    if x <= boss_radius:
+        raise ValueError("corner insert bosses do not fit within enclosure width")
+
+    if y <= boss_radius:
+        raise ValueError("corner insert bosses do not fit within enclosure depth")
+
+    base_z_mm = -parameters.height / 2
+
+    for boss_x, boss_y in (
+        (-x, -y),
+        (x, -y),
+        (-x, y),
+        (x, y),
+    ):
+        body = add_heat_set_insert_boss(
+            body,
+            parameters=InsertBossParameters.from_fastener(
+                fastener=fastener,
+                x=boss_x,
+                y=boss_y,
+                base_z_mm=base_z_mm,
+                base_height_mm=parameters.floor,
+                radial_wall_mm=parameters.corner_insert_wall_mm,
+            ),
+        )
+
+    return body
 
 
 def _build_lid(
