@@ -7,7 +7,7 @@ import cadquery as cq
 
 @dataclass(frozen=True)
 class ToleranceCouponParameters:
-    """Dimensions for a hole and slot calibration coupon."""
+    """Dimensions for a labeled hole and slot calibration coupon."""
 
     hole_diameters: list[float]
     slot_widths: list[float]
@@ -16,6 +16,8 @@ class ToleranceCouponParameters:
     cell_height: float = 18.0
     margin: float = 5.0
     corner_radius: float = 3.0
+    label_height: float = 0.6
+    label_size: float = 3.0
 
     def validate(self) -> None:
         if not self.hole_diameters:
@@ -37,6 +39,8 @@ class ToleranceCouponParameters:
             "cell_width",
             "cell_height",
             "margin",
+            "label_height",
+            "label_size",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be greater than zero")
@@ -59,7 +63,7 @@ class ToleranceCouponParameters:
 def build_tolerance_coupon(
     parameters: ToleranceCouponParameters,
 ) -> cq.Workplane:
-    """Build a two-row tolerance coupon."""
+    """Build a labeled two-row tolerance coupon."""
     parameters.validate()
 
     column_count = max(
@@ -94,6 +98,26 @@ def build_tolerance_coupon(
             .hole(diameter)
         )
 
+        label_y = upper_y - parameters.cell_height / 2 + parameters.label_size
+
+        label = (
+            cq.Workplane("XY")
+            .workplane(offset=parameters.plate_thickness / 2)
+            .center(
+                x_position,
+                label_y,
+            )
+            .text(
+                f"H{diameter:.1f}",
+                parameters.label_size,
+                parameters.label_height,
+                halign="center",
+                valign="center",
+            )
+        )
+
+        model = model.union(label)
+
     slot_length = parameters.cell_height * 0.65
 
     for index, slot_width in enumerate(parameters.slot_widths):
@@ -101,7 +125,10 @@ def build_tolerance_coupon(
 
         slot = (
             cq.Workplane("XY")
-            .center(x_position, lower_y)
+            .center(
+                x_position,
+                lower_y,
+            )
             .slot2D(
                 slot_length,
                 slot_width,
@@ -111,5 +138,25 @@ def build_tolerance_coupon(
         )
 
         model = model.cut(slot)
+
+        label_y = lower_y - parameters.cell_height / 2 + parameters.label_size
+
+        label = (
+            cq.Workplane("XY")
+            .workplane(offset=parameters.plate_thickness / 2)
+            .center(
+                x_position,
+                label_y,
+            )
+            .text(
+                f"S{slot_width:.1f}",
+                parameters.label_size,
+                parameters.label_height,
+                halign="center",
+                valign="center",
+            )
+        )
+
+        model = model.union(label)
 
     return model

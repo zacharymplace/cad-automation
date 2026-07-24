@@ -34,7 +34,8 @@ def test_tolerance_coupon_is_valid() -> None:
     assert solid.Volume() > 0
     assert bounds.xlen == pytest.approx(100)
     assert bounds.ylen == pytest.approx(46)
-    assert bounds.zlen == pytest.approx(4)
+    assert bounds.zlen > 4.0
+    assert bounds.zlen < 4.8
 
 
 @pytest.mark.parametrize(
