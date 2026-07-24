@@ -6,6 +6,7 @@ import cadquery as cq
 
 from zcad.features.holes import add_through_holes
 from zcad.features.labels import add_embossed_label
+from zcad.features.slots import cut_through_slot
 
 
 @dataclass(frozen=True)
@@ -122,21 +123,15 @@ def build_tolerance_coupon(
     for index, slot_width in enumerate(parameters.slot_widths):
         x_position = left_edge + index * parameters.cell_width
 
-        slot = (
-            cq.Workplane("XY")
-            .center(
-                x_position,
-                lower_y,
-            )
-            .slot2D(
-                slot_length,
-                slot_width,
-                angle=90,
-            )
-            .extrude(parameters.plate_thickness * 2)
+        model = cut_through_slot(
+            model,
+            x=x_position,
+            y=lower_y,
+            length=slot_length,
+            width=slot_width,
+            base_height=parameters.plate_thickness,
+            angle=90,
         )
-
-        model = model.cut(slot)
 
         label_y = lower_y - parameters.cell_height / 2 + parameters.label_size
 

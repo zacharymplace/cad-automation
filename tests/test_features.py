@@ -5,6 +5,7 @@ import pytest
 
 from zcad.features.holes import add_through_holes
 from zcad.features.labels import add_embossed_label
+from zcad.features.slots import cut_through_slot
 
 
 def test_through_hole_reduces_volume() -> None:
@@ -103,4 +104,60 @@ def test_invalid_label_inputs_are_rejected(
             base_height=base_height,
             text_size=text_size,
             emboss_height=emboss_height,
+        )
+
+
+def test_through_slot_reduces_volume() -> None:
+    base = cq.Workplane("XY").box(
+        30,
+        20,
+        5,
+    )
+
+    result = cut_through_slot(
+        base,
+        x=0,
+        y=0,
+        length=12,
+        width=4,
+        base_height=5,
+    )
+
+    assert result.val().isValid()
+    assert result.val().Volume() < base.val().Volume()
+
+
+@pytest.mark.parametrize(
+    (
+        "length",
+        "width",
+        "base_height",
+    ),
+    [
+        (0, 4, 5),
+        (12, 0, 5),
+        (12, 4, 0),
+        (4, 4, 5),
+        (3, 4, 5),
+    ],
+)
+def test_invalid_slot_inputs_are_rejected(
+    length: float,
+    width: float,
+    base_height: float,
+) -> None:
+    base = cq.Workplane("XY").box(
+        30,
+        20,
+        5,
+    )
+
+    with pytest.raises(ValueError):
+        cut_through_slot(
+            base,
+            x=0,
+            y=0,
+            length=length,
+            width=width,
+            base_height=base_height,
         )
