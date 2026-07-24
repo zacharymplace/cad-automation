@@ -49,32 +49,6 @@ class Pico2OledAssemblyParameters:
             raise ValueError("usb_access_clearance_mm must not be negative")
 
 
-def _connector_access_envelope(
-    *,
-    connector: RectangularConnectorSpec,
-    clearance_mm: float,
-) -> ClearanceEnvelope:
-    """Return outward access clearance for one board-edge connector."""
-    if connector.board_edge == "negative_x":
-        return ClearanceEnvelope(
-            negative_x_mm=clearance_mm,
-        )
-
-    if connector.board_edge == "positive_x":
-        return ClearanceEnvelope(
-            positive_x_mm=clearance_mm,
-        )
-
-    if connector.board_edge == "negative_y":
-        return ClearanceEnvelope(
-            negative_y_mm=clearance_mm,
-        )
-
-    return ClearanceEnvelope(
-        positive_y_mm=clearance_mm,
-    )
-
-
 def _build_board_proxy() -> cq.Workplane:
     """Build a mechanical proxy from the Pico 2 specification."""
     board = get_raspberry_pi_pico2()
@@ -221,11 +195,9 @@ def build_pico2_oled_assembly(
                     "depth_mm": connector.depth_mm,
                     "height_mm": connector.height_mm,
                 },
-                clearance_envelope=(
-                    _connector_access_envelope(
-                        connector=connector,
-                        clearance_mm=(resolved.usb_access_clearance_mm),
-                    )
+                clearance_envelope=ClearanceEnvelope.for_edge(
+                    edge=connector.board_edge,
+                    clearance_mm=resolved.usb_access_clearance_mm,
                 ),
             ),
             AssemblyComponent(
