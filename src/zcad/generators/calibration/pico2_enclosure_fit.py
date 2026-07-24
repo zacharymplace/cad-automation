@@ -192,6 +192,7 @@ class Pico2EnclosureFitParameters:
                 nominal_display_z_mm,
                 minimum_display_z_mm,
             ),
+            board_display_clearance_mm=(self.board_display_clearance_mm),
         )
 
     @property

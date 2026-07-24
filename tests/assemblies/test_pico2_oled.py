@@ -214,3 +214,48 @@ def test_clearance_policy_rejects_wrong_component_set() -> None:
         match="exactly board and display",
     ):
         analyze_pico2_oled_assembly(assembly)
+
+
+def test_board_carries_positive_z_clearance_envelope() -> None:
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            board_display_clearance_mm=1.25,
+        )
+    )
+
+    board = assembly.get("board")
+
+    assert board.clearance_envelope.positive_z_mm == pytest.approx(1.25)
+    assert board.clearance_envelope.negative_z_mm == pytest.approx(0.0)
+
+
+def test_generic_core_analyzer_consumes_board_envelope() -> None:
+    assembly = build_pico2_oled_assembly(
+        Pico2OledAssemblyParameters(
+            display_z_mm=4.25,
+            board_display_clearance_mm=0.5,
+        )
+    )
+
+    report = assembly.analyze_interference()
+
+    assert not report.collisions
+    assert len(report.clearance_violations) == 1
+
+    finding = report.clearance_violations[0]
+
+    assert finding.clearance_source == "envelope"
+    assert finding.measured_clearance_mm == pytest.approx(0.25)
+    assert finding.required_clearance_mm == pytest.approx(0.5)
+
+
+def test_negative_embedded_clearance_is_rejected() -> None:
+    parameters = Pico2OledAssemblyParameters(
+        board_display_clearance_mm=-0.1,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="board_display_clearance_mm",
+    ):
+        build_pico2_oled_assembly(parameters)

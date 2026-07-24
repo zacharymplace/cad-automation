@@ -1,10 +1,11 @@
 """Reusable Raspberry Pi Pico 2 and OLED device assembly."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import cadquery as cq
 from zcad_core.assemblies import (
     AssemblyComponent,
+    ClearanceEnvelope,
     DeviceAssembly,
     InterferenceReport,
     Placement,
@@ -27,6 +28,8 @@ class Pico2OledAssemblyParameters:
     display_y_mm: float = 6.0
     display_z_mm: float = 8.0
 
+    board_display_clearance_mm: float = 0.5
+
     def validate(self) -> None:
         """Validate component elevations."""
         if self.board_z_mm < 0:
@@ -34,6 +37,9 @@ class Pico2OledAssemblyParameters:
 
         if self.display_z_mm < 0:
             raise ValueError("display_z_mm must not be negative")
+
+        if self.board_display_clearance_mm < 0:
+            raise ValueError("board_display_clearance_mm must not be negative")
 
 
 def _build_board_proxy() -> cq.Workplane:
@@ -88,6 +94,9 @@ def build_pico2_oled_assembly(
                     "depth_mm": (board.board_length_mm),
                     "height_mm": (board.board_thickness_mm),
                 },
+                clearance_envelope=ClearanceEnvelope(
+                    positive_z_mm=(resolved.board_display_clearance_mm),
+                ),
             ),
             AssemblyComponent(
                 identifier="display",
@@ -129,6 +138,19 @@ def analyze_pico2_oled_assembly(
             "Pico 2 OLED assembly must contain exactly board and display components"
         )
 
-    return assembly.analyze_interference(
-        minimum_clearance_mm=(minimum_board_display_clearance_mm)
+    board = assembly.get("board")
+    display = assembly.get("display")
+
+    policy_assembly = DeviceAssembly(
+        (
+            replace(
+                board,
+                clearance_envelope=ClearanceEnvelope(
+                    positive_z_mm=(minimum_board_display_clearance_mm),
+                ),
+            ),
+            display,
+        )
     )
+
+    return policy_assembly.analyze_interference()

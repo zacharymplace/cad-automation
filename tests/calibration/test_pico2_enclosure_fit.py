@@ -206,6 +206,16 @@ def test_display_window_follows_assembly_placement() -> None:
     assert shifted_bounds.xlen > (centered_bounds.xlen)
 
 
+def test_enclosure_assembly_embeds_clearance_envelope() -> None:
+    parameters = Pico2EnclosureFitParameters(
+        board_display_clearance_mm=1.5,
+    )
+
+    board = parameters.device_assembly.get("board")
+
+    assert board.clearance_envelope.positive_z_mm == pytest.approx(1.5)
+
+
 def test_enclosure_assembly_meets_clearance_policy() -> None:
     from zcad.assemblies import (
         analyze_pico2_oled_assembly,
