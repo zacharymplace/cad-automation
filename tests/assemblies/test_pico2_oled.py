@@ -8,16 +8,17 @@ from zcad.assemblies import (
 )
 
 
-def test_assembly_contains_board_and_display() -> None:
+def test_assembly_contains_board_connector_and_display() -> None:
     assembly = build_pico2_oled_assembly()
 
     assert assembly.identifiers == (
         "board",
+        "usb_connector",
         "display",
     )
 
     assert assembly.get("board").metadata["kind"] == "pcb"
-
+    assert assembly.get("usb_connector").metadata["kind"] == "connector"
     assert assembly.get("display").metadata["kind"] == "display"
 
 
@@ -25,9 +26,13 @@ def test_default_component_placements() -> None:
     assembly = build_pico2_oled_assembly()
 
     board = assembly.get("board")
+    connector = assembly.get("usb_connector")
     display = assembly.get("display")
 
     assert board.placement.z_mm == pytest.approx(3.0)
+    assert connector.placement.x_mm == pytest.approx(0.0)
+    assert connector.placement.y_mm == pytest.approx(-22.4625)
+    assert connector.placement.z_mm == pytest.approx(4.0)
     assert display.placement.y_mm == pytest.approx(6.0)
     assert display.placement.z_mm == pytest.approx(8.0)
 
@@ -76,7 +81,7 @@ def test_assembly_compound_is_valid() -> None:
     compound = assembly.compound().val()
 
     assert compound.isValid()
-    assert len(compound.Solids()) == 2
+    assert len(compound.Solids()) == 3
 
 
 def test_default_assembly_passes_clearance_policy() -> None:
@@ -211,7 +216,7 @@ def test_clearance_policy_rejects_wrong_component_set() -> None:
 
     with pytest.raises(
         ValueError,
-        match="exactly board and display",
+        match="exactly board, usb_connector, and display",
     ):
         analyze_pico2_oled_assembly(assembly)
 
@@ -237,7 +242,16 @@ def test_generic_core_analyzer_consumes_board_envelope() -> None:
         )
     )
 
-    report = assembly.analyze_interference()
+    from zcad_core.assemblies import component_pair
+
+    report = assembly.analyze_interference(
+        allowed_contact_pairs=(
+            component_pair(
+                "board",
+                "usb_connector",
+            ),
+        )
+    )
 
     assert not report.collisions
     assert len(report.clearance_violations) == 1
@@ -287,3 +301,44 @@ def test_policy_wrapper_does_not_mutate_assembly() -> None:
     assert assembly.get("board") is board
     assert board.clearance_envelope is embedded_envelope
     assert embedded_envelope.positive_z_mm == pytest.approx(0.5)
+
+
+def test_usb_connector_uses_catalog_body_dimensions() -> None:
+    assembly = build_pico2_oled_assembly()
+    connector = assembly.get("usb_connector")
+
+    bounds = connector.transformed_geometry().val().BoundingBox()
+
+    assert bounds.xlen == pytest.approx(8.9)
+    assert bounds.ylen == pytest.approx(6.075)
+    assert bounds.zlen == pytest.approx(3.2)
+
+    assert connector.metadata["hardware_identifier"] == "USB_MICRO_B"
+    assert connector.metadata["board_edge"] == "negative_y"
+
+
+def test_policy_allows_board_connector_attachment() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    report = analyze_pico2_oled_assembly(build_pico2_oled_assembly())
+
+    assert not report.has_findings
+
+
+def test_generic_analysis_requires_attachment_exception() -> None:
+    from zcad_core.assemblies import component_pair
+
+    assembly = build_pico2_oled_assembly()
+
+    report = assembly.analyze_interference(
+        allowed_contact_pairs=(
+            component_pair(
+                "board",
+                "usb_connector",
+            ),
+        )
+    )
+
+    assert not report.has_findings

@@ -143,11 +143,17 @@ def test_enclosure_exposes_authoritative_assembly() -> None:
     assembly = parameters.device_assembly
 
     board = assembly.get("board")
+    connector = assembly.get("usb_connector")
     display = assembly.get("display")
 
     assert board.placement.z_mm == pytest.approx(
         parameters.floor_mm + parameters.standoff_height_mm
     )
+
+    assert connector.placement.z_mm == pytest.approx(
+        board.placement.z_mm + float(board.metadata["height_mm"])
+    )
+    assert connector.metadata["kind"] == "connector"
 
     assert display.placement.x_mm == pytest.approx(2.0)
     assert display.placement.y_mm == pytest.approx(7.0)
