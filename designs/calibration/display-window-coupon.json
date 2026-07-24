@@ -1,0 +1,22 @@
+{
+  "name": "display-window-coupon",
+  "type": "display_window_coupon",
+  "parameters": {
+    "clearances_mm": [
+      0.2,
+      0.4,
+      0.6
+    ],
+    "cell_width_mm": 34.0,
+    "panel_depth_mm": 32.0,
+    "panel_thickness_mm": 2.0,
+    "edge_margin_mm": 3.0,
+    "window_center_y_mm": 4.0,
+    "window_corner_radius_mm": 1.0,
+    "bezel_wall_mm": 1.5,
+    "bezel_height_mm": 0.8,
+    "label_size_mm": 3.0,
+    "label_height_mm": 0.4,
+    "label_y_mm": -10.5
+  }
+}

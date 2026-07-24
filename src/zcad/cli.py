@@ -19,6 +19,10 @@ from zcad_core.validation.profile_rules import (
     validate_design_and_parts,
 )
 
+from zcad.generators.calibration.display_window_coupon import (
+    DisplayWindowCouponParameters,
+    build_display_window_coupon,
+)
 from zcad.generators.calibration.insert_boss_coupon import (
     InsertBossCouponParameters,
     build_insert_boss_coupon,
@@ -99,6 +103,13 @@ def generate_parts(
     """Generate one or more named model parts."""
     design_type = design["type"]
     raw_parameters = design["parameters"]
+
+    if design_type == "display_window_coupon":
+        return {
+            "main": build_display_window_coupon(
+                DisplayWindowCouponParameters(**raw_parameters)
+            )
+        }
 
     if design_type == "insert_boss_coupon":
         return {
