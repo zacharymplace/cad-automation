@@ -3,8 +3,7 @@
 from dataclasses import dataclass
 
 import cadquery as cq
-
-from zcad.features.labels import add_embossed_label
+from zcad_core.features.labels import add_embossed_label
 
 
 @dataclass(frozen=True)

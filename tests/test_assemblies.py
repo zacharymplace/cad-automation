@@ -1,16 +1,15 @@
 """Tests for declarative assembly models."""
 
 import pytest
-
-from zcad.assemblies.enclosure import (
+from zcad_core.assemblies.enclosure import (
     build_enclosure_assembly,
 )
-from zcad.assemblies.models import (
+from zcad_core.assemblies.models import (
     Assembly,
     AssemblyPart,
     Mate,
 )
-from zcad.assemblies.validation import (
+from zcad_core.assemblies.validation import (
     validate_assembly,
 )
 

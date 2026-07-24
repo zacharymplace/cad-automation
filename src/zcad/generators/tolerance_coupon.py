@@ -3,10 +3,9 @@
 from dataclasses import dataclass
 
 import cadquery as cq
-
-from zcad.features.holes import add_through_holes
-from zcad.features.labels import add_embossed_label
-from zcad.features.slots import cut_through_slot
+from zcad_core.features.holes import add_through_holes
+from zcad_core.features.labels import add_embossed_label
+from zcad_core.features.slots import cut_through_slot
 
 
 @dataclass(frozen=True)
