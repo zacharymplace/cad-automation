@@ -1,1 +1,0 @@
-"""Profile-aware CAD validation."""

@@ -10,6 +10,14 @@ from zcad_core.exporters import (
     ExportRequest,
     export_parts,
 )
+from zcad_core.profiles.loading import (
+    load_material_profile,
+    load_printer_profile,
+)
+from zcad_core.validation.profile_rules import (
+    raise_for_validation_errors,
+    validate_design_and_parts,
+)
 
 from zcad.generators.enclosure import (
     EnclosureParameters,
@@ -34,14 +42,6 @@ from zcad.generators.tolerance_coupon import (
 from zcad.generators.tray import (
     TrayParameters,
     build_tray,
-)
-from zcad.profiles.loading import (
-    load_material_profile,
-    load_printer_profile,
-)
-from zcad.validation.profile_rules import (
-    raise_for_validation_errors,
-    validate_design_and_parts,
 )
 
 ModelParts = dict[str, cq.Workplane]
