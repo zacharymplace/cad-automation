@@ -310,27 +310,12 @@ def _fillet_vertical_edges(
 def _connector_cutout_parameters(
     parameters: Pico2EnclosureFitParameters,
 ) -> ConnectorCutoutParameters:
-    """Derive the USB opening from the placed assembly component."""
+    """Derive the USB opening through the reusable core API."""
     board = get_raspberry_pi_pico2()
-    connector_spec = board.usb_connector
-    connector_component = parameters.device_assembly.get("usb_connector")
 
-    connector_spec.validate()
-
-    if connector_spec.board_edge in {
-        "negative_y",
-        "positive_y",
-    }:
-        center_offset_mm = connector_component.placement.x_mm
-    else:
-        center_offset_mm = connector_component.placement.y_mm
-
-    return ConnectorCutoutParameters(
-        edge=connector_spec.board_edge,
-        center_offset_mm=center_offset_mm,
-        bottom_z_mm=(connector_component.placement.z_mm),
-        width_mm=connector_spec.width_mm,
-        height_mm=connector_spec.height_mm,
+    return ConnectorCutoutParameters.from_component(
+        component=parameters.device_assembly.get("usb_connector"),
+        connector=board.usb_connector,
         width_clearance_mm=(parameters.usb_width_clearance_mm),
         height_clearance_mm=(parameters.usb_height_clearance_mm),
         cutter_depth_mm=(parameters.wall_mm + 2.0),
