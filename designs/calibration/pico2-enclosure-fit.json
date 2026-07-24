@@ -13,6 +13,8 @@
     "lid_clearance_mm": 0.25,
     "lid_lip_height_mm": 2.5,
     "lid_lip_wall_mm": 1.2,
+    "corner_radius_mm": 3.0,
+    "exterior_edge_fillet_mm": 0.6,
     "usb_width_clearance_mm": 0.6,
     "usb_height_clearance_mm": 0.6,
     "label_text": "PICO 2",
