@@ -4,10 +4,9 @@ from dataclasses import dataclass
 
 import cadquery as cq
 from zcad_core.assemblies import (
-    AssemblyComponent,
-    DeviceAssembly,
+    EnclosureBoundary,
     InterferenceReport,
-    Placement,
+    analyze_boundary_clearance,
 )
 from zcad_core.features import (
     ConnectorCutoutParameters,
@@ -334,25 +333,15 @@ def _fillet_vertical_edges(
     return model.edges("|Z").fillet(radius_mm)
 
 
-def _negative_y_wall_proxy(
+def _enclosure_boundary(
     parameters: Pico2EnclosureFitParameters,
-) -> AssemblyComponent:
-    """Return a narrow proxy for the enclosure negative-Y wall."""
-    return AssemblyComponent(
-        identifier="negative_y_wall",
-        geometry=cq.Workplane("XY").box(
-            parameters.inner_width_mm,
-            parameters.wall_mm,
-            parameters.body_height_mm,
-            centered=(True, True, False),
-        ),
-        placement=Placement(
-            y_mm=-((parameters.inner_depth_mm / 2) + (parameters.wall_mm / 2)),
-        ),
-        metadata={
-            "kind": "enclosure_wall",
-            "edge": "negative_y",
-        },
+) -> EnclosureBoundary:
+    """Return the reusable enclosure cavity boundary."""
+    return EnclosureBoundary(
+        inner_width_mm=parameters.inner_width_mm,
+        inner_depth_mm=parameters.inner_depth_mm,
+        wall_height_mm=parameters.body_height_mm,
+        wall_thickness_mm=parameters.wall_mm,
     )
 
 
@@ -360,14 +349,11 @@ def _analyze_usb_access_clearance(
     parameters: Pico2EnclosureFitParameters,
 ) -> InterferenceReport:
     """Validate USB access clearance against the enclosure wall."""
-    connector = parameters.device_assembly.get("usb_connector")
-
-    return DeviceAssembly(
-        (
-            connector,
-            _negative_y_wall_proxy(parameters),
-        )
-    ).analyze_interference()
+    return analyze_boundary_clearance(
+        component=parameters.device_assembly.get("usb_connector"),
+        boundary=_enclosure_boundary(parameters),
+        edge="negative_y",
+    )
 
 
 def _connector_cutout_parameters(
