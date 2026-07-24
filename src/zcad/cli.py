@@ -220,8 +220,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
-    """Run the CAD generation command."""
+def run() -> None:
+    """Run one CAD generation command."""
     args = build_parser().parse_args()
     design = read_design(args.design)
     parts = generate_parts(design)
@@ -250,6 +250,19 @@ def main() -> None:
         material_profile=material_profile,
         repository_root=Path.cwd(),
     )
+
+
+def main() -> None:
+    """Run the CLI with clean error handling."""
+    try:
+        run()
+    except (
+        FileNotFoundError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ) as error:
+        raise SystemExit(f"zcad: error: {error}") from None
 
 
 if __name__ == "__main__":
