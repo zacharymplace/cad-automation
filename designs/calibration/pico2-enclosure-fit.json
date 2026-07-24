@@ -28,6 +28,7 @@
     "display_center_x_mm": 0.0,
     "display_center_y_mm": 6.0,
     "label_x_mm": 0.0,
-    "label_y_mm": -18.0
+    "label_y_mm": -18.0,
+    "board_display_clearance_mm": 0.5
   }
 }

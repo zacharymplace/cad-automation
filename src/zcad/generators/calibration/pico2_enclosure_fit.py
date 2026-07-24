@@ -22,6 +22,7 @@ from zcad_core.hardware import (
 
 from zcad.assemblies import (
     Pico2OledAssemblyParameters,
+    analyze_pico2_oled_assembly,
     build_pico2_oled_assembly,
 )
 
@@ -57,6 +58,7 @@ class Pico2EnclosureFitParameters:
     display_bezel_height_mm: float = 0.8
     display_center_x_mm: float = 0.0
     display_center_y_mm: float = 6.0
+    board_display_clearance_mm: float = 0.5
 
     label_text: str = "PICO 2 OLED"
     label_x_mm: float = 0.0
@@ -96,6 +98,7 @@ class Pico2EnclosureFitParameters:
             "usb_height_clearance_mm": (self.usb_height_clearance_mm),
             "display_window_clearance_mm": (self.display_window_clearance_mm),
             "display_window_corner_radius_mm": (self.display_window_corner_radius_mm),
+            "board_display_clearance_mm": self.board_display_clearance_mm,
         }
 
         for name, value in nonnegative_values.items():
@@ -141,20 +144,54 @@ class Pico2EnclosureFitParameters:
         if not self.label_text.strip():
             raise ValueError("label_text must not be empty")
 
+        report = analyze_pico2_oled_assembly(
+            self.device_assembly,
+            minimum_board_display_clearance_mm=(self.board_display_clearance_mm),
+        )
+
+        if report.collisions:
+            finding = report.collisions[0]
+
+            raise ValueError(
+                "Pico 2 OLED enclosure assembly collision: "
+                f"{finding.first_identifier} and "
+                f"{finding.second_identifier}"
+            )
+
+        if report.clearance_violations:
+            finding = report.clearance_violations[0]
+
+            raise ValueError(
+                "Pico 2 OLED enclosure assembly clearance "
+                "is insufficient: "
+                f"{finding.measured_clearance_mm:.3f} mm measured, "
+                f"{finding.required_clearance_mm:.3f} mm required"
+            )
+
     @property
     def assembly_parameters(
         self,
     ) -> Pico2OledAssemblyParameters:
-        """Return authoritative device-component placements."""
+        """Return authoritative policy-compliant placements."""
+        board = get_raspberry_pi_pico2()
         display = get_reference_oled_128x64()
+
+        board_z_mm = self.floor_mm + self.standoff_height_mm
+        board_top_z_mm = board_z_mm + board.board_thickness_mm
+
+        nominal_display_z_mm = self.body_height_mm - display.module_depth_mm
+        minimum_display_z_mm = board_top_z_mm + self.board_display_clearance_mm
 
         return Pico2OledAssemblyParameters(
             board_x_mm=0.0,
             board_y_mm=0.0,
-            board_z_mm=(self.floor_mm + self.standoff_height_mm),
+            board_z_mm=board_z_mm,
             display_x_mm=self.display_center_x_mm,
             display_y_mm=self.display_center_y_mm,
-            display_z_mm=(self.body_height_mm - display.module_depth_mm),
+            display_z_mm=max(
+                nominal_display_z_mm,
+                minimum_display_z_mm,
+            ),
         )
 
     @property

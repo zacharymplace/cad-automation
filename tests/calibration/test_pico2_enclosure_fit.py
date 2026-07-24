@@ -152,9 +152,18 @@ def test_enclosure_exposes_authoritative_assembly() -> None:
     assert display.placement.x_mm == pytest.approx(2.0)
     assert display.placement.y_mm == pytest.approx(7.0)
 
-    assert display.placement.z_mm == pytest.approx(
-        parameters.body_height_mm - float(display.metadata["height_mm"])
+    board_top_z_mm = board.placement.z_mm + float(board.metadata["height_mm"])
+
+    nominal_display_z_mm = parameters.body_height_mm - float(
+        display.metadata["height_mm"]
     )
+
+    expected_display_z_mm = max(
+        nominal_display_z_mm,
+        board_top_z_mm + parameters.board_display_clearance_mm,
+    )
+
+    assert display.placement.z_mm == pytest.approx(expected_display_z_mm)
 
 
 def test_enclosure_width_comes_from_assembly() -> None:
@@ -195,3 +204,44 @@ def test_display_window_follows_assembly_placement() -> None:
     assert shifted.val().isValid()
 
     assert shifted_bounds.xlen > (centered_bounds.xlen)
+
+
+def test_enclosure_assembly_meets_clearance_policy() -> None:
+    from zcad.assemblies import (
+        analyze_pico2_oled_assembly,
+    )
+
+    parameters = Pico2EnclosureFitParameters()
+
+    report = analyze_pico2_oled_assembly(
+        parameters.device_assembly,
+        minimum_board_display_clearance_mm=(parameters.board_display_clearance_mm),
+    )
+
+    assert not report.has_findings
+
+
+def test_larger_clearance_raises_display() -> None:
+    default_parameters = Pico2EnclosureFitParameters(
+        board_display_clearance_mm=0.5,
+    )
+    larger_parameters = Pico2EnclosureFitParameters(
+        board_display_clearance_mm=2.0,
+    )
+
+    default_display = default_parameters.device_assembly.get("display")
+    larger_display = larger_parameters.device_assembly.get("display")
+
+    assert larger_display.placement.z_mm > default_display.placement.z_mm
+
+
+def test_negative_board_display_clearance_is_rejected() -> None:
+    parameters = Pico2EnclosureFitParameters(
+        board_display_clearance_mm=-0.1,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="board_display_clearance_mm",
+    ):
+        build_pico2_enclosure_fit(parameters)
