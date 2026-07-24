@@ -5,6 +5,7 @@ import pytest
 
 from zcad.generators.calibration.pico2_enclosure_fit import (
     Pico2EnclosureFitParameters,
+    _connector_cutout_parameters,
     build_pico2_enclosure_fit,
 )
 
@@ -261,3 +262,38 @@ def test_negative_board_display_clearance_is_rejected() -> None:
         match="board_display_clearance_mm",
     ):
         build_pico2_enclosure_fit(parameters)
+
+
+def test_usb_cutout_follows_assembly_connector() -> None:
+    parameters = Pico2EnclosureFitParameters()
+    connector = parameters.device_assembly.get("usb_connector")
+
+    cutout = _connector_cutout_parameters(parameters)
+
+    assert cutout.edge == (connector.metadata["board_edge"])
+    assert cutout.center_offset_mm == pytest.approx(connector.placement.x_mm)
+    assert cutout.bottom_z_mm == pytest.approx(connector.placement.z_mm)
+
+    assert cutout.width_mm == pytest.approx(float(connector.metadata["width_mm"]))
+    assert cutout.height_mm == pytest.approx(float(connector.metadata["height_mm"]))
+
+    assert cutout.opening_width_mm == pytest.approx(
+        float(connector.metadata["width_mm"]) + parameters.usb_width_clearance_mm
+    )
+    assert cutout.opening_height_mm == pytest.approx(
+        float(connector.metadata["height_mm"]) + parameters.usb_height_clearance_mm
+    )
+
+
+def test_usb_cutout_elevation_follows_standoff_height() -> None:
+    lower = Pico2EnclosureFitParameters(
+        standoff_height_mm=3.0,
+    )
+    higher = Pico2EnclosureFitParameters(
+        standoff_height_mm=4.0,
+    )
+
+    lower_cutout = _connector_cutout_parameters(lower)
+    higher_cutout = _connector_cutout_parameters(higher)
+
+    assert higher_cutout.bottom_z_mm == pytest.approx(lower_cutout.bottom_z_mm + 1.0)

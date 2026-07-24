@@ -307,12 +307,41 @@ def _fillet_vertical_edges(
     return model.edges("|Z").fillet(radius_mm)
 
 
+def _connector_cutout_parameters(
+    parameters: Pico2EnclosureFitParameters,
+) -> ConnectorCutoutParameters:
+    """Derive the USB opening from the placed assembly component."""
+    board = get_raspberry_pi_pico2()
+    connector_spec = board.usb_connector
+    connector_component = parameters.device_assembly.get("usb_connector")
+
+    connector_spec.validate()
+
+    if connector_spec.board_edge in {
+        "negative_y",
+        "positive_y",
+    }:
+        center_offset_mm = connector_component.placement.x_mm
+    else:
+        center_offset_mm = connector_component.placement.y_mm
+
+    return ConnectorCutoutParameters(
+        edge=connector_spec.board_edge,
+        center_offset_mm=center_offset_mm,
+        bottom_z_mm=(connector_component.placement.z_mm),
+        width_mm=connector_spec.width_mm,
+        height_mm=connector_spec.height_mm,
+        width_clearance_mm=(parameters.usb_width_clearance_mm),
+        height_clearance_mm=(parameters.usb_height_clearance_mm),
+        cutter_depth_mm=(parameters.wall_mm + 2.0),
+    )
+
+
 def _build_body(
     parameters: Pico2EnclosureFitParameters,
 ) -> cq.Workplane:
     """Build the refined open enclosure body."""
     board = get_raspberry_pi_pico2()
-    board_component = parameters.device_assembly.get("board")
 
     body = cq.Workplane("XY").box(
         parameters.outer_width_mm,
@@ -350,15 +379,7 @@ def _build_body(
         hole_clearance_mm=(parameters.mounting_hole_clearance_mm),
     )
 
-    board_top_z_mm = board_component.placement.z_mm + board.board_thickness_mm
-
-    cutout_parameters = ConnectorCutoutParameters.from_connector(
-        connector=board.usb_connector,
-        board_top_z_mm=board_top_z_mm,
-        width_clearance_mm=(parameters.usb_width_clearance_mm),
-        height_clearance_mm=(parameters.usb_height_clearance_mm),
-        cutter_depth_mm=(parameters.wall_mm + 2.0),
-    )
+    cutout_parameters = _connector_cutout_parameters(parameters)
 
     body = cut_connector_opening(
         body,
