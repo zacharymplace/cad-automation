@@ -2,15 +2,14 @@
 
 from dataclasses import dataclass
 
-import cadquery as cq
 from zcad_core.assemblies import (
-    AssemblyComponent,
     ClearanceEnvelope,
     ClearancePolicy,
     DeviceAssembly,
     InterferenceReport,
     Placement,
     build_board_edge_connector_component,
+    build_rectangular_hardware_component,
     component_pair,
 )
 from zcad_core.hardware import (
@@ -49,30 +48,6 @@ class Pico2OledAssemblyParameters:
             raise ValueError("usb_access_clearance_mm must not be negative")
 
 
-def _build_board_proxy() -> cq.Workplane:
-    """Build a mechanical proxy from the Pico 2 specification."""
-    board = get_raspberry_pi_pico2()
-
-    return cq.Workplane("XY").box(
-        board.board_width_mm,
-        board.board_length_mm,
-        board.board_thickness_mm,
-        centered=(True, True, False),
-    )
-
-
-def _build_display_proxy() -> cq.Workplane:
-    """Build a mechanical proxy from the display specification."""
-    display = get_reference_oled_128x64()
-
-    return cq.Workplane("XY").box(
-        display.module_width_mm,
-        display.module_height_mm,
-        display.module_depth_mm,
-        centered=(True, True, False),
-    )
-
-
 def build_pico2_oled_assembly(
     parameters: Pico2OledAssemblyParameters | None = None,
 ) -> DeviceAssembly:
@@ -87,23 +62,20 @@ def build_pico2_oled_assembly(
 
     return DeviceAssembly(
         (
-            AssemblyComponent(
+            build_rectangular_hardware_component(
                 identifier="board",
-                geometry=_build_board_proxy(),
+                hardware_identifier=board.identifier,
+                kind="pcb",
+                width_mm=board.board_width_mm,
+                depth_mm=board.board_length_mm,
+                height_mm=board.board_thickness_mm,
                 placement=Placement(
                     x_mm=resolved.board_x_mm,
                     y_mm=resolved.board_y_mm,
                     z_mm=resolved.board_z_mm,
                 ),
-                metadata={
-                    "kind": "pcb",
-                    "hardware_identifier": board.identifier,
-                    "width_mm": board.board_width_mm,
-                    "depth_mm": board.board_length_mm,
-                    "height_mm": board.board_thickness_mm,
-                },
                 clearance_envelope=ClearanceEnvelope(
-                    positive_z_mm=(resolved.board_display_clearance_mm),
+                    positive_z_mm=resolved.board_display_clearance_mm,
                 ),
             ),
             build_board_edge_connector_component(
@@ -122,20 +94,20 @@ def build_pico2_oled_assembly(
                     clearance_mm=resolved.usb_access_clearance_mm,
                 ),
             ),
-            AssemblyComponent(
+            build_rectangular_hardware_component(
                 identifier="display",
-                geometry=_build_display_proxy(),
+                hardware_identifier=display.identifier,
+                kind="display",
+                width_mm=display.module_width_mm,
+                depth_mm=display.module_height_mm,
+                height_mm=display.module_depth_mm,
                 placement=Placement(
                     x_mm=resolved.display_x_mm,
                     y_mm=resolved.display_y_mm,
                     z_mm=resolved.display_z_mm,
                 ),
                 metadata={
-                    "kind": "display",
-                    "hardware_identifier": (display.identifier),
-                    "width_mm": (display.module_width_mm),
-                    "depth_mm": (display.module_height_mm),
-                    "height_mm": (display.module_depth_mm),
+                    "mount_style": display.mount_style,
                 },
             ),
         )
