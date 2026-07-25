@@ -13,8 +13,14 @@ __all__ = [
     "XiaoEsp32S3OledAssemblyParameters",
     "analyze_xiao_esp32s3_oled_assembly",
     "build_xiao_esp32s3_oled_assembly",
+    "get_board_display_product",
+    "list_board_display_products",
 ]
 
+from zcad.assemblies.product_registry import (
+    get_board_display_product,
+    list_board_display_products,
+)
 from zcad.assemblies.xiao_esp32s3_oled import (
     XiaoEsp32S3OledAssemblyParameters,
     analyze_xiao_esp32s3_oled_assembly,
