@@ -24,11 +24,23 @@ from zcad.fastening.printed_standoff import (
 from zcad.fastening.verification import (
     BoardFasteningBuild,
     BoardFasteningVerificationPolicy,
+    analyze_heat_set_insert_fit,
+    analyze_mount_positions,
+    analyze_no_board_fastening_fit,
+    analyze_printed_standoff_fit,
+    expected_board_mounting_positions,
+    mounting_finding,
 )
 
 __all__ = (
     "BoardFasteningBuild",
     "BoardFasteningVerificationPolicy",
+    "analyze_heat_set_insert_fit",
+    "analyze_no_board_fastening_fit",
+    "analyze_printed_standoff_fit",
+    "analyze_mount_positions",
+    "expected_board_mounting_positions",
+    "mounting_finding",
     "BoardFasteningArtifacts",
     "BoardFasteningBackend",
     "HeatSetInsertBackend",

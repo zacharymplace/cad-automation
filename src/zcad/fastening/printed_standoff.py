@@ -1,6 +1,5 @@
 """Printed-standoff fastening backend."""
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol, cast
 
@@ -19,6 +18,10 @@ from zcad_core.features import (
 from zcad.fastening.artifacts import (
     BoardFasteningArtifacts,
 )
+from zcad.fastening.verification import (
+    BoardFasteningBuild,
+    analyze_printed_standoff_fit,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
 )
@@ -29,17 +32,6 @@ class PrintedStandoffPolicy(Protocol):
 
     standoff_radial_wall_mm: float
     standoff_hole_clearance_mm: float | None
-
-
-DeriveCallback = Callable[..., BoardFasteningArtifacts]
-ApplyCallback = Callable[
-    [cq.Workplane, BoardFasteningArtifacts],
-    cq.Workplane,
-]
-FitCallback = Callable[
-    [object, float],
-    tuple[InterferenceFinding, ...],
-]
 
 
 def derive_board_standoff_parameters(
@@ -141,9 +133,6 @@ class PrintedStandoffBackend:
     """Backend for printed PCB standoffs."""
 
     strategy: object = "printed_standoff"
-    derive_callback: DeriveCallback | None = None
-    apply_callback: ApplyCallback | None = None
-    fit_callback: FitCallback | None = None
 
     def derive(
         self,
@@ -154,14 +143,6 @@ class PrintedStandoffBackend:
         policy: object,
     ) -> BoardFasteningArtifacts:
         """Derive printed-standoff artifacts."""
-        if self.derive_callback is not None:
-            return self.derive_callback(
-                assembly=assembly,
-                specification=specification,
-                enclosure_parameters=(enclosure_parameters),
-                policy=policy,
-            )
-
         return BoardFasteningArtifacts(
             standoff_parameters=(
                 derive_board_standoff_parameters(
@@ -186,12 +167,6 @@ class PrintedStandoffBackend:
         if artifacts.insert_boss_parameters:
             raise ValueError("printed standoff backend received insert-boss geometry")
 
-        if self.apply_callback is not None:
-            return self.apply_callback(
-                body,
-                artifacts,
-            )
-
         return add_board_standoffs(
             body=body,
             parameters=(artifacts.standoff_parameters),
@@ -203,11 +178,8 @@ class PrintedStandoffBackend:
         build: object,
         tolerance_mm: float,
     ) -> tuple[InterferenceFinding, ...]:
-        """Verify printed-standoff geometry."""
-        if self.fit_callback is None:
-            raise RuntimeError("printed standoff fit callback is not configured")
-
-        return self.fit_callback(
-            build,
-            tolerance_mm,
+        """Verify generated board-fastening geometry."""
+        return analyze_printed_standoff_fit(
+            cast(BoardFasteningBuild, build),
+            tolerance_mm=tolerance_mm,
         )

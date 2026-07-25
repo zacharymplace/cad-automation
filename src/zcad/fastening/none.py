@@ -1,7 +1,7 @@
 """Backend for enclosures without generated board mounts."""
 
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import cast
 
 import cadquery as cq
 from zcad_core.assemblies import (
@@ -13,22 +13,20 @@ from zcad_core.assemblies import (
 from zcad.fastening.artifacts import (
     BoardFasteningArtifacts,
 )
+from zcad.fastening.verification import (
+    BoardFasteningBuild,
+    analyze_no_board_fastening_fit,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
 )
-
-FitAnalyzer = Callable[
-    [object, float],
-    tuple[InterferenceFinding, ...],
-]
 
 
 @dataclass(frozen=True)
 class NoBoardFasteningBackend:
     """Backend that intentionally generates no board mounts."""
 
-    strategy: object
-    fit_analyzer: FitAnalyzer
+    strategy: object = "none"
 
     def derive(
         self,
@@ -67,7 +65,7 @@ class NoBoardFasteningBackend:
         tolerance_mm: float,
     ) -> tuple[InterferenceFinding, ...]:
         """Verify the intentional absence of board mounts."""
-        return self.fit_analyzer(
-            build,
-            tolerance_mm,
+        return analyze_no_board_fastening_fit(
+            cast(BoardFasteningBuild, build),
+            tolerance_mm=tolerance_mm,
         )
