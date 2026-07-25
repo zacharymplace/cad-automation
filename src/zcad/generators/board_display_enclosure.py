@@ -38,6 +38,9 @@ from zcad.fastening.backend import (
 from zcad.fastening.none import (
     NoBoardFasteningBackend,
 )
+from zcad.fastening.printed_standoff import (
+    PrintedStandoffBackend,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -425,57 +428,6 @@ def _add_board_insert_bosses(
 
 
 @dataclass(frozen=True)
-class PrintedStandoffBackend:
-    """Backend for printed PCB standoffs."""
-
-    strategy: BoardFasteningStrategy = BoardFasteningStrategy.PRINTED_STANDOFF
-
-    def derive(
-        self,
-        *,
-        assembly: DeviceAssembly,
-        specification: EnclosureSpecification,
-        enclosure_parameters: EnclosureParameters,
-        policy: BoardDisplayEnclosureParameters,
-    ) -> BoardFasteningArtifacts:
-        return BoardFasteningArtifacts(
-            standoff_parameters=(
-                _derive_board_standoff_parameters(
-                    assembly=assembly,
-                    specification=specification,
-                    enclosure_parameters=(enclosure_parameters),
-                    policy=policy,
-                )
-            )
-        )
-
-    def apply(
-        self,
-        *,
-        body: cq.Workplane,
-        artifacts: BoardFasteningArtifacts,
-    ) -> cq.Workplane:
-        if artifacts.insert_boss_parameters:
-            raise ValueError("printed standoff backend received insert-boss geometry")
-
-        return _add_board_standoffs(
-            body=body,
-            parameters=artifacts.standoff_parameters,
-        )
-
-    def analyze_fit(
-        self,
-        *,
-        build: BoardDisplayEnclosureBuild,
-        tolerance_mm: float,
-    ) -> tuple[InterferenceFinding, ...]:
-        return _analyze_printed_standoff_fit(
-            build,
-            tolerance_mm=tolerance_mm,
-        )
-
-
-@dataclass(frozen=True)
 class HeatSetInsertBackend:
     """Backend for heat-set insert PCB bosses."""
 
@@ -539,7 +491,24 @@ _BOARD_FASTENING_BACKENDS: dict[
             ),
         )
     ),
-    BoardFasteningStrategy.PRINTED_STANDOFF: (PrintedStandoffBackend()),
+    BoardFasteningStrategy.PRINTED_STANDOFF: (
+        PrintedStandoffBackend(
+            strategy=BoardFasteningStrategy.PRINTED_STANDOFF,
+            derive_callback=lambda **kwargs: BoardFasteningArtifacts(
+                standoff_parameters=_derive_board_standoff_parameters(
+                    **kwargs,
+                ),
+            ),
+            apply_callback=lambda body, artifacts: _add_board_standoffs(
+                body=body,
+                parameters=artifacts.standoff_parameters,
+            ),
+            fit_callback=lambda build, tolerance: _analyze_printed_standoff_fit(
+                build,
+                tolerance_mm=tolerance,
+            ),
+        )
+    ),
     BoardFasteningStrategy.HEAT_SET_INSERT: (HeatSetInsertBackend()),
 }
 
