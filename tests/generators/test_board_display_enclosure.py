@@ -1,5 +1,7 @@
 """Tests for registry-driven board-display enclosure geometry."""
 
+from dataclasses import replace
+
 import pytest
 
 from zcad.designs import (
@@ -439,3 +441,122 @@ def test_display_window_negative_clearance_is_rejected() -> None:
         BoardDisplayEnclosureParameters(
             display_window_clearance_mm=-0.1,
         ).validate()
+
+
+@pytest.mark.parametrize(
+    "product",
+    [
+        "PICO2_OLED",
+        "XIAO_ESP32S3_OLED",
+    ],
+)
+def test_fit_analysis_accepts_generated_display_window(
+    product: str,
+) -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": product,
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+    report = analyze_board_display_enclosure_fit(build)
+
+    assert not any(
+        finding.second_identifier == "display_window" for finding in report.findings
+    )
+
+
+def test_fit_analysis_detects_disabled_display_window() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            display_window_enabled=False,
+        ),
+    )
+    report = analyze_board_display_enclosure_fit(build)
+
+    window_findings = [
+        finding
+        for finding in report.findings
+        if finding.second_identifier == "display_window"
+    ]
+
+    assert len(window_findings) == 1
+    assert window_findings[0].kind == "collision"
+    assert window_findings[0].intersection_volume_mm3 > 0
+
+
+def test_fit_analysis_detects_undersized_display_window() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    small_window_build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            display_window_clearance_mm=0.0,
+        ),
+    )
+
+    verification_build = replace(
+        small_window_build,
+        policy=replace(
+            small_window_build.policy,
+            display_window_clearance_mm=1.0,
+        ),
+    )
+
+    report = analyze_board_display_enclosure_fit(verification_build)
+
+    assert any(
+        finding.second_identifier == "display_window"
+        and finding.intersection_volume_mm3 > 0
+        for finding in report.findings
+    )
+
+
+def test_fit_analysis_detects_shifted_display_window() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "XIAO_ESP32S3_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+
+    shifted_lid = build.parts["lid"].translate(
+        (
+            3.0,
+            0.0,
+            0.0,
+        )
+    )
+
+    shifted_build = replace(
+        build,
+        parts={
+            **build.parts,
+            "lid": shifted_lid,
+        },
+    )
+
+    report = analyze_board_display_enclosure_fit(shifted_build)
+
+    assert any(
+        finding.second_identifier == "display_window"
+        and finding.intersection_volume_mm3 > 0
+        for finding in report.findings
+    )

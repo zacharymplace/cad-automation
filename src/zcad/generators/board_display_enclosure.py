@@ -1,5 +1,7 @@
 """Generate printable enclosures from board-display designs."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import cadquery as cq
@@ -30,6 +32,7 @@ class BoardDisplayEnclosureBuild:
     assembly: DeviceAssembly
     specification: EnclosureSpecification
     enclosure_parameters: EnclosureParameters
+    policy: BoardDisplayEnclosureParameters
     parts: dict[str, cq.Workplane]
 
 
@@ -199,18 +202,14 @@ def _build_enclosure_parameters(
     return enclosure_parameters
 
 
-def _cut_display_window(
+def _build_display_window_cutter(
     *,
-    lid: cq.Workplane,
     assembly: DeviceAssembly,
     specification: EnclosureSpecification,
     enclosure_parameters: EnclosureParameters,
     policy: BoardDisplayEnclosureParameters,
 ) -> cq.Workplane:
-    """Cut a display opening through the enclosure lid."""
-    if not policy.display_window_enabled:
-        return lid
-
+    """Build the complete volume that must remain open above the display."""
     display = assembly.get("display")
     bounds = display.transformed_geometry().val().BoundingBox()
 
@@ -224,7 +223,7 @@ def _cut_display_window(
         enclosure_parameters.lid_thickness + enclosure_parameters.lid_lip_height + 4.0
     )
 
-    cutter = (
+    return (
         cq.Workplane("XY")
         .box(
             window_width_mm,
@@ -238,6 +237,26 @@ def _cut_display_window(
                 0.0,
             )
         )
+    )
+
+
+def _cut_display_window(
+    *,
+    lid: cq.Workplane,
+    assembly: DeviceAssembly,
+    specification: EnclosureSpecification,
+    enclosure_parameters: EnclosureParameters,
+    policy: BoardDisplayEnclosureParameters,
+) -> cq.Workplane:
+    """Cut a display opening through the enclosure lid."""
+    if not policy.display_window_enabled:
+        return lid
+
+    cutter = _build_display_window_cutter(
+        assembly=assembly,
+        specification=specification,
+        enclosure_parameters=enclosure_parameters,
+        policy=policy,
     )
 
     return lid.cut(cutter)
@@ -278,6 +297,7 @@ def build_board_display_enclosure_result(
         assembly=assembly,
         specification=specification,
         enclosure_parameters=enclosure_parameters,
+        policy=resolved,
         parts=parts,
     )
 
@@ -351,6 +371,26 @@ def analyze_board_display_enclosure_fit(
                     intersection_volume_mm3=0.0,
                 )
             )
+
+    required_window = _build_display_window_cutter(
+        assembly=build.assembly,
+        specification=build.specification,
+        enclosure_parameters=build.enclosure_parameters,
+        policy=build.policy,
+    )
+    lid = build.parts["lid"]
+
+    obstructing_volume_mm3 = lid.intersect(required_window).val().Volume()
+
+    if obstructing_volume_mm3 > 1e-6:
+        findings.append(
+            InterferenceFinding(
+                first_identifier="display",
+                second_identifier="display_window",
+                kind="collision",
+                intersection_volume_mm3=(obstructing_volume_mm3),
+            )
+        )
 
     return InterferenceReport(
         findings=tuple(findings),
