@@ -3,11 +3,13 @@
 from dataclasses import replace
 
 import pytest
+from zcad_core.assemblies import InterferenceFinding
 
 from zcad.designs import (
     parse_board_display_design,
 )
 from zcad.generators.board_display_enclosure import (
+    BoardDisplayEnclosureBuild,
     BoardDisplayEnclosureParameters,
     _build_enclosure_parameters,
     analyze_board_display_enclosure_fit,
@@ -299,7 +301,20 @@ def test_fit_analysis_detects_undersized_cavity() -> None:
 
     report = analyze_board_display_enclosure_fit(build)
 
-    assert not report.has_findings
+    non_mounting_findings = tuple(
+        finding
+        for finding in report.findings
+        if not finding.kind.startswith("mounting_")
+    )
+
+    assert non_mounting_findings == ()
+
+    mounting_findings = tuple(
+        finding for finding in report.findings if finding.kind.startswith("mounting_")
+    )
+
+    assert len(mounting_findings) == 1
+    assert mounting_findings[0].kind == "mounting_count"
 
 
 def _lid_volume(
@@ -726,3 +741,156 @@ def test_standoffs_require_board_above_cavity_floor() -> None:
                 board_standoffs_enabled=True,
             ),
         )
+
+
+def _mounting_findings(
+    build: BoardDisplayEnclosureBuild,
+) -> tuple[InterferenceFinding, ...]:
+    return tuple(
+        finding
+        for finding in (analyze_board_display_enclosure_fit(build).findings)
+        if finding.kind.startswith("mounting_")
+    )
+
+
+def test_default_pico_standoff_fit_passes() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+
+    assert _mounting_findings(build) == ()
+
+
+def test_fit_analysis_detects_missing_standoffs() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            board_standoffs_enabled=False,
+        ),
+    )
+
+    findings = _mounting_findings(build)
+
+    assert len(findings) == 1
+    assert findings[0].kind == "mounting_count"
+    assert findings[0].required_clearance_mm == (pytest.approx(4.0))
+    assert findings[0].measured_clearance_mm == (pytest.approx(0.0))
+
+
+def test_fit_analysis_detects_shifted_standoff() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+    first = build.standoff_parameters[0]
+
+    shifted = replace(
+        first,
+        x=first.x + 0.5,
+    )
+    modified = replace(
+        build,
+        standoff_parameters=(
+            shifted,
+            *build.standoff_parameters[1:],
+        ),
+    )
+
+    findings = _mounting_findings(modified)
+
+    alignment = [
+        finding for finding in findings if finding.kind == "mounting_alignment"
+    ]
+
+    assert len(alignment) == 1
+    assert alignment[0].second_identifier == ("standoff_1")
+    assert alignment[0].measured_clearance_mm == (pytest.approx(0.5))
+
+
+def test_fit_analysis_detects_wrong_standoff_height() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+    first = build.standoff_parameters[0]
+
+    modified = replace(
+        build,
+        standoff_parameters=(
+            replace(
+                first,
+                standoff_height_mm=(first.standoff_height_mm + 0.75),
+            ),
+            *build.standoff_parameters[1:],
+        ),
+    )
+
+    findings = _mounting_findings(modified)
+
+    height = [finding for finding in findings if finding.kind == "mounting_height"]
+
+    assert len(height) == 1
+    assert height[0].measured_clearance_mm == (pytest.approx(0.75))
+
+
+def test_fit_analysis_detects_wrong_standoff_diameters() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+    first = build.standoff_parameters[0]
+
+    modified = replace(
+        build,
+        standoff_parameters=(
+            replace(
+                first,
+                hole_diameter_mm=(first.hole_diameter_mm + 0.2),
+                outer_diameter_mm=(first.outer_diameter_mm + 0.4),
+            ),
+            *build.standoff_parameters[1:],
+        ),
+    )
+
+    kinds = {finding.kind for finding in _mounting_findings(modified)}
+
+    assert "mounting_hole_diameter" in kinds
+    assert "mounting_boss_diameter" in kinds
+
+
+def test_xiao_requires_no_standoff_verification() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "XIAO_ESP32S3_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+
+    assert build.standoff_parameters == ()
+    assert _mounting_findings(build) == ()

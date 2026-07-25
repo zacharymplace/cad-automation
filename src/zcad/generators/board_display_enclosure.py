@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import hypot
 
 import cadquery as cq
 from zcad_core.assemblies import (
@@ -432,6 +433,150 @@ def build_board_display_enclosure(
     ).parts
 
 
+def _analyze_board_standoff_fit(
+    build: BoardDisplayEnclosureBuild,
+    *,
+    tolerance_mm: float = 1e-6,
+) -> tuple[InterferenceFinding, ...]:
+    """Verify generated standoffs against assembly mounting metadata."""
+    board = build.assembly.get("board")
+    world_positions = assembly_mounting_hole_positions(board)
+
+    if not world_positions:
+        return ()
+
+    expected_positions = tuple(
+        (
+            world_x_mm - build.specification.center_x_mm,
+            world_y_mm - build.specification.center_y_mm,
+            world_z_mm,
+        )
+        for world_x_mm, world_y_mm, world_z_mm in world_positions
+    )
+
+    actual = build.standoff_parameters
+    findings: list[InterferenceFinding] = []
+
+    if len(actual) != len(expected_positions):
+        findings.append(
+            InterferenceFinding(
+                first_identifier="board",
+                second_identifier="standoffs",
+                kind="mounting_count",
+                required_clearance_mm=float(len(expected_positions)),
+                measured_clearance_mm=float(len(actual)),
+                clearance_source="assembly_mounting",
+            )
+        )
+
+    mounting = board.metadata.get("mounting")
+
+    if not isinstance(mounting, dict):
+        raise TypeError("board mounting metadata must be a dictionary")
+
+    hole_diameter_mm = mounting.get("hole_diameter_mm")
+    recommended_clearance_mm = mounting.get("recommended_clearance_mm")
+
+    if not isinstance(
+        hole_diameter_mm,
+        int | float,
+    ):
+        raise TypeError("board mounting hole diameter must be numeric")
+
+    if not isinstance(
+        recommended_clearance_mm,
+        int | float,
+    ):
+        raise TypeError("board mounting clearance must be numeric")
+
+    resolved_clearance_mm = (
+        build.policy.standoff_hole_clearance_mm
+        if (build.policy.standoff_hole_clearance_mm is not None)
+        else recommended_clearance_mm
+    )
+
+    expected_hole_diameter_mm = hole_diameter_mm + resolved_clearance_mm
+    expected_outer_diameter_mm = (
+        expected_hole_diameter_mm + 2 * build.policy.standoff_radial_wall_mm
+    )
+
+    for index, (
+        parameters,
+        expected,
+    ) in enumerate(
+        zip(
+            actual,
+            expected_positions,
+            strict=False,
+        ),
+        start=1,
+    ):
+        expected_x_mm, expected_y_mm, board_bottom_z_mm = expected
+        identifier = f"standoff_{index}"
+
+        center_offset_mm = hypot(
+            parameters.x - expected_x_mm,
+            parameters.y - expected_y_mm,
+        )
+
+        if center_offset_mm > tolerance_mm:
+            findings.append(
+                InterferenceFinding(
+                    first_identifier="board",
+                    second_identifier=identifier,
+                    kind="mounting_alignment",
+                    required_clearance_mm=tolerance_mm,
+                    measured_clearance_mm=(center_offset_mm),
+                    clearance_source=("assembly_mounting"),
+                )
+            )
+
+        expected_height_mm = board_bottom_z_mm - build.specification.bottom_z_mm
+        height_error_mm = abs(parameters.standoff_height_mm - expected_height_mm)
+
+        if height_error_mm > tolerance_mm:
+            findings.append(
+                InterferenceFinding(
+                    first_identifier="board",
+                    second_identifier=identifier,
+                    kind="mounting_height",
+                    required_clearance_mm=tolerance_mm,
+                    measured_clearance_mm=(height_error_mm),
+                    clearance_source=("assembly_mounting"),
+                )
+            )
+
+        hole_error_mm = abs(parameters.hole_diameter_mm - expected_hole_diameter_mm)
+
+        if hole_error_mm > tolerance_mm:
+            findings.append(
+                InterferenceFinding(
+                    first_identifier="board",
+                    second_identifier=identifier,
+                    kind="mounting_hole_diameter",
+                    required_clearance_mm=(expected_hole_diameter_mm),
+                    measured_clearance_mm=(parameters.hole_diameter_mm),
+                    clearance_source=("assembly_mounting"),
+                )
+            )
+
+        boss_error_mm = abs(parameters.outer_diameter_mm - expected_outer_diameter_mm)
+
+        if boss_error_mm > tolerance_mm:
+            findings.append(
+                InterferenceFinding(
+                    first_identifier="board",
+                    second_identifier=identifier,
+                    kind="mounting_boss_diameter",
+                    required_clearance_mm=(expected_outer_diameter_mm),
+                    measured_clearance_mm=(parameters.outer_diameter_mm),
+                    clearance_source=("assembly_mounting"),
+                )
+            )
+
+    return tuple(findings)
+
+
 def analyze_board_display_enclosure_fit(
     build: BoardDisplayEnclosureBuild,
 ) -> InterferenceReport:
@@ -449,7 +594,7 @@ def analyze_board_display_enclosure_fit(
         bottom_z_mm=specification.bottom_z_mm,
     )
 
-    findings: list[InterferenceFinding] = []
+    findings: list[InterferenceFinding] = list(_analyze_board_standoff_fit(build))
 
     for component in build.assembly:
         for edge in (
