@@ -297,3 +297,145 @@ def test_fit_analysis_detects_undersized_cavity() -> None:
     report = analyze_board_display_enclosure_fit(build)
 
     assert not report.has_findings
+
+
+def _lid_volume(
+    product: str,
+    policy: BoardDisplayEnclosureParameters,
+) -> float:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": product,
+        }
+    )
+
+    return (
+        build_board_display_enclosure(
+            design,
+            policy,
+        )["lid"]
+        .val()
+        .Volume()
+    )
+
+
+@pytest.mark.parametrize(
+    "product",
+    [
+        "PICO2_OLED",
+        "XIAO_ESP32S3_OLED",
+    ],
+)
+def test_display_window_generates_valid_lid(
+    product: str,
+) -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": product,
+        }
+    )
+
+    lid = build_board_display_enclosure(design)["lid"].val()
+
+    assert lid.isValid()
+    assert lid.Volume() > 0
+
+
+def test_display_window_removes_lid_material() -> None:
+    enabled = _lid_volume(
+        "PICO2_OLED",
+        BoardDisplayEnclosureParameters(
+            display_window_enabled=True,
+        ),
+    )
+    disabled = _lid_volume(
+        "PICO2_OLED",
+        BoardDisplayEnclosureParameters(
+            display_window_enabled=False,
+        ),
+    )
+
+    assert enabled < disabled
+
+
+def test_display_window_clearance_enlarges_opening() -> None:
+    small = _lid_volume(
+        "PICO2_OLED",
+        BoardDisplayEnclosureParameters(
+            display_window_clearance_mm=0.0,
+        ),
+    )
+    large = _lid_volume(
+        "PICO2_OLED",
+        BoardDisplayEnclosureParameters(
+            display_window_clearance_mm=1.0,
+        ),
+    )
+
+    assert large < small
+
+
+def test_display_window_follows_display_xy_placement() -> None:
+    centered = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+    shifted = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+            "parameters": {
+                "display_x_mm": 3.0,
+                "display_y_mm": 2.0,
+            },
+        }
+    )
+
+    centered_lid = build_board_display_enclosure(centered)["lid"].val()
+    shifted_lid = build_board_display_enclosure(shifted)["lid"].val()
+
+    assert centered_lid.isValid()
+    assert shifted_lid.isValid()
+    assert shifted_lid.Volume() == pytest.approx(
+        centered_lid.Volume(),
+        rel=1e-6,
+    )
+
+
+def test_disabling_display_window_preserves_more_material() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "XIAO_ESP32S3_OLED",
+        }
+    )
+
+    windowed = build_board_display_enclosure(
+        design,
+        BoardDisplayEnclosureParameters(
+            display_window_enabled=True,
+        ),
+    )["lid"].val()
+
+    solid = build_board_display_enclosure(
+        design,
+        BoardDisplayEnclosureParameters(
+            display_window_enabled=False,
+        ),
+    )["lid"].val()
+
+    assert solid.Volume() > windowed.Volume()
+
+
+def test_display_window_negative_clearance_is_rejected() -> None:
+    with pytest.raises(
+        ValueError,
+        match="display_window_clearance_mm",
+    ):
+        BoardDisplayEnclosureParameters(
+            display_window_clearance_mm=-0.1,
+        ).validate()

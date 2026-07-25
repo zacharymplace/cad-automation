@@ -48,6 +48,9 @@ class BoardDisplayEnclosureParameters:
     internal_clearance_mm: float = 2.0
     connector_cutout_clearance_mm: float = 0.5
 
+    display_window_enabled: bool = True
+    display_window_clearance_mm: float = 0.5
+
     corner_radius_mm: float = 4.0
 
     mounting_hole_diameter_mm: float = 3.2
@@ -79,6 +82,7 @@ class BoardDisplayEnclosureParameters:
             "lid_clearance_mm": self.lid_clearance_mm,
             "internal_clearance_mm": (self.internal_clearance_mm),
             "connector_cutout_clearance_mm": (self.connector_cutout_clearance_mm),
+            "display_window_clearance_mm": (self.display_window_clearance_mm),
             "corner_radius_mm": self.corner_radius_mm,
         }
 
@@ -195,6 +199,50 @@ def _build_enclosure_parameters(
     return enclosure_parameters
 
 
+def _cut_display_window(
+    *,
+    lid: cq.Workplane,
+    assembly: DeviceAssembly,
+    specification: EnclosureSpecification,
+    enclosure_parameters: EnclosureParameters,
+    policy: BoardDisplayEnclosureParameters,
+) -> cq.Workplane:
+    """Cut a display opening through the enclosure lid."""
+    if not policy.display_window_enabled:
+        return lid
+
+    display = assembly.get("display")
+    bounds = display.transformed_geometry().val().BoundingBox()
+
+    window_width_mm = bounds.xlen + 2 * policy.display_window_clearance_mm
+    window_depth_mm = bounds.ylen + 2 * policy.display_window_clearance_mm
+
+    window_center_x_mm = (bounds.xmin + bounds.xmax) / 2 - specification.center_x_mm
+    window_center_y_mm = (bounds.ymin + bounds.ymax) / 2 - specification.center_y_mm
+
+    cutter_height_mm = (
+        enclosure_parameters.lid_thickness + enclosure_parameters.lid_lip_height + 4.0
+    )
+
+    cutter = (
+        cq.Workplane("XY")
+        .box(
+            window_width_mm,
+            window_depth_mm,
+            cutter_height_mm,
+        )
+        .translate(
+            (
+                window_center_x_mm,
+                window_center_y_mm,
+                0.0,
+            )
+        )
+    )
+
+    return lid.cut(cutter)
+
+
 def build_board_display_enclosure_result(
     design: BoardDisplayDesign,
     parameters: BoardDisplayEnclosureParameters | None = None,
@@ -217,11 +265,20 @@ def build_board_display_enclosure_result(
         resolved,
     )
 
+    parts = build_enclosure(enclosure_parameters)
+    parts["lid"] = _cut_display_window(
+        lid=parts["lid"],
+        assembly=assembly,
+        specification=specification,
+        enclosure_parameters=enclosure_parameters,
+        policy=resolved,
+    )
+
     return BoardDisplayEnclosureBuild(
         assembly=assembly,
         specification=specification,
         enclosure_parameters=enclosure_parameters,
-        parts=build_enclosure(enclosure_parameters),
+        parts=parts,
     )
 
 
