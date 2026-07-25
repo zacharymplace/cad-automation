@@ -1283,3 +1283,71 @@ def test_heat_set_backend_rejects_standoff_artifacts() -> None:
             ),
             artifacts=artifacts,
         )
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    (
+        BoardFasteningStrategy.NONE,
+        BoardFasteningStrategy.PRINTED_STANDOFF,
+        BoardFasteningStrategy.HEAT_SET_INSERT,
+    ),
+)
+def test_board_fastening_backends_expose_fit_analysis(
+    strategy: BoardFasteningStrategy,
+) -> None:
+    from zcad.generators.board_display_enclosure import (
+        _get_board_fastening_backend,
+    )
+
+    backend = _get_board_fastening_backend(strategy)
+
+    assert callable(backend.analyze_fit)
+
+
+def test_selected_backend_owns_mounting_analysis(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from zcad.generators import (
+        board_display_enclosure as module,
+    )
+
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+    build = build_board_display_enclosure_result(design)
+    called = False
+
+    class BackendProbe:
+        strategy = BoardFasteningStrategy.PRINTED_STANDOFF
+
+        def derive(self, **kwargs: object) -> object:
+            raise AssertionError("derive should not be called")
+
+        def apply(self, **kwargs: object) -> object:
+            raise AssertionError("apply should not be called")
+
+        def analyze_fit(
+            self,
+            *,
+            build: BoardDisplayEnclosureBuild,
+            tolerance_mm: float,
+        ) -> tuple[InterferenceFinding, ...]:
+            nonlocal called
+            called = True
+
+            assert tolerance_mm == pytest.approx(1e-6)
+
+            return ()
+
+    monkeypatch.setitem(
+        module._BOARD_FASTENING_BACKENDS,
+        BoardFasteningStrategy.PRINTED_STANDOFF,
+        BackendProbe(),
+    )
+
+    assert module._analyze_board_mounting_fit(build) == ()
+    assert called

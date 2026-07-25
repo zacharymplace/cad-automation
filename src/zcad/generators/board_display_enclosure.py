@@ -455,6 +455,15 @@ class BoardFasteningBackend(Protocol):
         """Apply strategy-specific fastening geometry."""
         ...
 
+    def analyze_fit(
+        self,
+        *,
+        build: BoardDisplayEnclosureBuild,
+        tolerance_mm: float,
+    ) -> tuple[InterferenceFinding, ...]:
+        """Verify strategy-specific mounting geometry."""
+        ...
+
 
 @dataclass(frozen=True)
 class NoBoardFasteningBackend:
@@ -489,6 +498,17 @@ class NoBoardFasteningBackend:
             raise ValueError("none fastening backend received geometry")
 
         return body
+
+    def analyze_fit(
+        self,
+        *,
+        build: BoardDisplayEnclosureBuild,
+        tolerance_mm: float,
+    ) -> tuple[InterferenceFinding, ...]:
+        return _analyze_no_board_fastening_fit(
+            build,
+            tolerance_mm=tolerance_mm,
+        )
 
 
 @dataclass(frozen=True)
@@ -530,6 +550,17 @@ class PrintedStandoffBackend:
             parameters=artifacts.standoff_parameters,
         )
 
+    def analyze_fit(
+        self,
+        *,
+        build: BoardDisplayEnclosureBuild,
+        tolerance_mm: float,
+    ) -> tuple[InterferenceFinding, ...]:
+        return _analyze_printed_standoff_fit(
+            build,
+            tolerance_mm=tolerance_mm,
+        )
+
 
 @dataclass(frozen=True)
 class HeatSetInsertBackend:
@@ -568,6 +599,17 @@ class HeatSetInsertBackend:
         return _add_board_insert_bosses(
             body=body,
             parameters=artifacts.insert_boss_parameters,
+        )
+
+    def analyze_fit(
+        self,
+        *,
+        build: BoardDisplayEnclosureBuild,
+        tolerance_mm: float,
+    ) -> tuple[InterferenceFinding, ...]:
+        return _analyze_heat_set_insert_fit(
+            build,
+            tolerance_mm=tolerance_mm,
         )
 
 
@@ -734,19 +776,14 @@ def _mounting_finding(
     )
 
 
-def _analyze_board_mounting_fit(
+def _expected_board_mounting_positions(
     build: BoardDisplayEnclosureBuild,
-    *,
-    tolerance_mm: float = 1e-6,
-) -> tuple[InterferenceFinding, ...]:
-    """Verify selected board fastening against assembly metadata."""
+) -> tuple[tuple[float, float, float], ...]:
+    """Return expected enclosure-local board mounting positions."""
     board = build.assembly.get("board")
     world_positions = assembly_mounting_hole_positions(board)
 
-    if not world_positions:
-        return ()
-
-    expected_positions = tuple(
+    return tuple(
         (
             world_x_mm - build.specification.center_x_mm,
             world_y_mm - build.specification.center_y_mm,
@@ -759,19 +796,20 @@ def _analyze_board_mounting_fit(
         ) in world_positions
     )
 
-    strategy = build.policy.board_fastening_strategy
 
-    if strategy is BoardFasteningStrategy.PRINTED_STANDOFF:
-        actual = build.standoff_parameters
-        identifier_prefix = "standoff"
-    elif strategy is BoardFasteningStrategy.HEAT_SET_INSERT:
-        actual = build.insert_boss_parameters
-        identifier_prefix = "insert_boss"
-    elif strategy is BoardFasteningStrategy.NONE:
-        actual = ()
-        identifier_prefix = "mount"
-    else:
-        raise ValueError(f"unsupported board fastening strategy: {strategy}")
+def _analyze_mount_positions(
+    *,
+    build: BoardDisplayEnclosureBuild,
+    actual: tuple[object, ...],
+    identifier_prefix: str,
+    height_attribute: str,
+    tolerance_mm: float,
+) -> list[InterferenceFinding]:
+    """Verify count, XY position, and mounting height."""
+    expected_positions = _expected_board_mounting_positions(build)
+
+    if not expected_positions:
+        return []
 
     findings: list[InterferenceFinding] = []
 
@@ -815,152 +853,218 @@ def _analyze_board_mounting_fit(
             )
 
         expected_height_mm = board_bottom_z_mm - build.specification.bottom_z_mm
-
-        if strategy is BoardFasteningStrategy.PRINTED_STANDOFF:
-            height_error_mm = abs(parameters.standoff_height_mm - expected_height_mm)
-
-            if height_error_mm > tolerance_mm:
-                findings.append(
-                    _mounting_finding(
-                        identifier=identifier,
-                        kind="mounting_height",
-                        required=tolerance_mm,
-                        measured=height_error_mm,
-                    )
-                )
-
-        elif strategy is BoardFasteningStrategy.HEAT_SET_INSERT:
-            height_error_mm = abs(parameters.boss_height_mm - expected_height_mm)
-
-            if height_error_mm > tolerance_mm:
-                findings.append(
-                    _mounting_finding(
-                        identifier=identifier,
-                        kind="mounting_height",
-                        required=tolerance_mm,
-                        measured=height_error_mm,
-                    )
-                )
-
-    if strategy is BoardFasteningStrategy.PRINTED_STANDOFF:
-        mounting = board.metadata.get("mounting")
-
-        if not isinstance(mounting, dict):
-            raise TypeError("board mounting metadata must be a dictionary")
-
-        hole_diameter_mm = mounting.get("hole_diameter_mm")
-        recommended_clearance_mm = mounting.get("recommended_clearance_mm")
-
-        if not isinstance(
-            hole_diameter_mm,
-            int | float,
-        ):
-            raise TypeError("board mounting hole diameter must be numeric")
-
-        if not isinstance(
-            recommended_clearance_mm,
-            int | float,
-        ):
-            raise TypeError("board mounting clearance must be numeric")
-
-        resolved_clearance_mm = (
-            build.policy.standoff_hole_clearance_mm
-            if (build.policy.standoff_hole_clearance_mm is not None)
-            else recommended_clearance_mm
+        measured_height_mm = getattr(
+            parameters,
+            height_attribute,
         )
-        expected_hole_diameter_mm = hole_diameter_mm + resolved_clearance_mm
-        expected_outer_diameter_mm = (
-            expected_hole_diameter_mm + 2 * build.policy.standoff_radial_wall_mm
-        )
+        height_error_mm = abs(measured_height_mm - expected_height_mm)
 
-        for index, parameters in enumerate(
-            build.standoff_parameters,
-            start=1,
-        ):
-            identifier = f"standoff_{index}"
-
-            if (
-                abs(parameters.hole_diameter_mm - expected_hole_diameter_mm)
-                > tolerance_mm
-            ):
-                findings.append(
-                    _mounting_finding(
-                        identifier=identifier,
-                        kind=("mounting_hole_diameter"),
-                        required=(expected_hole_diameter_mm),
-                        measured=(parameters.hole_diameter_mm),
-                    )
+        if height_error_mm > tolerance_mm:
+            findings.append(
+                _mounting_finding(
+                    identifier=identifier,
+                    kind="mounting_height",
+                    required=tolerance_mm,
+                    measured=height_error_mm,
                 )
-
-            if (
-                abs(parameters.outer_diameter_mm - expected_outer_diameter_mm)
-                > tolerance_mm
-            ):
-                findings.append(
-                    _mounting_finding(
-                        identifier=identifier,
-                        kind=("mounting_boss_diameter"),
-                        required=(expected_outer_diameter_mm),
-                        measured=(parameters.outer_diameter_mm),
-                    )
-                )
-
-    elif strategy is BoardFasteningStrategy.HEAT_SET_INSERT:
-        if build.policy.board_fastener is None:
-            raise ValueError("board_fastener is required for heat-set insert fastening")
-
-        fastener = get_fastener(build.policy.board_fastener)
-        insert_diameter_mm = fastener.heat_set_insert_diameter_mm
-        insert_depth_mm = fastener.heat_set_insert_depth_mm
-
-        if insert_diameter_mm is None or insert_depth_mm is None:
-            raise ValueError("fastener does not define heat-set insert dimensions")
-
-        expected_outer_diameter_mm = (
-            insert_diameter_mm + 2 * build.policy.insert_boss_radial_wall_mm
-        )
-
-        for index, parameters in enumerate(
-            build.insert_boss_parameters,
-            start=1,
-        ):
-            identifier = f"insert_boss_{index}"
-
-            checks = (
-                (
-                    "mounting_pilot_hole_diameter",
-                    fastener.tap_hole_mm,
-                    parameters.pilot_hole_diameter_mm,
-                ),
-                (
-                    "mounting_insert_pocket_diameter",
-                    insert_diameter_mm,
-                    parameters.insert_pocket_diameter_mm,
-                ),
-                (
-                    "mounting_insert_pocket_depth",
-                    insert_depth_mm,
-                    parameters.insert_pocket_depth_mm,
-                ),
-                (
-                    "mounting_boss_diameter",
-                    expected_outer_diameter_mm,
-                    parameters.boss_outer_diameter_mm,
-                ),
             )
 
-            for kind, required, measured in checks:
-                if abs(measured - required) > tolerance_mm:
-                    findings.append(
-                        _mounting_finding(
-                            identifier=identifier,
-                            kind=kind,
-                            required=required,
-                            measured=measured,
-                        )
-                    )
+    return findings
+
+
+def _analyze_no_board_fastening_fit(
+    build: BoardDisplayEnclosureBuild,
+    *,
+    tolerance_mm: float,
+) -> tuple[InterferenceFinding, ...]:
+    """Verify the intentional absence of board mounts."""
+    del tolerance_mm
+
+    expected_positions = _expected_board_mounting_positions(build)
+
+    if not expected_positions:
+        return ()
+
+    return (
+        _mounting_finding(
+            identifier="board_mounts",
+            kind="mounting_count",
+            required=float(len(expected_positions)),
+            measured=0.0,
+        ),
+    )
+
+
+def _analyze_printed_standoff_fit(
+    build: BoardDisplayEnclosureBuild,
+    *,
+    tolerance_mm: float,
+) -> tuple[InterferenceFinding, ...]:
+    """Verify printed standoffs against assembly metadata."""
+    board = build.assembly.get("board")
+    expected_positions = _expected_board_mounting_positions(build)
+
+    if not expected_positions:
+        return ()
+
+    findings = _analyze_mount_positions(
+        build=build,
+        actual=build.standoff_parameters,
+        identifier_prefix="standoff",
+        height_attribute="standoff_height_mm",
+        tolerance_mm=tolerance_mm,
+    )
+
+    mounting = board.metadata.get("mounting")
+
+    if not isinstance(mounting, dict):
+        raise TypeError("board mounting metadata must be a dictionary")
+
+    hole_diameter_mm = mounting.get("hole_diameter_mm")
+    recommended_clearance_mm = mounting.get("recommended_clearance_mm")
+
+    if not isinstance(
+        hole_diameter_mm,
+        int | float,
+    ):
+        raise TypeError("board mounting hole diameter must be numeric")
+
+    if not isinstance(
+        recommended_clearance_mm,
+        int | float,
+    ):
+        raise TypeError("board mounting clearance must be numeric")
+
+    resolved_clearance_mm = (
+        build.policy.standoff_hole_clearance_mm
+        if (build.policy.standoff_hole_clearance_mm is not None)
+        else recommended_clearance_mm
+    )
+    expected_hole_diameter_mm = hole_diameter_mm + resolved_clearance_mm
+    expected_outer_diameter_mm = (
+        expected_hole_diameter_mm + 2 * build.policy.standoff_radial_wall_mm
+    )
+
+    for index, parameters in enumerate(
+        build.standoff_parameters,
+        start=1,
+    ):
+        identifier = f"standoff_{index}"
+
+        if abs(parameters.hole_diameter_mm - expected_hole_diameter_mm) > tolerance_mm:
+            findings.append(
+                _mounting_finding(
+                    identifier=identifier,
+                    kind="mounting_hole_diameter",
+                    required=(expected_hole_diameter_mm),
+                    measured=(parameters.hole_diameter_mm),
+                )
+            )
+
+        if (
+            abs(parameters.outer_diameter_mm - expected_outer_diameter_mm)
+            > tolerance_mm
+        ):
+            findings.append(
+                _mounting_finding(
+                    identifier=identifier,
+                    kind="mounting_boss_diameter",
+                    required=(expected_outer_diameter_mm),
+                    measured=(parameters.outer_diameter_mm),
+                )
+            )
 
     return tuple(findings)
+
+
+def _analyze_heat_set_insert_fit(
+    build: BoardDisplayEnclosureBuild,
+    *,
+    tolerance_mm: float,
+) -> tuple[InterferenceFinding, ...]:
+    """Verify heat-set insert bosses against fastener policy."""
+    expected_positions = _expected_board_mounting_positions(build)
+
+    if not expected_positions:
+        return ()
+
+    findings = _analyze_mount_positions(
+        build=build,
+        actual=build.insert_boss_parameters,
+        identifier_prefix="insert_boss",
+        height_attribute="boss_height_mm",
+        tolerance_mm=tolerance_mm,
+    )
+
+    if build.policy.board_fastener is None:
+        raise ValueError("board_fastener is required for heat-set insert fastening")
+
+    fastener = get_fastener(build.policy.board_fastener)
+    insert_diameter_mm = fastener.heat_set_insert_diameter_mm
+    insert_depth_mm = fastener.heat_set_insert_depth_mm
+
+    if insert_diameter_mm is None or insert_depth_mm is None:
+        raise ValueError("fastener does not define heat-set insert dimensions")
+
+    expected_outer_diameter_mm = (
+        insert_diameter_mm + 2 * build.policy.insert_boss_radial_wall_mm
+    )
+
+    for index, parameters in enumerate(
+        build.insert_boss_parameters,
+        start=1,
+    ):
+        identifier = f"insert_boss_{index}"
+
+        checks = (
+            (
+                "mounting_pilot_hole_diameter",
+                fastener.tap_hole_mm,
+                parameters.pilot_hole_diameter_mm,
+            ),
+            (
+                "mounting_insert_pocket_diameter",
+                insert_diameter_mm,
+                parameters.insert_pocket_diameter_mm,
+            ),
+            (
+                "mounting_insert_pocket_depth",
+                insert_depth_mm,
+                parameters.insert_pocket_depth_mm,
+            ),
+            (
+                "mounting_boss_diameter",
+                expected_outer_diameter_mm,
+                parameters.boss_outer_diameter_mm,
+            ),
+        )
+
+        for kind, required, measured in checks:
+            if abs(measured - required) > tolerance_mm:
+                findings.append(
+                    _mounting_finding(
+                        identifier=identifier,
+                        kind=kind,
+                        required=required,
+                        measured=measured,
+                    )
+                )
+
+    return tuple(findings)
+
+
+def _analyze_board_mounting_fit(
+    build: BoardDisplayEnclosureBuild,
+    *,
+    tolerance_mm: float = 1e-6,
+) -> tuple[InterferenceFinding, ...]:
+    """Delegate mounting verification to the selected backend."""
+    backend = _get_board_fastening_backend(build.policy.board_fastening_strategy)
+
+    return backend.analyze_fit(
+        build=build,
+        tolerance_mm=tolerance_mm,
+    )
 
 
 def analyze_board_display_enclosure_fit(
