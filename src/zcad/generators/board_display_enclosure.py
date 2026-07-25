@@ -35,6 +35,9 @@ from zcad.fastening.artifacts import (
 from zcad.fastening.backend import (
     BoardFasteningBackend,
 )
+from zcad.fastening.heat_set_insert import (
+    HeatSetInsertBackend,
+)
 from zcad.fastening.none import (
     NoBoardFasteningBackend,
 )
@@ -427,57 +430,6 @@ def _add_board_insert_bosses(
     return result
 
 
-@dataclass(frozen=True)
-class HeatSetInsertBackend:
-    """Backend for heat-set insert PCB bosses."""
-
-    strategy: BoardFasteningStrategy = BoardFasteningStrategy.HEAT_SET_INSERT
-
-    def derive(
-        self,
-        *,
-        assembly: DeviceAssembly,
-        specification: EnclosureSpecification,
-        enclosure_parameters: EnclosureParameters,
-        policy: BoardDisplayEnclosureParameters,
-    ) -> BoardFasteningArtifacts:
-        return BoardFasteningArtifacts(
-            insert_boss_parameters=(
-                _derive_board_insert_boss_parameters(
-                    assembly=assembly,
-                    specification=specification,
-                    enclosure_parameters=(enclosure_parameters),
-                    policy=policy,
-                )
-            )
-        )
-
-    def apply(
-        self,
-        *,
-        body: cq.Workplane,
-        artifacts: BoardFasteningArtifacts,
-    ) -> cq.Workplane:
-        if artifacts.standoff_parameters:
-            raise ValueError("heat-set insert backend received standoff geometry")
-
-        return _add_board_insert_bosses(
-            body=body,
-            parameters=artifacts.insert_boss_parameters,
-        )
-
-    def analyze_fit(
-        self,
-        *,
-        build: BoardDisplayEnclosureBuild,
-        tolerance_mm: float,
-    ) -> tuple[InterferenceFinding, ...]:
-        return _analyze_heat_set_insert_fit(
-            build,
-            tolerance_mm=tolerance_mm,
-        )
-
-
 _BOARD_FASTENING_BACKENDS: dict[
     BoardFasteningStrategy,
     BoardFasteningBackend,
@@ -509,7 +461,26 @@ _BOARD_FASTENING_BACKENDS: dict[
             ),
         )
     ),
-    BoardFasteningStrategy.HEAT_SET_INSERT: (HeatSetInsertBackend()),
+    BoardFasteningStrategy.HEAT_SET_INSERT: (
+        HeatSetInsertBackend(
+            strategy=BoardFasteningStrategy.HEAT_SET_INSERT,
+            derive_callback=lambda **kwargs: BoardFasteningArtifacts(
+                insert_boss_parameters=(
+                    _derive_board_insert_boss_parameters(
+                        **kwargs,
+                    )
+                ),
+            ),
+            apply_callback=lambda body, artifacts: _add_board_insert_bosses(
+                body=body,
+                parameters=(artifacts.insert_boss_parameters),
+            ),
+            fit_callback=lambda build, tolerance: _analyze_heat_set_insert_fit(
+                build,
+                tolerance_mm=tolerance,
+            ),
+        )
+    ),
 }
 
 

@@ -6,6 +6,9 @@ from zcad.fastening.artifacts import (
 from zcad.fastening.backend import (
     BoardFasteningBackend,
 )
+from zcad.fastening.heat_set_insert import (
+    HeatSetInsertBackend,
+)
 from zcad.fastening.none import (
     NoBoardFasteningBackend,
 )
@@ -13,5 +16,6 @@ from zcad.fastening.none import (
 __all__ = (
     "BoardFasteningArtifacts",
     "BoardFasteningBackend",
+    "HeatSetInsertBackend",
     "NoBoardFasteningBackend",
 )
