@@ -1,0 +1,1 @@
+"""Board-fastening backend registry."""
