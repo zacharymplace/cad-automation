@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from math import hypot
-from typing import Protocol
 
 import cadquery as cq
 from zcad_core.assemblies import (
@@ -32,6 +31,9 @@ from zcad.designs import (
 )
 from zcad.fastening.artifacts import (
     BoardFasteningArtifacts,
+)
+from zcad.fastening.backend import (
+    BoardFasteningBackend,
 )
 from zcad.generators.enclosure import (
     EnclosureParameters,
@@ -417,41 +419,6 @@ def _add_board_insert_bosses(
         )
 
     return result
-
-
-class BoardFasteningBackend(Protocol):
-    """Generation interface for one board-fastening strategy."""
-
-    strategy: BoardFasteningStrategy
-
-    def derive(
-        self,
-        *,
-        assembly: DeviceAssembly,
-        specification: EnclosureSpecification,
-        enclosure_parameters: EnclosureParameters,
-        policy: BoardDisplayEnclosureParameters,
-    ) -> BoardFasteningArtifacts:
-        """Derive strategy-specific fastening parameters."""
-        ...
-
-    def apply(
-        self,
-        *,
-        body: cq.Workplane,
-        artifacts: BoardFasteningArtifacts,
-    ) -> cq.Workplane:
-        """Apply strategy-specific fastening geometry."""
-        ...
-
-    def analyze_fit(
-        self,
-        *,
-        build: BoardDisplayEnclosureBuild,
-        tolerance_mm: float,
-    ) -> tuple[InterferenceFinding, ...]:
-        """Verify strategy-specific mounting geometry."""
-        ...
 
 
 @dataclass(frozen=True)

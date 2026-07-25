@@ -3,5 +3,11 @@
 from zcad.fastening.artifacts import (
     BoardFasteningArtifacts,
 )
+from zcad.fastening.backend import (
+    BoardFasteningBackend,
+)
 
-__all__ = ("BoardFasteningArtifacts",)
+__all__ = (
+    "BoardFasteningArtifacts",
+    "BoardFasteningBackend",
+)
