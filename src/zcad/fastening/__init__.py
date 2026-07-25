@@ -21,8 +21,14 @@ from zcad.fastening.printed_standoff import (
     add_board_standoffs,
     derive_board_standoff_parameters,
 )
+from zcad.fastening.verification import (
+    BoardFasteningBuild,
+    BoardFasteningVerificationPolicy,
+)
 
 __all__ = (
+    "BoardFasteningBuild",
+    "BoardFasteningVerificationPolicy",
     "BoardFasteningArtifacts",
     "BoardFasteningBackend",
     "HeatSetInsertBackend",

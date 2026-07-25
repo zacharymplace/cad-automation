@@ -39,6 +39,9 @@ from zcad.fastening.none import (
 from zcad.fastening.printed_standoff import (
     PrintedStandoffBackend,
 )
+from zcad.fastening.verification import (
+    BoardFasteningBuild,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -451,7 +454,7 @@ def _mounting_finding(
 
 
 def _expected_board_mounting_positions(
-    build: BoardDisplayEnclosureBuild,
+    build: BoardFasteningBuild,
 ) -> tuple[tuple[float, float, float], ...]:
     """Return expected enclosure-local board mounting positions."""
     board = build.assembly.get("board")
@@ -473,7 +476,7 @@ def _expected_board_mounting_positions(
 
 def _analyze_mount_positions(
     *,
-    build: BoardDisplayEnclosureBuild,
+    build: BoardFasteningBuild,
     actual: tuple[object, ...],
     identifier_prefix: str,
     height_attribute: str,
@@ -547,7 +550,7 @@ def _analyze_mount_positions(
 
 
 def _analyze_no_board_fastening_fit(
-    build: BoardDisplayEnclosureBuild,
+    build: BoardFasteningBuild,
     *,
     tolerance_mm: float,
 ) -> tuple[InterferenceFinding, ...]:
@@ -570,7 +573,7 @@ def _analyze_no_board_fastening_fit(
 
 
 def _analyze_printed_standoff_fit(
-    build: BoardDisplayEnclosureBuild,
+    build: BoardFasteningBuild,
     *,
     tolerance_mm: float,
 ) -> tuple[InterferenceFinding, ...]:
@@ -652,7 +655,7 @@ def _analyze_printed_standoff_fit(
 
 
 def _analyze_heat_set_insert_fit(
-    build: BoardDisplayEnclosureBuild,
+    build: BoardFasteningBuild,
     *,
     tolerance_mm: float,
 ) -> tuple[InterferenceFinding, ...]:
