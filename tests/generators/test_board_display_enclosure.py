@@ -1214,7 +1214,7 @@ def test_board_fastening_strategy_resolves_backend(
 def test_printed_backend_rejects_insert_artifacts() -> None:
     from zcad_core.features import InsertBossParameters
 
-    from zcad.generators.board_display_enclosure import (
+    from zcad.fastening import (
         BoardFasteningArtifacts,
         PrintedStandoffBackend,
     )
@@ -1252,7 +1252,7 @@ def test_printed_backend_rejects_insert_artifacts() -> None:
 def test_heat_set_backend_rejects_standoff_artifacts() -> None:
     from zcad_core.features import PcbStandoffParameters
 
-    from zcad.generators.board_display_enclosure import (
+    from zcad.fastening import (
         BoardFasteningArtifacts,
         HeatSetInsertBackend,
     )

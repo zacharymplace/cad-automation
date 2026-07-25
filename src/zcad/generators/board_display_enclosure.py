@@ -20,16 +20,12 @@ from zcad_core.assemblies import (
 from zcad_core.features import (
     InsertBossParameters,
     PcbStandoffParameters,
-    add_heat_set_insert_boss,
 )
 from zcad_core.hardware import get_fastener
 
 from zcad.designs import (
     BoardDisplayDesign,
     build_board_display_design,
-)
-from zcad.fastening.artifacts import (
-    BoardFasteningArtifacts,
 )
 from zcad.fastening.backend import (
     BoardFasteningBackend,
@@ -267,78 +263,6 @@ def _build_enclosure_parameters(
     return enclosure_parameters
 
 
-def _derive_board_insert_boss_parameters(
-    *,
-    assembly: DeviceAssembly,
-    specification: EnclosureSpecification,
-    enclosure_parameters: EnclosureParameters,
-    policy: BoardDisplayEnclosureParameters,
-) -> tuple[InsertBossParameters, ...]:
-    """Derive heat-set insert bosses from board mounting metadata."""
-    if policy.board_fastening_strategy is not BoardFasteningStrategy.HEAT_SET_INSERT:
-        return ()
-
-    if policy.board_fastener is None:
-        raise ValueError("board_fastener is required for heat-set insert fastening")
-
-    board = assembly.get("board")
-    positions = assembly_mounting_hole_positions(board)
-
-    if not positions:
-        return ()
-
-    fastener = get_fastener(policy.board_fastener)
-    body_bottom_z_mm = -enclosure_parameters.height / 2
-
-    derived: list[InsertBossParameters] = []
-
-    for (
-        world_x_mm,
-        world_y_mm,
-        board_bottom_z_mm,
-    ) in positions:
-        boss_height_mm = board_bottom_z_mm - specification.bottom_z_mm
-
-        if boss_height_mm <= 0:
-            raise ValueError(
-                "board mounting position must be above the enclosure cavity floor"
-            )
-
-        parameters = InsertBossParameters.from_fastener(
-            fastener=fastener,
-            x=(world_x_mm - specification.center_x_mm),
-            y=(world_y_mm - specification.center_y_mm),
-            base_height_mm=(enclosure_parameters.floor),
-            base_z_mm=body_bottom_z_mm,
-            boss_height_mm=boss_height_mm,
-            radial_wall_mm=(policy.insert_boss_radial_wall_mm),
-        )
-        parameters.validate()
-        derived.append(parameters)
-
-    return tuple(derived)
-
-
-def _add_board_insert_bosses(
-    *,
-    body: cq.Workplane,
-    parameters: tuple[
-        InsertBossParameters,
-        ...,
-    ],
-) -> cq.Workplane:
-    """Add all derived heat-set insert bosses."""
-    result = body
-
-    for insert_boss in parameters:
-        result = add_heat_set_insert_boss(
-            result,
-            parameters=insert_boss,
-        )
-
-    return result
-
-
 _BOARD_FASTENING_BACKENDS: dict[
     BoardFasteningStrategy,
     BoardFasteningBackend,
@@ -364,17 +288,6 @@ _BOARD_FASTENING_BACKENDS: dict[
     BoardFasteningStrategy.HEAT_SET_INSERT: (
         HeatSetInsertBackend(
             strategy=BoardFasteningStrategy.HEAT_SET_INSERT,
-            derive_callback=lambda **kwargs: BoardFasteningArtifacts(
-                insert_boss_parameters=(
-                    _derive_board_insert_boss_parameters(
-                        **kwargs,
-                    )
-                ),
-            ),
-            apply_callback=lambda body, artifacts: _add_board_insert_bosses(
-                body=body,
-                parameters=(artifacts.insert_boss_parameters),
-            ),
             fit_callback=lambda build, tolerance: _analyze_heat_set_insert_fit(
                 build,
                 tolerance_mm=tolerance,
