@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from math import hypot
 
 import cadquery as cq
@@ -29,6 +30,13 @@ from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
 )
+
+
+class BoardFasteningStrategy(StrEnum):
+    """Supported board-retention strategies."""
+
+    NONE = "none"
+    PRINTED_STANDOFF = "printed_standoff"
 
 
 @dataclass(frozen=True)
@@ -61,7 +69,9 @@ class BoardDisplayEnclosureParameters:
     display_window_enabled: bool = True
     display_window_clearance_mm: float = 0.5
 
-    board_standoffs_enabled: bool = True
+    board_fastening_strategy: BoardFasteningStrategy = (
+        BoardFasteningStrategy.PRINTED_STANDOFF
+    )
     standoff_radial_wall_mm: float = 1.5
     standoff_hole_clearance_mm: float | None = None
 
@@ -104,6 +114,18 @@ class BoardDisplayEnclosureParameters:
         for name, value in non_negative_values.items():
             if value < 0:
                 raise ValueError(f"{name} must not be negative")
+
+        if not isinstance(
+            self.board_fastening_strategy,
+            BoardFasteningStrategy,
+        ):
+            raise TypeError("board_fastening_strategy must be a BoardFasteningStrategy")
+
+        if not isinstance(
+            self.board_fastening_strategy,
+            BoardFasteningStrategy,
+        ):
+            raise TypeError("board_fastening_strategy must be a BoardFasteningStrategy")
 
         if (
             self.standoff_hole_clearance_mm is not None
@@ -228,8 +250,13 @@ def _derive_board_standoff_parameters(
     policy: BoardDisplayEnclosureParameters,
 ) -> tuple[PcbStandoffParameters, ...]:
     """Derive enclosure-local standoffs from board assembly metadata."""
-    if not policy.board_standoffs_enabled:
+    if policy.board_fastening_strategy is BoardFasteningStrategy.NONE:
         return ()
+
+    if policy.board_fastening_strategy is not BoardFasteningStrategy.PRINTED_STANDOFF:
+        raise ValueError(
+            f"unsupported board fastening strategy: {policy.board_fastening_strategy}"
+        )
 
     board = assembly.get("board")
     positions = assembly_mounting_hole_positions(board)

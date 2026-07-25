@@ -11,6 +11,7 @@ from zcad.designs import (
 from zcad.generators.board_display_enclosure import (
     BoardDisplayEnclosureBuild,
     BoardDisplayEnclosureParameters,
+    BoardFasteningStrategy,
     _build_enclosure_parameters,
     analyze_board_display_enclosure_fit,
     build_board_display_enclosure,
@@ -295,7 +296,7 @@ def test_fit_analysis_detects_undersized_cavity() -> None:
         design,
         BoardDisplayEnclosureParameters(
             internal_clearance_mm=0.0,
-            board_standoffs_enabled=False,
+            board_fastening_strategy=BoardFasteningStrategy.NONE,
         ),
     )
 
@@ -643,13 +644,13 @@ def test_pico_standoffs_add_body_geometry() -> None:
     enabled = build_board_display_enclosure_result(
         design,
         BoardDisplayEnclosureParameters(
-            board_standoffs_enabled=True,
+            board_fastening_strategy=BoardFasteningStrategy.PRINTED_STANDOFF,
         ),
     )
     disabled = build_board_display_enclosure_result(
         design,
         BoardDisplayEnclosureParameters(
-            board_standoffs_enabled=False,
+            board_fastening_strategy=BoardFasteningStrategy.NONE,
         ),
     )
 
@@ -672,7 +673,7 @@ def test_xiao_generates_no_unverified_standoffs() -> None:
     disabled = build_board_display_enclosure_result(
         design,
         BoardDisplayEnclosureParameters(
-            board_standoffs_enabled=False,
+            board_fastening_strategy=BoardFasteningStrategy.NONE,
         ),
     )
 
@@ -738,7 +739,7 @@ def test_standoffs_require_board_above_cavity_floor() -> None:
             design,
             BoardDisplayEnclosureParameters(
                 internal_clearance_mm=0.0,
-                board_standoffs_enabled=True,
+                board_fastening_strategy=BoardFasteningStrategy.PRINTED_STANDOFF,
             ),
         )
 
@@ -777,7 +778,7 @@ def test_fit_analysis_detects_missing_standoffs() -> None:
     build = build_board_display_enclosure_result(
         design,
         BoardDisplayEnclosureParameters(
-            board_standoffs_enabled=False,
+            board_fastening_strategy=BoardFasteningStrategy.NONE,
         ),
     )
 
@@ -894,3 +895,46 @@ def test_xiao_requires_no_standoff_verification() -> None:
 
     assert build.standoff_parameters == ()
     assert _mounting_findings(build) == ()
+
+
+def test_default_board_fastening_strategy_is_printed_standoff() -> None:
+    parameters = BoardDisplayEnclosureParameters()
+
+    assert parameters.board_fastening_strategy is (
+        BoardFasteningStrategy.PRINTED_STANDOFF
+    )
+
+
+def test_none_fastening_strategy_generates_no_standoffs() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            board_fastening_strategy=(BoardFasteningStrategy.NONE),
+        ),
+    )
+
+    assert build.standoff_parameters == ()
+
+    findings = _mounting_findings(build)
+
+    assert len(findings) == 1
+    assert findings[0].kind == "mounting_count"
+
+
+def test_fastening_strategy_rejects_untyped_string() -> None:
+    parameters = BoardDisplayEnclosureParameters(
+        board_fastening_strategy="printed_standoff",  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="board_fastening_strategy",
+    ):
+        parameters.validate()
