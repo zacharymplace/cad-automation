@@ -6,8 +6,12 @@ from zcad.fastening.artifacts import (
 from zcad.fastening.backend import (
     BoardFasteningBackend,
 )
+from zcad.fastening.none import (
+    NoBoardFasteningBackend,
+)
 
 __all__ = (
     "BoardFasteningArtifacts",
     "BoardFasteningBackend",
+    "NoBoardFasteningBackend",
 )

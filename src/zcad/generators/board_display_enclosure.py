@@ -35,6 +35,9 @@ from zcad.fastening.artifacts import (
 from zcad.fastening.backend import (
     BoardFasteningBackend,
 )
+from zcad.fastening.none import (
+    NoBoardFasteningBackend,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -422,52 +425,6 @@ def _add_board_insert_bosses(
 
 
 @dataclass(frozen=True)
-class NoBoardFasteningBackend:
-    """Backend that intentionally generates no mounts."""
-
-    strategy: BoardFasteningStrategy = BoardFasteningStrategy.NONE
-
-    def derive(
-        self,
-        *,
-        assembly: DeviceAssembly,
-        specification: EnclosureSpecification,
-        enclosure_parameters: EnclosureParameters,
-        policy: BoardDisplayEnclosureParameters,
-    ) -> BoardFasteningArtifacts:
-        del (
-            assembly,
-            specification,
-            enclosure_parameters,
-            policy,
-        )
-
-        return BoardFasteningArtifacts()
-
-    def apply(
-        self,
-        *,
-        body: cq.Workplane,
-        artifacts: BoardFasteningArtifacts,
-    ) -> cq.Workplane:
-        if artifacts.standoff_parameters or artifacts.insert_boss_parameters:
-            raise ValueError("none fastening backend received geometry")
-
-        return body
-
-    def analyze_fit(
-        self,
-        *,
-        build: BoardDisplayEnclosureBuild,
-        tolerance_mm: float,
-    ) -> tuple[InterferenceFinding, ...]:
-        return _analyze_no_board_fastening_fit(
-            build,
-            tolerance_mm=tolerance_mm,
-        )
-
-
-@dataclass(frozen=True)
 class PrintedStandoffBackend:
     """Backend for printed PCB standoffs."""
 
@@ -573,7 +530,15 @@ _BOARD_FASTENING_BACKENDS: dict[
     BoardFasteningStrategy,
     BoardFasteningBackend,
 ] = {
-    BoardFasteningStrategy.NONE: (NoBoardFasteningBackend()),
+    BoardFasteningStrategy.NONE: (
+        NoBoardFasteningBackend(
+            strategy=BoardFasteningStrategy.NONE,
+            fit_analyzer=lambda build, tolerance: _analyze_no_board_fastening_fit(
+                build,
+                tolerance_mm=tolerance,
+            ),
+        )
+    ),
     BoardFasteningStrategy.PRINTED_STANDOFF: (PrintedStandoffBackend()),
     BoardFasteningStrategy.HEAT_SET_INSERT: (HeatSetInsertBackend()),
 }
