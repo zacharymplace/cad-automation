@@ -2,6 +2,8 @@
 
 import argparse
 import json
+import sys
+from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +21,14 @@ from zcad_core.validation.profile_rules import (
     validate_design_and_parts,
 )
 
+from zcad.assemblies import (
+    get_board_display_product,
+    list_board_display_products,
+)
+from zcad.designs import (
+    build_board_display_design,
+    load_board_display_design,
+)
 from zcad.generators.calibration.display_window_coupon import (
     DisplayWindowCouponParameters,
     build_display_window_coupon,
@@ -185,9 +195,106 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run() -> None:
-    """Run one CAD generation command."""
-    args = build_parser().parse_args()
+def _run_products_command(arguments: list[str]) -> None:
+    """List registered board-display products."""
+    if arguments:
+        raise ValueError("products does not accept arguments")
+
+    for product in list_board_display_products():
+        print(product.identifier)
+        print(f"  Board: {product.board.identifier}")
+        print(f"  Display: {product.display.identifier}")
+
+
+def _read_design_command_path(
+    arguments: list[str],
+    *,
+    command: str,
+) -> Path:
+    """Validate and return the path for a design subcommand."""
+    if len(arguments) != 1:
+        raise ValueError(f"design {command} requires exactly one JSON design path")
+
+    return Path(arguments[0])
+
+
+def _run_design_validate_command(
+    arguments: list[str],
+) -> None:
+    """Validate a registry-driven board-display design."""
+    path = _read_design_command_path(
+        arguments,
+        command="validate",
+    )
+    design = load_board_display_design(path)
+
+    print(f"Valid design: {path}")
+    print(f"Schema version: {design.schema_version}")
+    print(f"Product: {design.product}")
+
+
+def _run_design_inspect_command(
+    arguments: list[str],
+) -> None:
+    """Inspect a registry-driven board-display design."""
+    path = _read_design_command_path(
+        arguments,
+        command="inspect",
+    )
+    design = load_board_display_design(path)
+    product = get_board_display_product(design.product)
+    assembly = build_board_display_design(design)
+
+    print(f"Design: {path}")
+    print(f"Schema version: {design.schema_version}")
+    print(f"Product: {design.product}")
+    print(f"Board: {product.board.identifier}")
+    print(f"Display: {product.display.identifier}")
+    print("Parameters:")
+
+    for field in fields(design.parameters):
+        value = getattr(design.parameters, field.name)
+        print(f"  {field.name}: {value}")
+
+    print("Components:")
+
+    for identifier in assembly.identifiers:
+        print(f"  {identifier}")
+
+
+def _run_design_command(arguments: list[str]) -> None:
+    """Run one registry-driven design command."""
+    if not arguments:
+        raise ValueError("design requires a command: validate or inspect")
+
+    command, *remaining = arguments
+
+    if command == "validate":
+        _run_design_validate_command(remaining)
+        return
+
+    if command == "inspect":
+        _run_design_inspect_command(remaining)
+        return
+
+    raise ValueError(f"unknown design command: {command}")
+
+
+def run(
+    argv: list[str] | None = None,
+) -> None:
+    """Run one CAD or registry-driven design command."""
+    arguments = list(argv) if argv is not None else sys.argv[1:]
+
+    if arguments and arguments[0] == "products":
+        _run_products_command(arguments[1:])
+        return
+
+    if arguments and arguments[0] == "design":
+        _run_design_command(arguments[1:])
+        return
+
+    args = build_parser().parse_args(arguments)
     design = read_design(args.design)
     parts = generate_parts(design)
 
