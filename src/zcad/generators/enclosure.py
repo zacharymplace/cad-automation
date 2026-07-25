@@ -8,7 +8,10 @@ from zcad_core.features import (
     add_heat_set_insert_boss,
 )
 from zcad_core.features.labels import add_embossed_label
-from zcad_core.hardware import get_fastener
+from zcad_core.hardware import (
+    BoardEdge,
+    get_fastener,
+)
 
 
 @dataclass(frozen=True)
@@ -30,6 +33,9 @@ class EnclosureParameters:
 
     cable_slot_width: float = 14.0
     cable_slot_height: float = 8.0
+    cable_slot_edge: BoardEdge = "negative_y"
+    cable_slot_center_offset: float = 0.0
+    cable_slot_bottom_offset: float = 0.0
 
     mounting_hole_diameter: float = 3.2
     mounting_hole_spacing_x: float = 60.0
@@ -91,11 +97,43 @@ class EnclosureParameters:
         inner_width = self.width - 2 * self.wall
         inner_depth = self.depth - 2 * self.wall
 
-        if self.cable_slot_width >= inner_width:
-            raise ValueError("cable_slot_width must be smaller than inner width")
+        supported_edges = {
+            "negative_x",
+            "positive_x",
+            "negative_y",
+            "positive_y",
+        }
 
-        if self.cable_slot_height >= self.height:
-            raise ValueError("cable_slot_height must be smaller than enclosure height")
+        if self.cable_slot_edge not in supported_edges:
+            raise ValueError(f"unsupported cable_slot_edge: {self.cable_slot_edge}")
+
+        if self.cable_slot_bottom_offset < 0:
+            raise ValueError("cable_slot_bottom_offset cannot be negative")
+
+        if self.cable_slot_edge in {
+            "negative_y",
+            "positive_y",
+        }:
+            available_slot_span = inner_width
+        else:
+            available_slot_span = inner_depth
+
+        if self.cable_slot_width >= available_slot_span:
+            raise ValueError(
+                "cable_slot_width must be smaller than the selected wall span"
+            )
+
+        inner_height = self.height - self.floor
+
+        if self.cable_slot_bottom_offset + self.cable_slot_height > inner_height:
+            raise ValueError("cable slot must fit within the enclosure cavity height")
+
+        maximum_center_offset = (available_slot_span - self.cable_slot_width) / 2
+
+        if abs(self.cable_slot_center_offset) > maximum_center_offset:
+            raise ValueError(
+                "cable_slot_center_offset places the slot outside the selected wall"
+            )
 
         lip_outer_width = inner_width - 2 * self.lid_clearance
         lip_outer_depth = inner_depth - 2 * self.lid_clearance
@@ -152,19 +190,46 @@ def _build_body(
     if parameters.corner_radius > 0:
         body = body.edges("|Z").fillet(parameters.corner_radius)
 
-    cable_slot_z = parameters.height / 2 - parameters.cable_slot_height / 2
+    cable_slot_z = (
+        -parameters.height / 2
+        + parameters.floor
+        + parameters.cable_slot_bottom_offset
+        + parameters.cable_slot_height / 2
+    )
+
+    if parameters.cable_slot_edge in {
+        "negative_y",
+        "positive_y",
+    }:
+        cutter_width = parameters.cable_slot_width
+        cutter_depth = parameters.wall * 4
+        cable_slot_x = parameters.cable_slot_center_offset
+        cable_slot_y = (
+            -parameters.depth / 2
+            if parameters.cable_slot_edge == "negative_y"
+            else parameters.depth / 2
+        )
+    else:
+        cutter_width = parameters.wall * 4
+        cutter_depth = parameters.cable_slot_width
+        cable_slot_x = (
+            -parameters.width / 2
+            if parameters.cable_slot_edge == "negative_x"
+            else parameters.width / 2
+        )
+        cable_slot_y = parameters.cable_slot_center_offset
 
     cable_cutter = (
         cq.Workplane("XY")
         .box(
-            parameters.cable_slot_width,
-            parameters.wall * 4,
+            cutter_width,
+            cutter_depth,
             parameters.cable_slot_height,
         )
         .translate(
             (
-                0,
-                -parameters.depth / 2,
+                cable_slot_x,
+                cable_slot_y,
                 cable_slot_z,
             )
         )

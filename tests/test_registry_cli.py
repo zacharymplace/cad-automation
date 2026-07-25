@@ -205,3 +205,72 @@ def test_design_analyze_reports_interference(
     assert "Kind:" in result.stdout
     assert "board-display design analysis found" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_checked_in_pico_example_builds_and_exports(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "exports"
+
+    result = run_cli(
+        "design",
+        "build",
+        "designs/board-display/pico2-oled.example.json",
+        "--output",
+        str(output),
+    )
+
+    assert result.returncode == 0
+    assert "Generated: pico2-oled" in result.stdout
+    assert "Part count: 2" in result.stdout
+    assert "Part: body" in result.stdout
+    assert "Part: lid" in result.stdout
+    assert "STEP:" in result.stdout
+    assert "STL:" in result.stdout
+    assert "META:" in result.stdout
+    assert result.stderr == ""
+
+    assert list(output.rglob("*.step"))
+    assert list(output.rglob("*.stl"))
+    assert list(output.rglob("*.json"))
+
+
+def test_checked_in_xiao_example_builds_and_exports(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "exports"
+
+    result = run_cli(
+        "design",
+        "build",
+        "designs/board-display/xiao-esp32s3-oled.example.json",
+        "--output",
+        str(output),
+    )
+
+    assert result.returncode == 0
+    assert "Generated: xiao-esp32s3-oled" in result.stdout
+    assert "Part count: 2" in result.stdout
+    assert result.stderr == ""
+
+
+def test_design_build_rejects_unknown_product(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "unknown.json"
+    write_design(
+        path,
+        product="UNKNOWN_PRODUCT",
+    )
+
+    result = run_cli(
+        "design",
+        "build",
+        str(path),
+        "--output",
+        str(tmp_path / "exports"),
+    )
+
+    assert result.returncode == 1
+    assert "unknown board-display product identifier" in result.stderr
+    assert "Traceback" not in result.stderr

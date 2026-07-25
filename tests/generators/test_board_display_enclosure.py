@@ -181,3 +181,52 @@ def test_enclosure_policy_rejects_invalid_values(
         BoardDisplayEnclosureParameters(
             **arguments,
         ).validate()
+
+
+def test_connector_edge_drives_enclosure_slot_edge() -> None:
+    pico = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+    xiao = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "XIAO_ESP32S3_OLED",
+        }
+    )
+
+    policy = BoardDisplayEnclosureParameters()
+
+    pico_parameters = _build_enclosure_parameters(
+        pico,
+        policy,
+    )
+    xiao_parameters = _build_enclosure_parameters(
+        xiao,
+        policy,
+    )
+
+    assert pico_parameters.cable_slot_edge == "negative_y"
+    assert xiao_parameters.cable_slot_edge == "positive_y"
+
+
+def test_connector_height_drives_enclosure_slot_offset() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    parameters = _build_enclosure_parameters(
+        design,
+        BoardDisplayEnclosureParameters(),
+    )
+
+    assert parameters.cable_slot_bottom_offset >= 0
+    assert (
+        parameters.cable_slot_bottom_offset + parameters.cable_slot_height
+        <= parameters.height - parameters.floor
+    )

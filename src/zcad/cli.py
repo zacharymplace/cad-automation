@@ -32,6 +32,9 @@ from zcad.designs import (
     build_board_display_design,
     load_board_display_design,
 )
+from zcad.generators.board_display_enclosure import (
+    build_board_display_enclosure,
+)
 from zcad.generators.calibration.display_window_coupon import (
     DisplayWindowCouponParameters,
     build_display_window_coupon,
@@ -283,6 +286,89 @@ def _run_design_analyze_command(
     print("Analysis passed")
 
 
+def _build_design_command_parser() -> argparse.ArgumentParser:
+    """Create the registry-driven design build parser."""
+    parser = argparse.ArgumentParser(
+        prog="zcad design build",
+        description=("Build and export a registered board-display enclosure."),
+    )
+    parser.add_argument(
+        "design",
+        type=Path,
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("exports"),
+    )
+    parser.add_argument(
+        "--printer-profile",
+        type=Path,
+        default=Path("profiles/printers/default-fdm.json"),
+    )
+    parser.add_argument(
+        "--material-profile",
+        type=Path,
+        default=Path("profiles/materials/petg.json"),
+    )
+    return parser
+
+
+def _run_design_build_command(
+    arguments: list[str],
+) -> None:
+    """Build and export a registry-driven board-display enclosure."""
+    args = _build_design_command_parser().parse_args(arguments)
+
+    design = load_board_display_design(args.design)
+    parts = build_board_display_enclosure(design)
+
+    printer_profile = load_printer_profile(args.printer_profile)
+    material_profile = load_material_profile(args.material_profile)
+
+    validation_issues = validate_design_and_parts(
+        design_type="board_display_enclosure",
+        parameters={
+            "schema_version": design.schema_version,
+            "product": design.product,
+        },
+        parts=parts,
+        printer_profile=printer_profile,
+    )
+
+    for issue in validation_issues:
+        print(f"{issue.severity.upper()}: [{issue.code}] {issue.message}")
+
+    raise_for_validation_errors(validation_issues)
+
+    result = export_parts(
+        ExportRequest(
+            design_name=(design.product.lower().replace("_", "-")),
+            design_type="board_display_enclosure",
+            parts=parts,
+            output_directory=args.output,
+            printer_profile=printer_profile,
+            material_profile=material_profile,
+            repository_root=Path.cwd(),
+        )
+    )
+
+    print(f"Generated: {result.design_name}")
+    print(f"Part count: {len(result.parts)}")
+
+    for part in result.parts:
+        bounds_x, bounds_y, bounds_z = part.bounds_mm
+
+        print()
+        print(f"Part: {part.part_name}")
+        print("Valid solid: True")
+        print(f"Volume: {part.volume_mm3:.2f} mm^3")
+        print(f"Bounds: {bounds_x:.2f} × {bounds_y:.2f} × {bounds_z:.2f} mm")
+        print(f"STEP: {part.step_path}")
+        print(f"STL:  {part.stl_path}")
+        print(f"META: {part.metadata_path}")
+
+
 def _run_design_inspect_command(
     arguments: list[str],
 ) -> None:
@@ -315,7 +401,9 @@ def _run_design_inspect_command(
 def _run_design_command(arguments: list[str]) -> None:
     """Run one registry-driven design command."""
     if not arguments:
-        raise ValueError("design requires a command: validate, inspect, or analyze")
+        raise ValueError(
+            "design requires a command: validate, inspect, analyze, or build"
+        )
 
     command, *remaining = arguments
 
@@ -329,6 +417,10 @@ def _run_design_command(arguments: list[str]) -> None:
 
     if command == "analyze":
         _run_design_analyze_command(remaining)
+        return
+
+    if command == "build":
+        _run_design_build_command(remaining)
         return
 
     raise ValueError(f"unknown design command: {command}")

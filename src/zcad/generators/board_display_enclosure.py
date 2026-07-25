@@ -142,6 +142,11 @@ def _build_enclosure_parameters(
         corner_radius=policy.corner_radius_mm,
         cable_slot_width=(specification.cable_width_mm),
         cable_slot_height=(specification.cable_height_mm),
+        cable_slot_edge=specification.cable_edge,
+        cable_slot_center_offset=(specification.cable_center_offset_mm),
+        cable_slot_bottom_offset=(
+            specification.cable_bottom_z_mm - specification.bottom_z_mm
+        ),
         mounting_hole_diameter=(policy.mounting_hole_diameter_mm),
         mounting_hole_spacing_x=(mounting_hole_spacing_x_mm),
         mounting_hole_spacing_y=(mounting_hole_spacing_y_mm),
