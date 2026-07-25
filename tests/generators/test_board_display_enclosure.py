@@ -293,6 +293,7 @@ def test_fit_analysis_detects_undersized_cavity() -> None:
         design,
         BoardDisplayEnclosureParameters(
             internal_clearance_mm=0.0,
+            board_standoffs_enabled=False,
         ),
     )
 
@@ -560,3 +561,168 @@ def test_fit_analysis_detects_shifted_display_window() -> None:
         and finding.intersection_volume_mm3 > 0
         for finding in report.findings
     )
+
+
+def test_pico_generates_four_assembly_driven_standoffs() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+
+    assert len(build.standoff_parameters) == 4
+
+    positions = tuple(
+        (parameters.x, parameters.y) for parameters in build.standoff_parameters
+    )
+
+    expected = (
+        (-5.7, -22.5),
+        (5.7, -22.5),
+        (-5.7, 24.5),
+        (5.7, 24.5),
+    )
+
+    assert len(positions) == len(expected)
+
+    for actual, target in zip(
+        positions,
+        expected,
+        strict=True,
+    ):
+        assert actual == pytest.approx(target)
+
+
+def test_pico_standoff_tops_align_with_board_bottom() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+    board = build.assembly.get("board")
+
+    board_bottom_z_mm = board.transformed_geometry().val().BoundingBox().zmin
+
+    for parameters in build.standoff_parameters:
+        generated_top_z_mm = (
+            build.specification.bottom_z_mm + parameters.standoff_height_mm
+        )
+
+        assert generated_top_z_mm == pytest.approx(board_bottom_z_mm)
+
+
+def test_pico_standoffs_add_body_geometry() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    enabled = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            board_standoffs_enabled=True,
+        ),
+    )
+    disabled = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            board_standoffs_enabled=False,
+        ),
+    )
+
+    assert enabled.parts["body"].val().isValid()
+    assert disabled.parts["body"].val().isValid()
+    assert enabled.parts["body"].val().Volume() != pytest.approx(
+        disabled.parts["body"].val().Volume()
+    )
+
+
+def test_xiao_generates_no_unverified_standoffs() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "XIAO_ESP32S3_OLED",
+        }
+    )
+
+    enabled = build_board_display_enclosure_result(design)
+    disabled = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            board_standoffs_enabled=False,
+        ),
+    )
+
+    assert enabled.standoff_parameters == ()
+    assert disabled.standoff_parameters == ()
+
+    assert enabled.parts["body"].val().Volume() == pytest.approx(
+        disabled.parts["body"].val().Volume()
+    )
+
+
+def test_standoff_clearance_changes_hole_diameter() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    default = build_board_display_enclosure_result(design)
+    custom = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            standoff_hole_clearance_mm=0.9,
+        ),
+    )
+
+    assert default.standoff_parameters[0].hole_diameter_mm == (pytest.approx(2.6))
+    assert custom.standoff_parameters[0].hole_diameter_mm == (pytest.approx(3.0))
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("standoff_radial_wall_mm", 0.0),
+        ("standoff_hole_clearance_mm", -0.1),
+    ),
+)
+def test_standoff_policy_rejects_invalid_values(
+    field: str,
+    value: float,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match=field,
+    ):
+        BoardDisplayEnclosureParameters(**{field: value}).validate()
+
+
+def test_standoffs_require_board_above_cavity_floor() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="above the enclosure cavity floor",
+    ):
+        build_board_display_enclosure_result(
+            design,
+            BoardDisplayEnclosureParameters(
+                internal_clearance_mm=0.0,
+                board_standoffs_enabled=True,
+            ),
+        )

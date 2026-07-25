@@ -12,7 +12,12 @@ from zcad_core.assemblies import (
     InterferenceFinding,
     InterferenceReport,
     analyze_boundary_clearance,
+    assembly_mounting_hole_positions,
     derive_enclosure_specification,
+)
+from zcad_core.features import (
+    PcbStandoffParameters,
+    add_pcb_standoff,
 )
 
 from zcad.designs import (
@@ -33,6 +38,7 @@ class BoardDisplayEnclosureBuild:
     specification: EnclosureSpecification
     enclosure_parameters: EnclosureParameters
     policy: BoardDisplayEnclosureParameters
+    standoff_parameters: tuple[PcbStandoffParameters, ...]
     parts: dict[str, cq.Workplane]
 
 
@@ -54,6 +60,10 @@ class BoardDisplayEnclosureParameters:
     display_window_enabled: bool = True
     display_window_clearance_mm: float = 0.5
 
+    board_standoffs_enabled: bool = True
+    standoff_radial_wall_mm: float = 1.5
+    standoff_hole_clearance_mm: float | None = None
+
     corner_radius_mm: float = 4.0
 
     mounting_hole_diameter_mm: float = 3.2
@@ -71,6 +81,7 @@ class BoardDisplayEnclosureParameters:
             "lid_thickness_mm": self.lid_thickness_mm,
             "lid_lip_height_mm": self.lid_lip_height_mm,
             "lid_lip_wall_mm": self.lid_lip_wall_mm,
+            "standoff_radial_wall_mm": (self.standoff_radial_wall_mm),
             "mounting_hole_diameter_mm": (self.mounting_hole_diameter_mm),
             "mounting_hole_edge_offset_mm": (self.mounting_hole_edge_offset_mm),
             "label_size_mm": self.label_size_mm,
@@ -92,6 +103,12 @@ class BoardDisplayEnclosureParameters:
         for name, value in non_negative_values.items():
             if value < 0:
                 raise ValueError(f"{name} must not be negative")
+
+        if (
+            self.standoff_hole_clearance_mm is not None
+            and self.standoff_hole_clearance_mm < 0
+        ):
+            raise ValueError("standoff_hole_clearance_mm must not be negative")
 
         if not self.label.strip():
             raise ValueError("label must not be empty")
@@ -202,6 +219,96 @@ def _build_enclosure_parameters(
     return enclosure_parameters
 
 
+def _derive_board_standoff_parameters(
+    *,
+    assembly: DeviceAssembly,
+    specification: EnclosureSpecification,
+    enclosure_parameters: EnclosureParameters,
+    policy: BoardDisplayEnclosureParameters,
+) -> tuple[PcbStandoffParameters, ...]:
+    """Derive enclosure-local standoffs from board assembly metadata."""
+    if not policy.board_standoffs_enabled:
+        return ()
+
+    board = assembly.get("board")
+    positions = assembly_mounting_hole_positions(board)
+
+    if not positions:
+        return ()
+
+    mounting = board.metadata.get("mounting")
+
+    if not isinstance(mounting, dict):
+        raise TypeError("board mounting metadata must be a dictionary")
+
+    hole_diameter_mm = mounting.get("hole_diameter_mm")
+    recommended_clearance_mm = mounting.get("recommended_clearance_mm")
+
+    if not isinstance(
+        hole_diameter_mm,
+        int | float,
+    ):
+        raise TypeError("board mounting hole diameter must be numeric")
+
+    if not isinstance(
+        recommended_clearance_mm,
+        int | float,
+    ):
+        raise TypeError("board mounting clearance must be numeric")
+
+    resolved_clearance_mm = (
+        policy.standoff_hole_clearance_mm
+        if policy.standoff_hole_clearance_mm is not None
+        else recommended_clearance_mm
+    )
+
+    hole_with_clearance_mm = hole_diameter_mm + resolved_clearance_mm
+    outer_diameter_mm = hole_with_clearance_mm + 2 * policy.standoff_radial_wall_mm
+
+    body_bottom_z_mm = -enclosure_parameters.height / 2
+
+    derived: list[PcbStandoffParameters] = []
+
+    for world_x_mm, world_y_mm, board_bottom_z_mm in positions:
+        standoff_height_mm = board_bottom_z_mm - specification.bottom_z_mm
+
+        if standoff_height_mm <= 0:
+            raise ValueError(
+                "board mounting position must be above the enclosure cavity floor"
+            )
+
+        parameters = PcbStandoffParameters(
+            x=(world_x_mm - specification.center_x_mm),
+            y=(world_y_mm - specification.center_y_mm),
+            base_height_mm=enclosure_parameters.floor,
+            standoff_height_mm=standoff_height_mm,
+            outer_diameter_mm=outer_diameter_mm,
+            hole_diameter_mm=hole_with_clearance_mm,
+            base_z_mm=body_bottom_z_mm,
+        )
+        parameters.validate()
+        derived.append(parameters)
+
+    return tuple(derived)
+
+
+def _add_board_standoffs(
+    *,
+    body: cq.Workplane,
+    parameters: tuple[PcbStandoffParameters, ...],
+) -> cq.Workplane:
+    """Add all derived PCB standoffs to an enclosure body."""
+    result = body
+
+    for standoff in parameters:
+        result = add_pcb_standoff(
+            result,
+            parameters=standoff,
+        )
+
+    return result
+
+
 def _build_display_window_cutter(
     *,
     assembly: DeviceAssembly,
@@ -284,7 +391,18 @@ def build_board_display_enclosure_result(
         resolved,
     )
 
+    standoff_parameters = _derive_board_standoff_parameters(
+        assembly=assembly,
+        specification=specification,
+        enclosure_parameters=enclosure_parameters,
+        policy=resolved,
+    )
+
     parts = build_enclosure(enclosure_parameters)
+    parts["body"] = _add_board_standoffs(
+        body=parts["body"],
+        parameters=standoff_parameters,
+    )
     parts["lid"] = _cut_display_window(
         lid=parts["lid"],
         assembly=assembly,
@@ -298,6 +416,7 @@ def build_board_display_enclosure_result(
         specification=specification,
         enclosure_parameters=enclosure_parameters,
         policy=resolved,
+        standoff_parameters=standoff_parameters,
         parts=parts,
     )
 
