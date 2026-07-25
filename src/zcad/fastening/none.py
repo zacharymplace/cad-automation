@@ -1,7 +1,6 @@
 """Backend for enclosures without generated board mounts."""
 
 from dataclasses import dataclass
-from typing import cast
 
 import cadquery as cq
 from zcad_core.assemblies import (
@@ -61,11 +60,11 @@ class NoBoardFasteningBackend:
     def analyze_fit(
         self,
         *,
-        build: object,
+        build: BoardFasteningBuild,
         tolerance_mm: float,
     ) -> tuple[InterferenceFinding, ...]:
         """Verify the intentional absence of board mounts."""
         return analyze_no_board_fastening_fit(
-            cast(BoardFasteningBuild, build),
+            build,
             tolerance_mm=tolerance_mm,
         )

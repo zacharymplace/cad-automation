@@ -12,6 +12,9 @@ from zcad_core.assemblies import (
 from zcad.fastening.artifacts import (
     BoardFasteningArtifacts,
 )
+from zcad.fastening.verification import (
+    BoardFasteningBuild,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
 )
@@ -45,7 +48,7 @@ class BoardFasteningBackend(Protocol):
     def analyze_fit(
         self,
         *,
-        build: object,
+        build: BoardFasteningBuild,
         tolerance_mm: float,
     ) -> tuple[InterferenceFinding, ...]:
         """Verify strategy-specific fastening geometry."""

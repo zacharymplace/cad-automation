@@ -175,11 +175,11 @@ class PrintedStandoffBackend:
     def analyze_fit(
         self,
         *,
-        build: object,
+        build: BoardFasteningBuild,
         tolerance_mm: float,
     ) -> tuple[InterferenceFinding, ...]:
         """Verify generated board-fastening geometry."""
         return analyze_printed_standoff_fit(
-            cast(BoardFasteningBuild, build),
+            build,
             tolerance_mm=tolerance_mm,
         )
