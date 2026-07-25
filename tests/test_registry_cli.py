@@ -137,3 +137,71 @@ def test_design_rejects_unknown_command() -> None:
     assert result.returncode == 1
     assert "unknown design command: unknown" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_checked_in_pico_example_validates() -> None:
+    result = run_cli(
+        "design",
+        "validate",
+        "designs/board-display/pico2-oled.example.json",
+    )
+
+    assert result.returncode == 0
+    assert "Product: PICO2_OLED" in result.stdout
+    assert result.stderr == ""
+
+
+def test_checked_in_xiao_example_inspects() -> None:
+    result = run_cli(
+        "design",
+        "inspect",
+        "designs/board-display/xiao-esp32s3-oled.example.json",
+    )
+
+    assert result.returncode == 0
+    assert "Product: XIAO_ESP32S3_OLED" in result.stdout
+    assert "Board: SEEED_XIAO_ESP32_S3" in result.stdout
+    assert result.stderr == ""
+
+
+def test_checked_in_pico_example_passes_analysis() -> None:
+    result = run_cli(
+        "design",
+        "analyze",
+        "designs/board-display/pico2-oled.example.json",
+    )
+
+    assert result.returncode == 0
+    assert "Finding count: 0" in result.stdout
+    assert "Analysis passed" in result.stdout
+    assert result.stderr == ""
+
+
+def test_design_analyze_reports_interference(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "interfering.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1",
+                "product": "PICO2_OLED",
+                "parameters": {"display_y_mm": 0.0, "display_z_mm": 3.0},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = run_cli(
+        "design",
+        "analyze",
+        str(path),
+    )
+
+    assert result.returncode == 1
+    assert "Finding count:" in result.stdout
+    assert "Kind:" in result.stdout
+    assert "board-display design analysis found" in result.stderr
+    assert "Traceback" not in result.stderr

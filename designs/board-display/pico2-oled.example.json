@@ -1,0 +1,14 @@
+{
+  "schema_version": "1",
+  "product": "PICO2_OLED",
+  "parameters": {
+    "board_x_mm": 0.0,
+    "board_y_mm": 0.0,
+    "board_z_mm": 3.0,
+    "display_x_mm": 0.0,
+    "display_y_mm": 6.0,
+    "display_z_mm": 8.0,
+    "board_display_clearance_mm": 0.5,
+    "usb_access_clearance_mm": 2.0
+  }
+}

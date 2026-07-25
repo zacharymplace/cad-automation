@@ -25,6 +25,9 @@ from zcad.assemblies import (
     get_board_display_product,
     list_board_display_products,
 )
+from zcad.assemblies.board_display import (
+    analyze_board_display_product,
+)
 from zcad.designs import (
     build_board_display_design,
     load_board_display_design,
@@ -233,6 +236,53 @@ def _run_design_validate_command(
     print(f"Product: {design.product}")
 
 
+def _run_design_analyze_command(
+    arguments: list[str],
+) -> None:
+    """Analyze a registry-driven board-display design."""
+    path = _read_design_command_path(
+        arguments,
+        command="analyze",
+    )
+    design = load_board_display_design(path)
+    product = get_board_display_product(design.product)
+    assembly = build_board_display_design(design)
+
+    report = analyze_board_display_product(
+        product,
+        assembly,
+        minimum_board_display_clearance_mm=(
+            design.parameters.board_display_clearance_mm
+        ),
+    )
+
+    print(f"Design: {path}")
+    print(f"Product: {design.product}")
+    print(f"Finding count: {len(report.findings)}")
+
+    for finding in report.findings:
+        print()
+        print(f"Kind: {finding.kind}")
+        print(f"First: {finding.first_identifier}")
+        print(f"Second: {finding.second_identifier}")
+
+        if finding.intersection_volume_mm3 is not None:
+            print(f"Intersection volume: {finding.intersection_volume_mm3:.3f} mm^3")
+
+        if finding.required_clearance_mm is not None:
+            print(f"Required clearance: {finding.required_clearance_mm:.3f} mm")
+
+        if finding.measured_clearance_mm is not None:
+            print(f"Measured clearance: {finding.measured_clearance_mm:.3f} mm")
+
+    if report.has_findings:
+        raise ValueError(
+            f"board-display design analysis found {len(report.findings)} finding(s)"
+        )
+
+    print("Analysis passed")
+
+
 def _run_design_inspect_command(
     arguments: list[str],
 ) -> None:
@@ -265,7 +315,7 @@ def _run_design_inspect_command(
 def _run_design_command(arguments: list[str]) -> None:
     """Run one registry-driven design command."""
     if not arguments:
-        raise ValueError("design requires a command: validate or inspect")
+        raise ValueError("design requires a command: validate, inspect, or analyze")
 
     command, *remaining = arguments
 
@@ -275,6 +325,10 @@ def _run_design_command(arguments: list[str]) -> None:
 
     if command == "inspect":
         _run_design_inspect_command(remaining)
+        return
+
+    if command == "analyze":
+        _run_design_analyze_command(remaining)
         return
 
     raise ValueError(f"unknown design command: {command}")
