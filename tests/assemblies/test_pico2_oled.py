@@ -368,3 +368,15 @@ def test_negative_usb_access_clearance_is_rejected() -> None:
         match="usb_access_clearance_mm",
     ):
         build_pico2_oled_assembly(parameters)
+
+
+def test_pico_product_definition_selects_expected_hardware() -> None:
+    from zcad.assemblies.pico2_oled import PICO2_OLED_PRODUCT
+
+    assert PICO2_OLED_PRODUCT.identifier == "PICO2_OLED"
+    assert PICO2_OLED_PRODUCT.board.identifier == "RASPBERRY_PI_PICO_2"
+    assert PICO2_OLED_PRODUCT.display.identifier == "REFERENCE_OLED_128X64"
+    assert isinstance(
+        PICO2_OLED_PRODUCT.default_parameters,
+        Pico2OledAssemblyParameters,
+    )

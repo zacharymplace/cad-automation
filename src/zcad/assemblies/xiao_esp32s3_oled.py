@@ -13,8 +13,9 @@ from zcad_core.hardware import (
 
 from zcad.assemblies.board_display import (
     BoardDisplayAssemblyParameters,
-    analyze_board_display_product_assembly,
-    build_board_display_product_assembly,
+    BoardDisplayProduct,
+    analyze_board_display_product,
+    build_board_display_product,
 )
 
 
@@ -25,18 +26,21 @@ class XiaoEsp32S3OledAssemblyParameters(BoardDisplayAssemblyParameters):
     display_y_mm: float = -6.0
 
 
+XIAO_ESP32S3_OLED_PRODUCT = BoardDisplayProduct(
+    identifier="XIAO_ESP32S3_OLED",
+    board=get_seeed_xiao_esp32s3(),
+    display=get_reference_oled_128x64(),
+    default_parameters=XiaoEsp32S3OledAssemblyParameters(),
+)
+
+
 def build_xiao_esp32s3_oled_assembly(
     parameters: XiaoEsp32S3OledAssemblyParameters | None = None,
 ) -> DeviceAssembly:
     """Build the XIAO ESP32-S3, USB-C, and OLED assembly."""
-    resolved = (
-        parameters if parameters is not None else XiaoEsp32S3OledAssemblyParameters()
-    )
-
-    return build_board_display_product_assembly(
-        board=get_seeed_xiao_esp32s3(),
-        display=get_reference_oled_128x64(),
-        parameters=resolved,
+    return build_board_display_product(
+        XIAO_ESP32S3_OLED_PRODUCT,
+        parameters=parameters,
     )
 
 
@@ -47,7 +51,8 @@ def analyze_xiao_esp32s3_oled_assembly(
 ) -> InterferenceReport:
     """Analyze XIAO attachment and display-clearance policy."""
     try:
-        return analyze_board_display_product_assembly(
+        return analyze_board_display_product(
+            XIAO_ESP32S3_OLED_PRODUCT,
             assembly,
             minimum_board_display_clearance_mm=(minimum_board_display_clearance_mm),
         )

@@ -7,7 +7,10 @@ from zcad_core.hardware import RectangularConnectorSpec
 
 from zcad.assemblies.board_display import (
     BoardDisplayAssemblyParameters,
+    BoardDisplayProduct,
+    analyze_board_display_product,
     analyze_board_display_product_assembly,
+    build_board_display_product,
     build_board_display_product_assembly,
 )
 
@@ -130,3 +133,77 @@ def test_shared_adapter_analysis_passes_valid_assembly() -> None:
     )
 
     assert not report.has_findings
+
+
+def _product() -> BoardDisplayProduct:
+    return BoardDisplayProduct(
+        identifier="TEST_BOARD_DISPLAY",
+        board=FixtureBoardSpec(),
+        display=FixtureDisplaySpec(),
+        default_parameters=BoardDisplayAssemblyParameters(
+            display_y_mm=-8.0,
+            display_z_mm=5.0,
+        ),
+    )
+
+
+def test_declarative_product_builds_default_assembly() -> None:
+    assembly = build_board_display_product(_product())
+
+    assert assembly.identifiers == (
+        "board",
+        "usb_connector",
+        "display",
+    )
+    assert assembly.get("board").metadata["hardware_identifier"] == "TEST_BOARD"
+    assert assembly.get("display").placement.y_mm == pytest.approx(-8.0)
+
+
+def test_declarative_product_accepts_parameter_override() -> None:
+    assembly = build_board_display_product(
+        _product(),
+        parameters=BoardDisplayAssemblyParameters(
+            display_y_mm=-10.0,
+            display_z_mm=6.0,
+        ),
+    )
+
+    assert assembly.get("display").placement.y_mm == pytest.approx(-10.0)
+    assert assembly.get("display").placement.z_mm == pytest.approx(6.0)
+
+
+def test_declarative_product_analysis_passes() -> None:
+    product = _product()
+    assembly = build_board_display_product(product)
+
+    report = analyze_board_display_product(
+        product,
+        assembly,
+        minimum_board_display_clearance_mm=0.0,
+    )
+
+    assert not report.has_findings
+
+
+@pytest.mark.parametrize(
+    ("identifier", "connector_identifier", "message"),
+    [
+        ("", "usb_connector", "identifier"),
+        ("TEST_PRODUCT", "", "connector_identifier"),
+    ],
+)
+def test_declarative_product_rejects_invalid_identifiers(
+    identifier: str,
+    connector_identifier: str,
+    message: str,
+) -> None:
+    product = BoardDisplayProduct(
+        identifier=identifier,
+        board=FixtureBoardSpec(),
+        display=FixtureDisplaySpec(),
+        default_parameters=BoardDisplayAssemblyParameters(),
+        connector_identifier=connector_identifier,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        build_board_display_product(product)

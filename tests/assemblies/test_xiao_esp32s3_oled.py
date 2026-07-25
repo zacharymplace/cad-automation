@@ -62,3 +62,17 @@ def test_xiao_negative_clearance_is_rejected() -> None:
                 usb_access_clearance_mm=-0.1,
             )
         )
+
+
+def test_xiao_product_definition_selects_expected_hardware() -> None:
+    from zcad.assemblies.xiao_esp32s3_oled import (
+        XIAO_ESP32S3_OLED_PRODUCT,
+    )
+
+    assert XIAO_ESP32S3_OLED_PRODUCT.identifier == "XIAO_ESP32S3_OLED"
+    assert XIAO_ESP32S3_OLED_PRODUCT.board.identifier == "SEEED_XIAO_ESP32_S3"
+    assert XIAO_ESP32S3_OLED_PRODUCT.display.identifier == "REFERENCE_OLED_128X64"
+    assert isinstance(
+        XIAO_ESP32S3_OLED_PRODUCT.default_parameters,
+        XiaoEsp32S3OledAssemblyParameters,
+    )

@@ -13,8 +13,9 @@ from zcad_core.hardware import (
 
 from zcad.assemblies.board_display import (
     BoardDisplayAssemblyParameters,
-    analyze_board_display_product_assembly,
-    build_board_display_product_assembly,
+    BoardDisplayProduct,
+    analyze_board_display_product,
+    build_board_display_product,
 )
 
 
@@ -25,16 +26,21 @@ class Pico2OledAssemblyParameters(BoardDisplayAssemblyParameters):
     display_y_mm: float = 6.0
 
 
+PICO2_OLED_PRODUCT = BoardDisplayProduct(
+    identifier="PICO2_OLED",
+    board=get_raspberry_pi_pico2(),
+    display=get_reference_oled_128x64(),
+    default_parameters=Pico2OledAssemblyParameters(),
+)
+
+
 def build_pico2_oled_assembly(
     parameters: Pico2OledAssemblyParameters | None = None,
 ) -> DeviceAssembly:
     """Build the Pico 2, USB, and OLED product assembly."""
-    resolved = parameters if parameters is not None else Pico2OledAssemblyParameters()
-
-    return build_board_display_product_assembly(
-        board=get_raspberry_pi_pico2(),
-        display=get_reference_oled_128x64(),
-        parameters=resolved,
+    return build_board_display_product(
+        PICO2_OLED_PRODUCT,
+        parameters=parameters,
     )
 
 
@@ -45,7 +51,8 @@ def analyze_pico2_oled_assembly(
 ) -> InterferenceReport:
     """Analyze Pico 2 attachment and display-clearance policy."""
     try:
-        return analyze_board_display_product_assembly(
+        return analyze_board_display_product(
+            PICO2_OLED_PRODUCT,
             assembly,
             minimum_board_display_clearance_mm=(minimum_board_display_clearance_mm),
         )

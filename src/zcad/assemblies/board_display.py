@@ -84,3 +84,58 @@ def analyze_board_display_product_assembly(
         minimum_board_display_clearance_mm=(minimum_board_display_clearance_mm),
         connector_identifier=connector_identifier,
     )
+
+
+@dataclass(frozen=True)
+class BoardDisplayProduct:
+    """Declarative definition of a board-display product."""
+
+    identifier: str
+    board: RectangularBoardSpec
+    display: RectangularDisplaySpec
+    default_parameters: BoardDisplayAssemblyParameters
+    connector_identifier: str = "usb_connector"
+
+    def validate(self) -> None:
+        """Validate the product definition."""
+        if not self.identifier.strip():
+            raise ValueError("identifier must not be empty")
+
+        if not self.connector_identifier.strip():
+            raise ValueError("connector_identifier must not be empty")
+
+        self.default_parameters.validate()
+
+
+def build_board_display_product(
+    product: BoardDisplayProduct,
+    *,
+    parameters: BoardDisplayAssemblyParameters | None = None,
+) -> DeviceAssembly:
+    """Build an assembly from a declarative product definition."""
+    product.validate()
+
+    resolved = parameters if parameters is not None else product.default_parameters
+
+    return build_board_display_product_assembly(
+        board=product.board,
+        display=product.display,
+        parameters=resolved,
+        connector_identifier=product.connector_identifier,
+    )
+
+
+def analyze_board_display_product(
+    product: BoardDisplayProduct,
+    assembly: DeviceAssembly,
+    *,
+    minimum_board_display_clearance_mm: float = 0.5,
+) -> InterferenceReport:
+    """Analyze an assembly using its product definition."""
+    product.validate()
+
+    return analyze_board_display_product_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=(minimum_board_display_clearance_mm),
+        connector_identifier=product.connector_identifier,
+    )
