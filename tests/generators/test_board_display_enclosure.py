@@ -938,3 +938,242 @@ def test_fastening_strategy_rejects_untyped_string() -> None:
         match="board_fastening_strategy",
     ):
         parameters.validate()
+
+
+def test_heat_set_insert_strategy_generates_four_bosses() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            internal_clearance_mm=5.0,
+            board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+            board_fastener="M2",
+        ),
+    )
+
+    assert build.standoff_parameters == ()
+    assert len(build.insert_boss_parameters) == 4
+
+    for parameters in build.insert_boss_parameters:
+        assert parameters.boss_height_mm == (pytest.approx(5.0))
+        assert parameters.insert_pocket_diameter_mm == pytest.approx(3.2)
+        assert parameters.insert_pocket_depth_mm == pytest.approx(3.0)
+        assert parameters.pilot_hole_diameter_mm == pytest.approx(1.6)
+
+
+def test_heat_set_insert_bosses_use_assembly_positions() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            internal_clearance_mm=5.0,
+            board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+            board_fastener="M2",
+        ),
+    )
+
+    positions = tuple(
+        (parameters.x, parameters.y) for parameters in build.insert_boss_parameters
+    )
+    expected = (
+        (-5.7, -22.5),
+        (5.7, -22.5),
+        (-5.7, 24.5),
+        (5.7, 24.5),
+    )
+
+    assert len(positions) == len(expected)
+
+    for actual, target in zip(
+        positions,
+        expected,
+        strict=True,
+    ):
+        assert actual == pytest.approx(target)
+
+
+def test_heat_set_insert_strategy_changes_body_geometry() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+    base_policy = {
+        "internal_clearance_mm": 5.0,
+    }
+
+    without_mounts = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            **base_policy,
+            board_fastening_strategy=(BoardFasteningStrategy.NONE),
+        ),
+    )
+    with_inserts = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            **base_policy,
+            board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+            board_fastener="M2",
+        ),
+    )
+
+    assert with_inserts.parts["body"].val().Volume() != pytest.approx(
+        without_mounts.parts["body"].val().Volume()
+    )
+
+
+def test_heat_set_insert_requires_fastener() -> None:
+    parameters = BoardDisplayEnclosureParameters(
+        board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="board_fastener",
+    ):
+        parameters.validate()
+
+
+def test_heat_set_insert_rejects_insufficient_height() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="boss_height_mm must exceed",
+    ):
+        build_board_display_enclosure_result(
+            design,
+            BoardDisplayEnclosureParameters(
+                board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+                board_fastener="M2",
+            ),
+        )
+
+
+def test_xiao_generates_no_insert_bosses_without_pattern() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "XIAO_ESP32S3_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            internal_clearance_mm=5.0,
+            board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+            board_fastener="M2",
+        ),
+    )
+
+    assert build.standoff_parameters == ()
+    assert build.insert_boss_parameters == ()
+
+
+def _heat_set_insert_build() -> BoardDisplayEnclosureBuild:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    return build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            internal_clearance_mm=5.0,
+            board_fastening_strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+            board_fastener="M2",
+        ),
+    )
+
+
+def test_heat_set_insert_mounting_fit_passes() -> None:
+    build = _heat_set_insert_build()
+
+    assert _mounting_findings(build) == ()
+
+
+def test_heat_set_insert_fit_detects_shifted_boss() -> None:
+    build = _heat_set_insert_build()
+    first = build.insert_boss_parameters[0]
+
+    modified = replace(
+        build,
+        insert_boss_parameters=(
+            replace(
+                first,
+                x=first.x + 0.5,
+            ),
+            *build.insert_boss_parameters[1:],
+        ),
+    )
+
+    findings = _mounting_findings(modified)
+
+    assert len(findings) == 1
+    assert findings[0].kind == "mounting_alignment"
+    assert findings[0].second_identifier == ("insert_boss_1")
+    assert findings[0].measured_clearance_mm == (pytest.approx(0.5))
+
+
+def test_heat_set_insert_fit_detects_wrong_height() -> None:
+    build = _heat_set_insert_build()
+    first = build.insert_boss_parameters[0]
+
+    modified = replace(
+        build,
+        insert_boss_parameters=(
+            replace(
+                first,
+                boss_height_mm=(first.boss_height_mm + 0.5),
+            ),
+            *build.insert_boss_parameters[1:],
+        ),
+    )
+
+    kinds = {finding.kind for finding in _mounting_findings(modified)}
+
+    assert "mounting_height" in kinds
+
+
+def test_heat_set_insert_fit_detects_wrong_bore() -> None:
+    build = _heat_set_insert_build()
+    first = build.insert_boss_parameters[0]
+
+    modified = replace(
+        build,
+        insert_boss_parameters=(
+            replace(
+                first,
+                insert_pocket_diameter_mm=(first.insert_pocket_diameter_mm + 0.2),
+                pilot_hole_diameter_mm=(first.pilot_hole_diameter_mm + 0.1),
+            ),
+            *build.insert_boss_parameters[1:],
+        ),
+    )
+
+    kinds = {finding.kind for finding in _mounting_findings(modified)}
+
+    assert "mounting_insert_pocket_diameter" in kinds
+    assert "mounting_pilot_hole_diameter" in kinds
