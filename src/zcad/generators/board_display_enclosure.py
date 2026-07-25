@@ -30,6 +30,9 @@ from zcad.designs import (
     BoardDisplayDesign,
     build_board_display_design,
 )
+from zcad.fastening.artifacts import (
+    BoardFasteningArtifacts,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -414,20 +417,6 @@ def _add_board_insert_bosses(
         )
 
     return result
-
-
-@dataclass(frozen=True)
-class BoardFasteningArtifacts:
-    """Derived parameters for one board-fastening backend."""
-
-    standoff_parameters: tuple[
-        PcbStandoffParameters,
-        ...,
-    ] = ()
-    insert_boss_parameters: tuple[
-        InsertBossParameters,
-        ...,
-    ] = ()
 
 
 class BoardFasteningBackend(Protocol):
