@@ -5,44 +5,24 @@ from dataclasses import dataclass
 from zcad_core.assemblies import (
     DeviceAssembly,
     InterferenceReport,
-    Placement,
-    analyze_board_display_assembly,
-    build_board_display_assembly,
 )
 from zcad_core.hardware import (
     get_raspberry_pi_pico2,
     get_reference_oled_128x64,
 )
 
+from zcad.assemblies.board_display import (
+    BoardDisplayAssemblyParameters,
+    analyze_board_display_product_assembly,
+    build_board_display_product_assembly,
+)
+
 
 @dataclass(frozen=True)
-class Pico2OledAssemblyParameters:
+class Pico2OledAssemblyParameters(BoardDisplayAssemblyParameters):
     """Authoritative placements for a Pico 2 and OLED assembly."""
 
-    board_x_mm: float = 0.0
-    board_y_mm: float = 0.0
-    board_z_mm: float = 3.0
-
-    display_x_mm: float = 0.0
     display_y_mm: float = 6.0
-    display_z_mm: float = 8.0
-
-    board_display_clearance_mm: float = 0.5
-    usb_access_clearance_mm: float = 2.0
-
-    def validate(self) -> None:
-        """Validate product placement and clearance parameters."""
-        if self.board_z_mm < 0:
-            raise ValueError("board_z_mm must not be negative")
-
-        if self.display_z_mm < 0:
-            raise ValueError("display_z_mm must not be negative")
-
-        if self.board_display_clearance_mm < 0:
-            raise ValueError("board_display_clearance_mm must not be negative")
-
-        if self.usb_access_clearance_mm < 0:
-            raise ValueError("usb_access_clearance_mm must not be negative")
 
 
 def build_pico2_oled_assembly(
@@ -51,27 +31,10 @@ def build_pico2_oled_assembly(
     """Build the Pico 2, USB, and OLED product assembly."""
     resolved = parameters if parameters is not None else Pico2OledAssemblyParameters()
 
-    resolved.validate()
-
-    board_placement = Placement(
-        x_mm=resolved.board_x_mm,
-        y_mm=resolved.board_y_mm,
-        z_mm=resolved.board_z_mm,
-    )
-    display_placement = Placement(
-        x_mm=resolved.display_x_mm,
-        y_mm=resolved.display_y_mm,
-        z_mm=resolved.display_z_mm,
-    )
-
-    return build_board_display_assembly(
+    return build_board_display_product_assembly(
         board=get_raspberry_pi_pico2(),
         display=get_reference_oled_128x64(),
-        board_placement=board_placement,
-        display_placement=display_placement,
-        board_display_clearance_mm=(resolved.board_display_clearance_mm),
-        connector_access_clearance_mm=(resolved.usb_access_clearance_mm),
-        connector_identifier="usb_connector",
+        parameters=resolved,
     )
 
 
@@ -82,10 +45,9 @@ def analyze_pico2_oled_assembly(
 ) -> InterferenceReport:
     """Analyze Pico 2 attachment and display-clearance policy."""
     try:
-        return analyze_board_display_assembly(
+        return analyze_board_display_product_assembly(
             assembly,
             minimum_board_display_clearance_mm=(minimum_board_display_clearance_mm),
-            connector_identifier="usb_connector",
         )
     except ValueError as error:
         if "board-display assembly must contain exactly" not in str(error):
