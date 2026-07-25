@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from math import hypot
+from typing import Protocol
 
 import cadquery as cq
 from zcad_core.assemblies import (
@@ -415,6 +416,181 @@ def _add_board_insert_bosses(
     return result
 
 
+@dataclass(frozen=True)
+class BoardFasteningArtifacts:
+    """Derived parameters for one board-fastening backend."""
+
+    standoff_parameters: tuple[
+        PcbStandoffParameters,
+        ...,
+    ] = ()
+    insert_boss_parameters: tuple[
+        InsertBossParameters,
+        ...,
+    ] = ()
+
+
+class BoardFasteningBackend(Protocol):
+    """Generation interface for one board-fastening strategy."""
+
+    strategy: BoardFasteningStrategy
+
+    def derive(
+        self,
+        *,
+        assembly: DeviceAssembly,
+        specification: EnclosureSpecification,
+        enclosure_parameters: EnclosureParameters,
+        policy: BoardDisplayEnclosureParameters,
+    ) -> BoardFasteningArtifacts:
+        """Derive strategy-specific fastening parameters."""
+        ...
+
+    def apply(
+        self,
+        *,
+        body: cq.Workplane,
+        artifacts: BoardFasteningArtifacts,
+    ) -> cq.Workplane:
+        """Apply strategy-specific fastening geometry."""
+        ...
+
+
+@dataclass(frozen=True)
+class NoBoardFasteningBackend:
+    """Backend that intentionally generates no mounts."""
+
+    strategy: BoardFasteningStrategy = BoardFasteningStrategy.NONE
+
+    def derive(
+        self,
+        *,
+        assembly: DeviceAssembly,
+        specification: EnclosureSpecification,
+        enclosure_parameters: EnclosureParameters,
+        policy: BoardDisplayEnclosureParameters,
+    ) -> BoardFasteningArtifacts:
+        del (
+            assembly,
+            specification,
+            enclosure_parameters,
+            policy,
+        )
+
+        return BoardFasteningArtifacts()
+
+    def apply(
+        self,
+        *,
+        body: cq.Workplane,
+        artifacts: BoardFasteningArtifacts,
+    ) -> cq.Workplane:
+        if artifacts.standoff_parameters or artifacts.insert_boss_parameters:
+            raise ValueError("none fastening backend received geometry")
+
+        return body
+
+
+@dataclass(frozen=True)
+class PrintedStandoffBackend:
+    """Backend for printed PCB standoffs."""
+
+    strategy: BoardFasteningStrategy = BoardFasteningStrategy.PRINTED_STANDOFF
+
+    def derive(
+        self,
+        *,
+        assembly: DeviceAssembly,
+        specification: EnclosureSpecification,
+        enclosure_parameters: EnclosureParameters,
+        policy: BoardDisplayEnclosureParameters,
+    ) -> BoardFasteningArtifacts:
+        return BoardFasteningArtifacts(
+            standoff_parameters=(
+                _derive_board_standoff_parameters(
+                    assembly=assembly,
+                    specification=specification,
+                    enclosure_parameters=(enclosure_parameters),
+                    policy=policy,
+                )
+            )
+        )
+
+    def apply(
+        self,
+        *,
+        body: cq.Workplane,
+        artifacts: BoardFasteningArtifacts,
+    ) -> cq.Workplane:
+        if artifacts.insert_boss_parameters:
+            raise ValueError("printed standoff backend received insert-boss geometry")
+
+        return _add_board_standoffs(
+            body=body,
+            parameters=artifacts.standoff_parameters,
+        )
+
+
+@dataclass(frozen=True)
+class HeatSetInsertBackend:
+    """Backend for heat-set insert PCB bosses."""
+
+    strategy: BoardFasteningStrategy = BoardFasteningStrategy.HEAT_SET_INSERT
+
+    def derive(
+        self,
+        *,
+        assembly: DeviceAssembly,
+        specification: EnclosureSpecification,
+        enclosure_parameters: EnclosureParameters,
+        policy: BoardDisplayEnclosureParameters,
+    ) -> BoardFasteningArtifacts:
+        return BoardFasteningArtifacts(
+            insert_boss_parameters=(
+                _derive_board_insert_boss_parameters(
+                    assembly=assembly,
+                    specification=specification,
+                    enclosure_parameters=(enclosure_parameters),
+                    policy=policy,
+                )
+            )
+        )
+
+    def apply(
+        self,
+        *,
+        body: cq.Workplane,
+        artifacts: BoardFasteningArtifacts,
+    ) -> cq.Workplane:
+        if artifacts.standoff_parameters:
+            raise ValueError("heat-set insert backend received standoff geometry")
+
+        return _add_board_insert_bosses(
+            body=body,
+            parameters=artifacts.insert_boss_parameters,
+        )
+
+
+_BOARD_FASTENING_BACKENDS: dict[
+    BoardFasteningStrategy,
+    BoardFasteningBackend,
+] = {
+    BoardFasteningStrategy.NONE: (NoBoardFasteningBackend()),
+    BoardFasteningStrategy.PRINTED_STANDOFF: (PrintedStandoffBackend()),
+    BoardFasteningStrategy.HEAT_SET_INSERT: (HeatSetInsertBackend()),
+}
+
+
+def _get_board_fastening_backend(
+    strategy: BoardFasteningStrategy,
+) -> BoardFasteningBackend:
+    """Return the registered backend for a strategy."""
+    try:
+        return _BOARD_FASTENING_BACKENDS[strategy]
+    except KeyError as error:
+        raise ValueError(f"unsupported board fastening strategy: {strategy}") from error
+
+
 def _build_display_window_cutter(
     *,
     assembly: DeviceAssembly,
@@ -497,27 +673,18 @@ def build_board_display_enclosure_result(
         resolved,
     )
 
-    standoff_parameters = _derive_board_standoff_parameters(
+    fastening_backend = _get_board_fastening_backend(resolved.board_fastening_strategy)
+    fastening_artifacts = fastening_backend.derive(
         assembly=assembly,
         specification=specification,
-        enclosure_parameters=enclosure_parameters,
-        policy=resolved,
-    )
-    insert_boss_parameters = _derive_board_insert_boss_parameters(
-        assembly=assembly,
-        specification=specification,
-        enclosure_parameters=enclosure_parameters,
+        enclosure_parameters=(enclosure_parameters),
         policy=resolved,
     )
 
     parts = build_enclosure(enclosure_parameters)
-    parts["body"] = _add_board_standoffs(
+    parts["body"] = fastening_backend.apply(
         body=parts["body"],
-        parameters=standoff_parameters,
-    )
-    parts["body"] = _add_board_insert_bosses(
-        body=parts["body"],
-        parameters=insert_boss_parameters,
+        artifacts=fastening_artifacts,
     )
     parts["lid"] = _cut_display_window(
         lid=parts["lid"],
@@ -532,8 +699,8 @@ def build_board_display_enclosure_result(
         specification=specification,
         enclosure_parameters=enclosure_parameters,
         policy=resolved,
-        standoff_parameters=standoff_parameters,
-        insert_boss_parameters=(insert_boss_parameters),
+        standoff_parameters=(fastening_artifacts.standoff_parameters),
+        insert_boss_parameters=(fastening_artifacts.insert_boss_parameters),
         parts=parts,
     )
 

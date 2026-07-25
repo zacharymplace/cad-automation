@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 
+import cadquery as cq
 import pytest
 from zcad_core.assemblies import InterferenceFinding
 
@@ -1177,3 +1178,108 @@ def test_heat_set_insert_fit_detects_wrong_bore() -> None:
 
     assert "mounting_insert_pocket_diameter" in kinds
     assert "mounting_pilot_hole_diameter" in kinds
+
+
+@pytest.mark.parametrize(
+    ("strategy", "backend_name"),
+    (
+        (
+            BoardFasteningStrategy.NONE,
+            "NoBoardFasteningBackend",
+        ),
+        (
+            BoardFasteningStrategy.PRINTED_STANDOFF,
+            "PrintedStandoffBackend",
+        ),
+        (
+            BoardFasteningStrategy.HEAT_SET_INSERT,
+            "HeatSetInsertBackend",
+        ),
+    ),
+)
+def test_board_fastening_strategy_resolves_backend(
+    strategy: BoardFasteningStrategy,
+    backend_name: str,
+) -> None:
+    from zcad.generators.board_display_enclosure import (
+        _get_board_fastening_backend,
+    )
+
+    backend = _get_board_fastening_backend(strategy)
+
+    assert backend.strategy is strategy
+    assert type(backend).__name__ == backend_name
+
+
+def test_printed_backend_rejects_insert_artifacts() -> None:
+    from zcad_core.features import InsertBossParameters
+
+    from zcad.generators.board_display_enclosure import (
+        BoardFasteningArtifacts,
+        PrintedStandoffBackend,
+    )
+
+    backend = PrintedStandoffBackend()
+    artifacts = BoardFasteningArtifacts(
+        insert_boss_parameters=(
+            InsertBossParameters(
+                x=0.0,
+                y=0.0,
+                base_height_mm=3.0,
+                boss_height_mm=5.0,
+                boss_outer_diameter_mm=6.8,
+                pilot_hole_diameter_mm=1.6,
+                insert_pocket_diameter_mm=3.2,
+                insert_pocket_depth_mm=3.0,
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="insert-boss geometry",
+    ):
+        backend.apply(
+            body=cq.Workplane("XY").box(
+                20.0,
+                20.0,
+                3.0,
+            ),
+            artifacts=artifacts,
+        )
+
+
+def test_heat_set_backend_rejects_standoff_artifacts() -> None:
+    from zcad_core.features import PcbStandoffParameters
+
+    from zcad.generators.board_display_enclosure import (
+        BoardFasteningArtifacts,
+        HeatSetInsertBackend,
+    )
+
+    backend = HeatSetInsertBackend()
+    artifacts = BoardFasteningArtifacts(
+        standoff_parameters=(
+            PcbStandoffParameters(
+                x=0.0,
+                y=0.0,
+                base_height_mm=3.0,
+                standoff_height_mm=3.0,
+                outer_diameter_mm=5.6,
+                hole_diameter_mm=2.6,
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="standoff geometry",
+    ):
+        backend.apply(
+            body=cq.Workplane("XY").box(
+                20.0,
+                20.0,
+                3.0,
+            ),
+            artifacts=artifacts,
+        )
