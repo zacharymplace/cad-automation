@@ -4,6 +4,12 @@ from dataclasses import dataclass
 
 import cadquery as cq
 from zcad_core.assemblies import (
+    DeviceAssembly,
+    EnclosureBoundary,
+    EnclosureSpecification,
+    InterferenceFinding,
+    InterferenceReport,
+    analyze_boundary_clearance,
     derive_enclosure_specification,
 )
 
@@ -15,6 +21,16 @@ from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
 )
+
+
+@dataclass(frozen=True)
+class BoardDisplayEnclosureBuild:
+    """Resolved assembly, enclosure policy, specification, and parts."""
+
+    assembly: DeviceAssembly
+    specification: EnclosureSpecification
+    enclosure_parameters: EnclosureParameters
+    parts: dict[str, cq.Workplane]
 
 
 @dataclass(frozen=True)
@@ -97,11 +113,15 @@ def _mounting_hole_spacing(
     return 2 * center_offset_mm
 
 
-def _build_enclosure_parameters(
+def _resolve_enclosure_build_inputs(
     design: BoardDisplayDesign,
     policy: BoardDisplayEnclosureParameters,
-) -> EnclosureParameters:
-    """Resolve existing enclosure parameters from a design and policy."""
+) -> tuple[
+    DeviceAssembly,
+    EnclosureSpecification,
+    EnclosureParameters,
+]:
+    """Resolve the assembly, specification, and enclosure parameters."""
     policy.validate()
 
     assembly = build_board_display_design(design)
@@ -129,7 +149,7 @@ def _build_enclosure_parameters(
         edge_offset_mm=(policy.mounting_hole_edge_offset_mm),
     )
 
-    return EnclosureParameters(
+    enclosure_parameters = EnclosureParameters(
         width=width_mm,
         depth=depth_mm,
         height=height_mm,
@@ -155,12 +175,31 @@ def _build_enclosure_parameters(
         label_height=policy.label_height_mm,
     )
 
+    return (
+        assembly,
+        specification,
+        enclosure_parameters,
+    )
 
-def build_board_display_enclosure(
+
+def _build_enclosure_parameters(
+    design: BoardDisplayDesign,
+    policy: BoardDisplayEnclosureParameters,
+) -> EnclosureParameters:
+    """Resolve existing enclosure parameters from a design and policy."""
+    _, _, enclosure_parameters = _resolve_enclosure_build_inputs(
+        design,
+        policy,
+    )
+
+    return enclosure_parameters
+
+
+def build_board_display_enclosure_result(
     design: BoardDisplayDesign,
     parameters: BoardDisplayEnclosureParameters | None = None,
-) -> dict[str, cq.Workplane]:
-    """Build printable body and lid parts for a board-display design."""
+) -> BoardDisplayEnclosureBuild:
+    """Build and return all resolved enclosure-generation artifacts."""
     resolved = (
         parameters
         if parameters is not None
@@ -169,9 +208,93 @@ def build_board_display_enclosure(
         )
     )
 
-    enclosure_parameters = _build_enclosure_parameters(
+    (
+        assembly,
+        specification,
+        enclosure_parameters,
+    ) = _resolve_enclosure_build_inputs(
         design,
         resolved,
     )
 
-    return build_enclosure(enclosure_parameters)
+    return BoardDisplayEnclosureBuild(
+        assembly=assembly,
+        specification=specification,
+        enclosure_parameters=enclosure_parameters,
+        parts=build_enclosure(enclosure_parameters),
+    )
+
+
+def build_board_display_enclosure(
+    design: BoardDisplayDesign,
+    parameters: BoardDisplayEnclosureParameters | None = None,
+) -> dict[str, cq.Workplane]:
+    """Build printable body and lid parts for a board-display design."""
+    return build_board_display_enclosure_result(
+        design,
+        parameters,
+    ).parts
+
+
+def analyze_board_display_enclosure_fit(
+    build: BoardDisplayEnclosureBuild,
+) -> InterferenceReport:
+    """Analyze assembly fit against enclosure walls, floor, and lid."""
+    parameters = build.enclosure_parameters
+    specification = build.specification
+
+    boundary = EnclosureBoundary(
+        inner_width_mm=specification.inner_width_mm,
+        inner_depth_mm=specification.inner_depth_mm,
+        wall_height_mm=(parameters.height - parameters.floor),
+        wall_thickness_mm=parameters.wall,
+        center_x_mm=specification.center_x_mm,
+        center_y_mm=specification.center_y_mm,
+        bottom_z_mm=specification.bottom_z_mm,
+    )
+
+    findings: list[InterferenceFinding] = []
+
+    for component in build.assembly:
+        for edge in (
+            "negative_x",
+            "positive_x",
+            "negative_y",
+            "positive_y",
+        ):
+            report = analyze_boundary_clearance(
+                component=component,
+                boundary=boundary,
+                edge=edge,
+                wall_identifier=f"{edge}_wall",
+            )
+            findings.extend(report.findings)
+
+        bounds = component.transformed_geometry().val().BoundingBox()
+
+        floor_z_mm = specification.bottom_z_mm
+        lid_z_mm = specification.bottom_z_mm + specification.inner_height_mm
+
+        if bounds.zmin < floor_z_mm - 1e-6:
+            findings.append(
+                InterferenceFinding(
+                    first_identifier=component.identifier,
+                    second_identifier="floor",
+                    kind="collision",
+                    intersection_volume_mm3=0.0,
+                )
+            )
+
+        if bounds.zmax > lid_z_mm + 1e-6:
+            findings.append(
+                InterferenceFinding(
+                    first_identifier=component.identifier,
+                    second_identifier="lid",
+                    kind="collision",
+                    intersection_volume_mm3=0.0,
+                )
+            )
+
+    return InterferenceReport(
+        findings=tuple(findings),
+    )

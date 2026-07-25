@@ -274,3 +274,51 @@ def test_design_build_rejects_unknown_product(
     assert result.returncode == 1
     assert "unknown board-display product identifier" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_checked_in_pico_example_passes_fit_verification() -> None:
+    result = run_cli(
+        "design",
+        "verify-fit",
+        "designs/board-display/pico2-oled.example.json",
+    )
+
+    assert result.returncode == 0
+    assert "Product: PICO2_OLED" in result.stdout
+    assert "Finding count: 0" in result.stdout
+    assert "Fit verification passed" in result.stdout
+    assert result.stderr == ""
+
+
+def test_checked_in_xiao_example_passes_fit_verification() -> None:
+    result = run_cli(
+        "design",
+        "verify-fit",
+        "designs/board-display/xiao-esp32s3-oled.example.json",
+    )
+
+    assert result.returncode == 0
+    assert "Product: XIAO_ESP32S3_OLED" in result.stdout
+    assert "Finding count: 0" in result.stdout
+    assert "Fit verification passed" in result.stdout
+    assert result.stderr == ""
+
+
+def test_verify_fit_rejects_unknown_product(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "unknown.json"
+    write_design(
+        path,
+        product="UNKNOWN_PRODUCT",
+    )
+
+    result = run_cli(
+        "design",
+        "verify-fit",
+        str(path),
+    )
+
+    assert result.returncode == 1
+    assert "unknown board-display product identifier" in result.stderr
+    assert "Traceback" not in result.stderr

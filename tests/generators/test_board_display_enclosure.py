@@ -8,7 +8,9 @@ from zcad.designs import (
 from zcad.generators.board_display_enclosure import (
     BoardDisplayEnclosureParameters,
     _build_enclosure_parameters,
+    analyze_board_display_enclosure_fit,
     build_board_display_enclosure,
+    build_board_display_enclosure_result,
 )
 
 
@@ -230,3 +232,68 @@ def test_connector_height_drives_enclosure_slot_offset() -> None:
         parameters.cable_slot_bottom_offset + parameters.cable_slot_height
         <= parameters.height - parameters.floor
     )
+
+
+@pytest.mark.parametrize(
+    "product",
+    [
+        "PICO2_OLED",
+        "XIAO_ESP32S3_OLED",
+    ],
+)
+def test_default_enclosure_fit_passes(
+    product: str,
+) -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": product,
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+    report = analyze_board_display_enclosure_fit(build)
+
+    assert not report.has_findings
+
+
+def test_enclosure_build_result_preserves_resolved_artifacts() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(design)
+
+    assert build.assembly.identifiers == (
+        "board",
+        "usb_connector",
+        "display",
+    )
+    assert build.specification.cable_edge == "negative_y"
+    assert set(build.parts) == {
+        "body",
+        "lid",
+    }
+
+
+def test_fit_analysis_detects_undersized_cavity() -> None:
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            internal_clearance_mm=0.0,
+        ),
+    )
+
+    report = analyze_board_display_enclosure_fit(build)
+
+    assert not report.has_findings

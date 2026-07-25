@@ -33,7 +33,9 @@ from zcad.designs import (
     load_board_display_design,
 )
 from zcad.generators.board_display_enclosure import (
+    analyze_board_display_enclosure_fit,
     build_board_display_enclosure,
+    build_board_display_enclosure_result,
 )
 from zcad.generators.calibration.display_window_coupon import (
     DisplayWindowCouponParameters,
@@ -286,6 +288,46 @@ def _run_design_analyze_command(
     print("Analysis passed")
 
 
+def _run_design_verify_fit_command(
+    arguments: list[str],
+) -> None:
+    """Verify a registry-driven product against its enclosure cavity."""
+    path = _read_design_command_path(
+        arguments,
+        command="verify-fit",
+    )
+    design = load_board_display_design(path)
+    build = build_board_display_enclosure_result(design)
+    report = analyze_board_display_enclosure_fit(build)
+
+    print(f"Design: {path}")
+    print(f"Product: {design.product}")
+    print(f"Finding count: {len(report.findings)}")
+
+    for finding in report.findings:
+        print()
+        print(f"Kind: {finding.kind}")
+        print(f"First: {finding.first_identifier}")
+        print(f"Second: {finding.second_identifier}")
+
+        if finding.intersection_volume_mm3 is not None:
+            print(f"Intersection volume: {finding.intersection_volume_mm3:.3f} mm^3")
+
+        if finding.required_clearance_mm is not None:
+            print(f"Required clearance: {finding.required_clearance_mm:.3f} mm")
+
+        if finding.measured_clearance_mm is not None:
+            print(f"Measured clearance: {finding.measured_clearance_mm:.3f} mm")
+
+    if report.has_findings:
+        raise ValueError(
+            "board-display enclosure fit verification found "
+            f"{len(report.findings)} finding(s)"
+        )
+
+    print("Fit verification passed")
+
+
 def _build_design_command_parser() -> argparse.ArgumentParser:
     """Create the registry-driven design build parser."""
     parser = argparse.ArgumentParser(
@@ -402,7 +444,8 @@ def _run_design_command(arguments: list[str]) -> None:
     """Run one registry-driven design command."""
     if not arguments:
         raise ValueError(
-            "design requires a command: validate, inspect, analyze, or build"
+            "design requires a command: "
+            "validate, inspect, analyze, verify-fit, or build"
         )
 
     command, *remaining = arguments
@@ -417,6 +460,10 @@ def _run_design_command(arguments: list[str]) -> None:
 
     if command == "analyze":
         _run_design_analyze_command(remaining)
+        return
+
+    if command == "verify-fit":
+        _run_design_verify_fit_command(remaining)
         return
 
     if command == "build":
