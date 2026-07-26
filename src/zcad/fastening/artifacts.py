@@ -7,6 +7,10 @@ from zcad_core.features import (
     PcbStandoffParameters,
 )
 
+from zcad.fastening.snap_retention import (
+    SnapRetentionParameters,
+)
+
 
 @dataclass(frozen=True)
 class BoardFasteningArtifacts:
@@ -18,5 +22,9 @@ class BoardFasteningArtifacts:
     ] = ()
     insert_boss_parameters: tuple[
         InsertBossParameters,
+        ...,
+    ] = ()
+    snap_retention_parameters: tuple[
+        SnapRetentionParameters,
         ...,
     ] = ()

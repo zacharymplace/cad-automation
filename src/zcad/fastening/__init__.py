@@ -21,6 +21,10 @@ from zcad.fastening.printed_standoff import (
     add_board_standoffs,
     derive_board_standoff_parameters,
 )
+from zcad.fastening.snap_retention import (
+    SnapRetentionParameters,
+    SnapRetentionPolicy,
+)
 from zcad.fastening.verification import (
     BoardFasteningBuild,
     BoardFasteningVerificationPolicy,
@@ -33,6 +37,8 @@ from zcad.fastening.verification import (
 )
 
 __all__ = (
+    "SnapRetentionPolicy",
+    "SnapRetentionParameters",
     "BoardFasteningBuild",
     "BoardFasteningVerificationPolicy",
     "analyze_heat_set_insert_fit",
