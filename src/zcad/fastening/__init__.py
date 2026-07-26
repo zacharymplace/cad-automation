@@ -28,6 +28,7 @@ from zcad.fastening.snap_retention import (
 )
 from zcad.fastening.snap_retention_backend import (
     SnapRetentionBackend,
+    add_snap_retention_clips,
 )
 from zcad.fastening.verification import (
     BoardFasteningBuild,
@@ -55,6 +56,7 @@ __all__ = (
     "SnapRetentionPolicy",
     "add_board_insert_bosses",
     "add_board_standoffs",
+    "add_snap_retention_clips",
     "analyze_heat_set_insert_fit",
     "analyze_mount_positions",
     "analyze_no_board_fastening_fit",

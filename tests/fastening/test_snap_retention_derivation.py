@@ -10,8 +10,13 @@ from zcad_core.assemblies import (
     EnclosureSpecification,
     Placement,
 )
+from zcad_core.features import (
+    InsertBossParameters,
+    PcbStandoffParameters,
+)
 
 from zcad.fastening import (
+    BoardFasteningArtifacts,
     SnapRetentionBackend,
     SnapRetentionPolicy,
     derive_snap_retention_parameters,
@@ -284,21 +289,108 @@ def test_backend_derives_snap_artifacts() -> None:
     assert artifacts.insert_boss_parameters == ()
 
 
-def test_backend_geometry_is_explicitly_unimplemented() -> None:
+def test_backend_applies_snap_retention_geometry() -> None:
+    body = (
+        cq.Workplane("XY")
+        .box(
+            46.0,
+            66.0,
+            3.0,
+            centered=(True, True, False),
+        )
+        .translate(
+            (
+                0.0,
+                0.0,
+                -9.0,
+            )
+        )
+    )
+
+    artifacts = SnapRetentionBackend().derive(
+        assembly=_assembly(
+            metadata=_retention_metadata(),
+        ),
+        specification=_specification(),
+        enclosure_parameters=_enclosure_parameters(),
+        policy=ExamplePolicy(),
+    )
+
+    result = SnapRetentionBackend().apply(
+        body=body,
+        artifacts=artifacts,
+    )
+
+    assert result.val().isValid()
+    assert result.val().Volume() > body.val().Volume()
+
+
+def test_backend_with_no_snap_artifacts_preserves_body() -> None:
+    body = cq.Workplane("XY").box(
+        20.0,
+        20.0,
+        3.0,
+        centered=(True, True, False),
+    )
+
+    result = SnapRetentionBackend().apply(
+        body=body,
+        artifacts=BoardFasteningArtifacts(),
+    )
+
+    assert result.val().isValid()
+    assert result.val().Volume() == pytest.approx(body.val().Volume())
+
+
+def test_backend_rejects_standoff_artifacts() -> None:
     with pytest.raises(
-        NotImplementedError,
-        match="geometry not implemented",
+        ValueError,
+        match="received standoff geometry",
     ):
         SnapRetentionBackend().apply(
             body=cq.Workplane("XY").box(
-                10.0,
-                10.0,
-                10.0,
+                20.0,
+                20.0,
+                3.0,
             ),
-            artifacts=SnapRetentionBackend().derive(
-                assembly=_assembly(),
-                specification=_specification(),
-                enclosure_parameters=(_enclosure_parameters()),
-                policy=ExamplePolicy(),
+            artifacts=BoardFasteningArtifacts(
+                standoff_parameters=(
+                    PcbStandoffParameters(
+                        x=0.0,
+                        y=0.0,
+                        base_height_mm=3.0,
+                        standoff_height_mm=4.0,
+                        outer_diameter_mm=5.0,
+                        hole_diameter_mm=2.0,
+                    ),
+                ),
+            ),
+        )
+
+
+def test_backend_rejects_insert_boss_artifacts() -> None:
+    with pytest.raises(
+        ValueError,
+        match="received insert-boss geometry",
+    ):
+        SnapRetentionBackend().apply(
+            body=cq.Workplane("XY").box(
+                20.0,
+                20.0,
+                3.0,
+            ),
+            artifacts=BoardFasteningArtifacts(
+                insert_boss_parameters=(
+                    InsertBossParameters(
+                        x=0.0,
+                        y=0.0,
+                        base_height_mm=3.0,
+                        boss_height_mm=5.0,
+                        boss_outer_diameter_mm=6.0,
+                        pilot_hole_diameter_mm=2.0,
+                        insert_pocket_diameter_mm=3.0,
+                        insert_pocket_depth_mm=3.0,
+                    ),
+                ),
             ),
         )
