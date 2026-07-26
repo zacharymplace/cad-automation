@@ -189,6 +189,9 @@ def test_policy_values_propagate_to_parameters() -> None:
     assert first.clearance_mm == 0.3
     assert first.flex_length_mm == 9.0
     assert first.base_z_mm == -9.0
+    assert first.base_height_mm == pytest.approx(3.0)
+    assert first.support_height_mm == pytest.approx(6.0)
+    assert first.board_thickness_mm == pytest.approx(1.6)
 
 
 def test_z_rotation_transforms_position_and_orientation() -> None:

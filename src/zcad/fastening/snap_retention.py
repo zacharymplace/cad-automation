@@ -34,6 +34,10 @@ class SnapRetentionParameters:
     x: float
     y: float
 
+    base_height_mm: float
+    support_height_mm: float
+    board_thickness_mm: float
+
     width_mm: float
     wall_mm: float
     height_mm: float
@@ -47,6 +51,9 @@ class SnapRetentionParameters:
     def validate(self) -> None:
         """Validate one snap-retention feature."""
         positive_values = {
+            "base_height_mm": self.base_height_mm,
+            "support_height_mm": self.support_height_mm,
+            "board_thickness_mm": self.board_thickness_mm,
             "width_mm": self.width_mm,
             "wall_mm": self.wall_mm,
             "height_mm": self.height_mm,
@@ -158,6 +165,21 @@ def derive_snap_retention_parameters(
     if insertion_axis != "positive_z":
         raise ValueError("snap retention currently supports only positive_z insertion")
 
+    board_thickness_mm = _numeric_metadata_value(
+        retention.get("board_thickness_mm"),
+        name="board retention board_thickness_mm",
+    )
+
+    if board_thickness_mm <= 0:
+        raise ValueError("board retention board_thickness_mm must be greater than zero")
+
+    body_bottom_z_mm = -enclosure_parameters.height / 2
+    cavity_floor_z_mm = body_bottom_z_mm + enclosure_parameters.floor
+    support_height_mm = board.placement.z_mm - cavity_floor_z_mm
+
+    if support_height_mm <= 0:
+        raise ValueError("board retention support height must be greater than zero")
+
     clip_regions = retention.get("clip_regions")
 
     if not isinstance(clip_regions, tuple):
@@ -166,7 +188,6 @@ def derive_snap_retention_parameters(
     board_bounds = board.geometry.val().BoundingBox()
     board_width_mm = board_bounds.xlen
     board_depth_mm = board_bounds.ylen
-    body_bottom_z_mm = -enclosure_parameters.height / 2
 
     derived: list[SnapRetentionParameters] = []
 
@@ -231,6 +252,9 @@ def derive_snap_retention_parameters(
         parameters = SnapRetentionParameters(
             x=world_x - specification.center_x_mm,
             y=world_y - specification.center_y_mm,
+            base_height_mm=enclosure_parameters.floor,
+            support_height_mm=support_height_mm,
+            board_thickness_mm=board_thickness_mm,
             width_mm=width_mm,
             wall_mm=policy.snap_clip_wall_mm,
             height_mm=policy.snap_clip_height_mm,

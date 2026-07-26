@@ -12,6 +12,9 @@ def test_snap_retention_parameters_validate() -> None:
     parameters = SnapRetentionParameters(
         x=0.0,
         y=0.0,
+        base_height_mm=3.0,
+        support_height_mm=4.0,
+        board_thickness_mm=1.6,
         width_mm=6.0,
         wall_mm=1.2,
         height_mm=4.0,
@@ -27,6 +30,9 @@ def test_snap_retention_parameters_validate() -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
+        ("base_height_mm", 0.0),
+        ("support_height_mm", 0.0),
+        ("board_thickness_mm", 0.0),
         ("width_mm", 0.0),
         ("wall_mm", 0.0),
         ("height_mm", 0.0),
@@ -41,6 +47,9 @@ def test_snap_retention_rejects_nonpositive_dimensions(
     values = {
         "x": 0.0,
         "y": 0.0,
+        "base_height_mm": 3.0,
+        "support_height_mm": 4.0,
+        "board_thickness_mm": 1.6,
         "width_mm": 6.0,
         "wall_mm": 1.2,
         "height_mm": 4.0,
@@ -66,6 +75,9 @@ def test_snap_retention_rejects_negative_clearance() -> None:
     parameters = SnapRetentionParameters(
         x=0.0,
         y=0.0,
+        base_height_mm=3.0,
+        support_height_mm=4.0,
+        board_thickness_mm=1.6,
         width_mm=6.0,
         wall_mm=1.2,
         height_mm=4.0,
@@ -86,6 +98,9 @@ def test_artifacts_preserve_snap_retention_parameters() -> None:
     parameters = SnapRetentionParameters(
         x=1.0,
         y=2.0,
+        base_height_mm=3.0,
+        support_height_mm=4.0,
+        board_thickness_mm=1.6,
         width_mm=6.0,
         wall_mm=1.2,
         height_mm=4.0,
