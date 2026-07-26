@@ -24,6 +24,7 @@ from zcad.fastening.snap_retention import (
 )
 from zcad.fastening.verification import (
     BoardFasteningBuild,
+    analyze_snap_retention_fit,
 )
 from zcad.generators.enclosure import (
     EnclosureParameters,
@@ -125,8 +126,8 @@ class SnapRetentionBackend:
         build: BoardFasteningBuild,
         tolerance_mm: float,
     ) -> tuple[InterferenceFinding, ...]:
-        """Return no findings until verification is implemented."""
-        del build
-        del tolerance_mm
-
-        return ()
+        """Verify generated snap-retention artifacts."""
+        return analyze_snap_retention_fit(
+            build,
+            tolerance_mm=tolerance_mm,
+        )

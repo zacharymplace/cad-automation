@@ -36,6 +36,9 @@ from zcad.fastening.none import (
 from zcad.fastening.printed_standoff import (
     PrintedStandoffBackend,
 )
+from zcad.fastening.snap_retention import (
+    SnapRetentionParameters,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -61,6 +64,10 @@ class BoardDisplayEnclosureBuild:
     standoff_parameters: tuple[PcbStandoffParameters, ...]
     insert_boss_parameters: tuple[
         InsertBossParameters,
+        ...,
+    ]
+    snap_retention_parameters: tuple[
+        SnapRetentionParameters,
         ...,
     ]
     parts: dict[str, cq.Workplane]
@@ -410,6 +417,7 @@ def build_board_display_enclosure_result(
         policy=resolved,
         standoff_parameters=(fastening_artifacts.standoff_parameters),
         insert_boss_parameters=(fastening_artifacts.insert_boss_parameters),
+        snap_retention_parameters=(fastening_artifacts.snap_retention_parameters),
         parts=parts,
     )
 

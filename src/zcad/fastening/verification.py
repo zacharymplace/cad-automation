@@ -15,6 +15,10 @@ from zcad_core.features import (
 )
 from zcad_core.hardware import get_fastener
 
+from zcad.fastening.snap_retention import (
+    SnapRetentionParameters,
+    derive_snap_retention_parameters,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
 )
@@ -29,6 +33,11 @@ class BoardFasteningVerificationPolicy(Protocol):
 
     board_fastener: str | None
     insert_boss_radial_wall_mm: float
+
+    snap_clip_wall_mm: float
+    snap_clip_height_mm: float
+    snap_clip_overhang_mm: float
+    snap_clip_clearance_mm: float
 
 
 @runtime_checkable
@@ -46,6 +55,10 @@ class BoardFasteningBuild(Protocol):
     ]
     insert_boss_parameters: tuple[
         InsertBossParameters,
+        ...,
+    ]
+    snap_retention_parameters: tuple[
+        SnapRetentionParameters,
         ...,
     ]
 
@@ -341,6 +354,110 @@ def analyze_heat_set_insert_fit(
                     mounting_finding(
                         identifier=identifier,
                         kind=kind,
+                        required=required,
+                        measured=measured,
+                    )
+                )
+
+    return tuple(findings)
+
+
+def _snap_retention_finding(
+    *,
+    identifier: str,
+    kind: str,
+    required: float,
+    measured: float,
+) -> InterferenceFinding:
+    """Create one snap-retention verification finding."""
+    return InterferenceFinding(
+        first_identifier="board",
+        second_identifier=identifier,
+        kind=kind,
+        required_clearance_mm=required,
+        measured_clearance_mm=measured,
+        clearance_source="snap_retention",
+    )
+
+
+def analyze_snap_retention_fit(
+    build: BoardFasteningBuild,
+    *,
+    tolerance_mm: float,
+) -> tuple[InterferenceFinding, ...]:
+    """Verify snap-retention artifacts against assembly metadata."""
+    expected = derive_snap_retention_parameters(
+        assembly=build.assembly,
+        specification=build.specification,
+        enclosure_parameters=build.enclosure_parameters,
+        policy=build.policy,
+    )
+    actual = build.snap_retention_parameters
+
+    if not expected:
+        if not actual:
+            return ()
+
+        return (
+            _snap_retention_finding(
+                identifier="snap_clips",
+                kind="snap_retention_count",
+                required=0.0,
+                measured=float(len(actual)),
+            ),
+        )
+
+    findings: list[InterferenceFinding] = []
+
+    if len(actual) != len(expected):
+        findings.append(
+            _snap_retention_finding(
+                identifier="snap_clips",
+                kind="snap_retention_count",
+                required=float(len(expected)),
+                measured=float(len(actual)),
+            )
+        )
+
+    numeric_fields = (
+        "x",
+        "y",
+        "base_height_mm",
+        "support_height_mm",
+        "board_thickness_mm",
+        "width_mm",
+        "wall_mm",
+        "height_mm",
+        "overhang_mm",
+        "clearance_mm",
+        "compliant_span_mm",
+        "base_z_mm",
+        "rotation_degrees",
+    )
+
+    for index, (
+        actual_clip,
+        expected_clip,
+    ) in enumerate(
+        zip(
+            actual,
+            expected,
+            strict=False,
+        ),
+        start=1,
+    ):
+        identifier = f"snap_clip_{index}"
+
+        for field in numeric_fields:
+            required = getattr(expected_clip, field)
+            measured = getattr(actual_clip, field)
+            error_mm = abs(measured - required)
+
+            if error_mm > tolerance_mm:
+                findings.append(
+                    _snap_retention_finding(
+                        identifier=identifier,
+                        kind=f"snap_retention_{field}",
                         required=required,
                         measured=measured,
                     )

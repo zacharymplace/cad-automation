@@ -37,6 +37,7 @@ from zcad.fastening.verification import (
     analyze_mount_positions,
     analyze_no_board_fastening_fit,
     analyze_printed_standoff_fit,
+    analyze_snap_retention_fit,
     expected_board_mounting_positions,
     mounting_finding,
 )
@@ -61,6 +62,7 @@ __all__ = (
     "analyze_mount_positions",
     "analyze_no_board_fastening_fit",
     "analyze_printed_standoff_fit",
+    "analyze_snap_retention_fit",
     "derive_board_insert_boss_parameters",
     "derive_board_standoff_parameters",
     "derive_snap_retention_parameters",

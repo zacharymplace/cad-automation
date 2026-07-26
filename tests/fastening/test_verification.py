@@ -25,6 +25,11 @@ class ExamplePolicy:
     board_fastener: str | None = "m2"
     insert_boss_radial_wall_mm: float = 1.8
 
+    snap_clip_wall_mm: float = 1.2
+    snap_clip_height_mm: float = 4.0
+    snap_clip_overhang_mm: float = 0.6
+    snap_clip_clearance_mm: float = 0.25
+
 
 @dataclass(frozen=True)
 class ExampleBuild:
@@ -36,6 +41,7 @@ class ExampleBuild:
     policy: ExamplePolicy
     standoff_parameters: tuple = ()
     insert_boss_parameters: tuple = ()
+    snap_retention_parameters: tuple = ()
 
 
 def test_verification_policy_is_structural() -> None:

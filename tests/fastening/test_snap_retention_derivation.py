@@ -1,6 +1,6 @@
 """Tests for snap-retention metadata derivation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import cadquery as cq
 import pytest
@@ -394,3 +394,126 @@ def test_backend_rejects_insert_boss_artifacts() -> None:
                 ),
             ),
         )
+
+
+@dataclass(frozen=True)
+class SnapVerificationBuild:
+    """Build fixture for snap-retention verification."""
+
+    assembly: DeviceAssembly
+    specification: EnclosureSpecification
+    enclosure_parameters: EnclosureParameters
+    policy: ExamplePolicy
+    snap_retention_parameters: tuple
+    standoff_parameters: tuple = ()
+    insert_boss_parameters: tuple = ()
+
+
+def _snap_verification_build(
+    *,
+    snap_retention_parameters: tuple | None = None,
+) -> SnapVerificationBuild:
+    assembly = _assembly(
+        metadata=_retention_metadata(),
+    )
+    specification = _specification()
+    enclosure_parameters = _enclosure_parameters()
+    policy = ExamplePolicy()
+
+    expected = derive_snap_retention_parameters(
+        assembly=assembly,
+        specification=specification,
+        enclosure_parameters=enclosure_parameters,
+        policy=policy,
+    )
+
+    return SnapVerificationBuild(
+        assembly=assembly,
+        specification=specification,
+        enclosure_parameters=enclosure_parameters,
+        policy=policy,
+        snap_retention_parameters=(
+            expected if snap_retention_parameters is None else snap_retention_parameters
+        ),
+    )
+
+
+def test_snap_verification_accepts_derived_artifacts() -> None:
+    build = _snap_verification_build()
+
+    assert (
+        SnapRetentionBackend().analyze_fit(
+            build=build,
+            tolerance_mm=1e-6,
+        )
+        == ()
+    )
+
+
+def test_snap_verification_reports_count_mismatch() -> None:
+    build = _snap_verification_build(
+        snap_retention_parameters=(),
+    )
+
+    findings = SnapRetentionBackend().analyze_fit(
+        build=build,
+        tolerance_mm=1e-6,
+    )
+
+    assert len(findings) == 1
+    assert findings[0].kind == "snap_retention_count"
+    assert findings[0].required_clearance_mm == 2.0
+    assert findings[0].measured_clearance_mm == 0.0
+
+
+def test_snap_verification_reports_position_mismatch() -> None:
+    build = _snap_verification_build()
+    first, *remaining = build.snap_retention_parameters
+
+    altered = replace(
+        first,
+        x=first.x + 1.0,
+    )
+
+    mismatched = replace(
+        build,
+        snap_retention_parameters=(
+            altered,
+            *remaining,
+        ),
+    )
+
+    findings = SnapRetentionBackend().analyze_fit(
+        build=mismatched,
+        tolerance_mm=1e-6,
+    )
+
+    assert len(findings) == 1
+    assert findings[0].kind == "snap_retention_x"
+    assert findings[0].measured_clearance_mm == pytest.approx(altered.x)
+
+
+def test_snap_verification_reports_engagement_mismatch() -> None:
+    build = _snap_verification_build()
+    first, *remaining = build.snap_retention_parameters
+
+    altered = replace(
+        first,
+        compliant_span_mm=(first.compliant_span_mm + 0.5),
+    )
+
+    mismatched = replace(
+        build,
+        snap_retention_parameters=(
+            altered,
+            *remaining,
+        ),
+    )
+
+    findings = SnapRetentionBackend().analyze_fit(
+        build=mismatched,
+        tolerance_mm=1e-6,
+    )
+
+    assert len(findings) == 1
+    assert findings[0].kind == "snap_retention_compliant_span_mm"
