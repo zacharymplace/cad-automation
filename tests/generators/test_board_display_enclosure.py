@@ -1195,6 +1195,10 @@ def test_heat_set_insert_fit_detects_wrong_bore() -> None:
             BoardFasteningStrategy.HEAT_SET_INSERT,
             "HeatSetInsertBackend",
         ),
+        (
+            BoardFasteningStrategy.SNAP_RETENTION,
+            "SnapRetentionBackend",
+        ),
     ),
 )
 def test_board_fastening_strategy_resolves_backend(
@@ -1291,6 +1295,7 @@ def test_heat_set_backend_rejects_standoff_artifacts() -> None:
         BoardFasteningStrategy.NONE,
         BoardFasteningStrategy.PRINTED_STANDOFF,
         BoardFasteningStrategy.HEAT_SET_INSERT,
+        BoardFasteningStrategy.SNAP_RETENTION,
     ),
 )
 def test_board_fastening_backends_expose_fit_analysis(
@@ -1351,3 +1356,180 @@ def test_selected_backend_owns_mounting_analysis(
 
     assert module._analyze_board_mounting_fit(build) == ()
     assert called
+
+
+def test_snap_retention_strategy_builds_and_verifies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from zcad_core.assemblies import (
+        AssemblyComponent,
+        DeviceAssembly,
+        EnclosureSpecification,
+        Placement,
+    )
+
+    from zcad.generators import (
+        board_display_enclosure as module,
+    )
+    from zcad.generators.enclosure import (
+        EnclosureParameters,
+    )
+
+    board = AssemblyComponent(
+        identifier="board",
+        geometry=(
+            cq.Workplane("XY").box(
+                20.0,
+                40.0,
+                1.6,
+                centered=(True, True, False),
+            )
+        ),
+        placement=Placement(
+            z_mm=0.0,
+        ),
+        metadata={
+            "retention": {
+                "board_thickness_mm": 1.6,
+                "insertion_axis": "positive_z",
+                "clip_regions": (
+                    {
+                        "edge": "negative_x",
+                        "center_offset_mm": 0.0,
+                        "width_mm": 6.0,
+                        "edge_clearance_mm": 0.5,
+                    },
+                    {
+                        "edge": "positive_x",
+                        "center_offset_mm": 0.0,
+                        "width_mm": 6.0,
+                        "edge_clearance_mm": 0.5,
+                    },
+                ),
+                "keepout_regions": (),
+            },
+        },
+    )
+
+    display = AssemblyComponent(
+        identifier="display",
+        geometry=(
+            cq.Workplane("XY").box(
+                28.0,
+                20.0,
+                4.0,
+                centered=(True, True, False),
+            )
+        ),
+        placement=Placement(
+            z_mm=8.0,
+        ),
+        metadata={
+            "mount_style": "bezel",
+        },
+    )
+
+    connector = AssemblyComponent(
+        identifier="usb_connector",
+        geometry=(
+            cq.Workplane("XY").box(
+                8.0,
+                6.0,
+                3.0,
+                centered=(True, True, False),
+            )
+        ),
+        placement=Placement(
+            y_mm=-23.0,
+            z_mm=0.0,
+        ),
+    )
+
+    assembly = DeviceAssembly(
+        (
+            board,
+            connector,
+            display,
+        )
+    )
+
+    specification = EnclosureSpecification(
+        inner_width_mm=40.0,
+        inner_depth_mm=60.0,
+        inner_height_mm=15.0,
+        center_x_mm=0.0,
+        center_y_mm=0.0,
+        bottom_z_mm=-6.0,
+        connector_identifier="usb_connector",
+        cable_edge="negative_y",
+        cable_width_mm=10.0,
+        cable_height_mm=4.0,
+        cable_center_offset_mm=0.0,
+        cable_bottom_z_mm=0.0,
+    )
+
+    enclosure_parameters = EnclosureParameters(
+        width=46.0,
+        depth=66.0,
+        height=18.0,
+        wall=3.0,
+        floor=3.0,
+        lid_thickness=3.0,
+        lid_clearance=0.25,
+        lid_lip_height=4.0,
+        lid_lip_wall=2.0,
+        corner_radius=4.0,
+        cable_slot_width=10.0,
+        cable_slot_height=4.0,
+        cable_slot_edge="negative_y",
+        cable_slot_center_offset=0.0,
+        cable_slot_bottom_offset=6.0,
+        mounting_hole_diameter=3.2,
+        mounting_hole_spacing_x=30.0,
+        mounting_hole_spacing_y=50.0,
+        label="SNAP TEST",
+        label_size=6.0,
+        label_height=0.6,
+    )
+
+    monkeypatch.setattr(
+        module,
+        "_resolve_enclosure_build_inputs",
+        lambda design, policy: (
+            assembly,
+            specification,
+            enclosure_parameters,
+        ),
+    )
+
+    design = parse_board_display_design(
+        {
+            "schema_version": "1",
+            "product": "PICO2_OLED",
+        }
+    )
+
+    build = build_board_display_enclosure_result(
+        design,
+        BoardDisplayEnclosureParameters(
+            board_fastening_strategy=(BoardFasteningStrategy.SNAP_RETENTION),
+            display_window_enabled=False,
+        ),
+    )
+
+    assert len(build.snap_retention_parameters) == 2
+    assert build.standoff_parameters == ()
+    assert build.insert_boss_parameters == ()
+
+    assert build.parts["body"].val().isValid()
+    assert build.parts["body"].val().Volume() > 0
+
+    findings = analyze_board_display_enclosure_fit(build)
+
+    snap_findings = tuple(
+        finding
+        for finding in findings.findings
+        if finding.clearance_source == "snap_retention"
+    )
+
+    assert snap_findings == ()

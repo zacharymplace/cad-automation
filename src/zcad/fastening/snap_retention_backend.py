@@ -88,18 +88,23 @@ class SnapRetentionBackend:
         policy: object,
     ) -> BoardFasteningArtifacts:
         """Derive snap-retention artifacts."""
-        return BoardFasteningArtifacts(
-            snap_retention_parameters=(
-                derive_snap_retention_parameters(
-                    assembly=assembly,
-                    specification=specification,
-                    enclosure_parameters=enclosure_parameters,
-                    policy=cast(
-                        SnapRetentionPolicy,
-                        policy,
-                    ),
-                )
+        parameters = derive_snap_retention_parameters(
+            assembly=assembly,
+            specification=specification,
+            enclosure_parameters=enclosure_parameters,
+            policy=cast(
+                SnapRetentionPolicy,
+                policy,
+            ),
+        )
+
+        if not parameters:
+            raise ValueError(
+                "snap retention requires verified board retention metadata"
             )
+
+        return BoardFasteningArtifacts(
+            snap_retention_parameters=parameters,
         )
 
     def apply(

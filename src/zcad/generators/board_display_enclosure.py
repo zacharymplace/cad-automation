@@ -39,6 +39,9 @@ from zcad.fastening.printed_standoff import (
 from zcad.fastening.snap_retention import (
     SnapRetentionParameters,
 )
+from zcad.fastening.snap_retention_backend import (
+    SnapRetentionBackend,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -51,6 +54,7 @@ class BoardFasteningStrategy(StrEnum):
     NONE = "none"
     PRINTED_STANDOFF = "printed_standoff"
     HEAT_SET_INSERT = "heat_set_insert"
+    SNAP_RETENTION = "snap_retention"
 
 
 @dataclass(frozen=True)
@@ -292,6 +296,11 @@ _BOARD_FASTENING_BACKENDS: dict[
     BoardFasteningStrategy.HEAT_SET_INSERT: (
         HeatSetInsertBackend(
             strategy=(BoardFasteningStrategy.HEAT_SET_INSERT),
+        )
+    ),
+    BoardFasteningStrategy.SNAP_RETENTION: (
+        SnapRetentionBackend(
+            strategy=(BoardFasteningStrategy.SNAP_RETENTION),
         )
     ),
 }

@@ -517,3 +517,16 @@ def test_snap_verification_reports_engagement_mismatch() -> None:
 
     assert len(findings) == 1
     assert findings[0].kind == "snap_retention_compliant_span_mm"
+
+
+def test_backend_rejects_missing_retention_metadata() -> None:
+    with pytest.raises(
+        ValueError,
+        match="requires verified board retention metadata",
+    ):
+        SnapRetentionBackend().derive(
+            assembly=_assembly(),
+            specification=_specification(),
+            enclosure_parameters=_enclosure_parameters(),
+            policy=ExamplePolicy(),
+        )
