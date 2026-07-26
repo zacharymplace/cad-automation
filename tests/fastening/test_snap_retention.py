@@ -20,7 +20,7 @@ def test_snap_retention_parameters_validate() -> None:
         height_mm=4.0,
         overhang_mm=0.6,
         clearance_mm=0.25,
-        flex_length_mm=8.0,
+        compliant_span_mm=8.0,
         base_z_mm=-5.0,
     )
 
@@ -37,7 +37,7 @@ def test_snap_retention_parameters_validate() -> None:
         ("wall_mm", 0.0),
         ("height_mm", 0.0),
         ("overhang_mm", 0.0),
-        ("flex_length_mm", 0.0),
+        ("compliant_span_mm", 0.0),
     ],
 )
 def test_snap_retention_rejects_nonpositive_dimensions(
@@ -55,7 +55,7 @@ def test_snap_retention_rejects_nonpositive_dimensions(
         "height_mm": 4.0,
         "overhang_mm": 0.6,
         "clearance_mm": 0.25,
-        "flex_length_mm": 8.0,
+        "compliant_span_mm": 8.0,
         "base_z_mm": -5.0,
     }
     values[field] = value
@@ -83,7 +83,7 @@ def test_snap_retention_rejects_negative_clearance() -> None:
         height_mm=4.0,
         overhang_mm=0.6,
         clearance_mm=-0.01,
-        flex_length_mm=8.0,
+        compliant_span_mm=8.0,
         base_z_mm=-5.0,
     )
 
@@ -106,7 +106,7 @@ def test_artifacts_preserve_snap_retention_parameters() -> None:
         height_mm=4.0,
         overhang_mm=0.6,
         clearance_mm=0.25,
-        flex_length_mm=8.0,
+        compliant_span_mm=8.0,
         base_z_mm=-5.0,
         rotation_degrees=90.0,
     )

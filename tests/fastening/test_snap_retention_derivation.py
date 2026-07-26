@@ -29,7 +29,6 @@ class ExamplePolicy:
     snap_clip_height_mm: float = 4.0
     snap_clip_overhang_mm: float = 0.6
     snap_clip_clearance_mm: float = 0.25
-    snap_clip_flex_length_mm: float = 8.0
 
 
 def _specification() -> EnclosureSpecification:
@@ -169,7 +168,6 @@ def test_policy_values_propagate_to_parameters() -> None:
         snap_clip_height_mm=4.5,
         snap_clip_overhang_mm=0.7,
         snap_clip_clearance_mm=0.3,
-        snap_clip_flex_length_mm=9.0,
     )
 
     parameters = derive_snap_retention_parameters(
@@ -187,7 +185,7 @@ def test_policy_values_propagate_to_parameters() -> None:
     assert first.height_mm == 4.5
     assert first.overhang_mm == 0.7
     assert first.clearance_mm == 0.3
-    assert first.flex_length_mm == 9.0
+    assert first.compliant_span_mm == pytest.approx(6.0 + 1.6 + 0.3)
     assert first.base_z_mm == -9.0
     assert first.base_height_mm == pytest.approx(3.0)
     assert first.support_height_mm == pytest.approx(6.0)

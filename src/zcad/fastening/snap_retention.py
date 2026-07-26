@@ -24,7 +24,6 @@ class SnapRetentionPolicy(Protocol):
     snap_clip_height_mm: float
     snap_clip_overhang_mm: float
     snap_clip_clearance_mm: float
-    snap_clip_flex_length_mm: float
 
 
 @dataclass(frozen=True)
@@ -43,7 +42,7 @@ class SnapRetentionParameters:
     height_mm: float
     overhang_mm: float
     clearance_mm: float
-    flex_length_mm: float
+    compliant_span_mm: float
 
     base_z_mm: float
     rotation_degrees: float = 0.0
@@ -58,7 +57,7 @@ class SnapRetentionParameters:
             "wall_mm": self.wall_mm,
             "height_mm": self.height_mm,
             "overhang_mm": self.overhang_mm,
-            "flex_length_mm": self.flex_length_mm,
+            "compliant_span_mm": self.compliant_span_mm,
         }
 
         for name, value in positive_values.items():
@@ -260,7 +259,9 @@ def derive_snap_retention_parameters(
             height_mm=policy.snap_clip_height_mm,
             overhang_mm=policy.snap_clip_overhang_mm,
             clearance_mm=(policy.snap_clip_clearance_mm),
-            flex_length_mm=(policy.snap_clip_flex_length_mm),
+            compliant_span_mm=(
+                support_height_mm + board_thickness_mm + policy.snap_clip_clearance_mm
+            ),
             base_z_mm=body_bottom_z_mm,
             rotation_degrees=(edge_rotation_degrees + board.placement.rotation_z_deg),
         )
