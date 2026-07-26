@@ -24,6 +24,10 @@ from zcad.fastening.printed_standoff import (
 from zcad.fastening.snap_retention import (
     SnapRetentionParameters,
     SnapRetentionPolicy,
+    derive_snap_retention_parameters,
+)
+from zcad.fastening.snap_retention_backend import (
+    SnapRetentionBackend,
 )
 from zcad.fastening.verification import (
     BoardFasteningBuild,
@@ -37,25 +41,27 @@ from zcad.fastening.verification import (
 )
 
 __all__ = (
-    "SnapRetentionPolicy",
-    "SnapRetentionParameters",
-    "BoardFasteningBuild",
-    "BoardFasteningVerificationPolicy",
-    "analyze_heat_set_insert_fit",
-    "analyze_no_board_fastening_fit",
-    "analyze_printed_standoff_fit",
-    "analyze_mount_positions",
-    "expected_board_mounting_positions",
-    "mounting_finding",
     "BoardFasteningArtifacts",
     "BoardFasteningBackend",
+    "BoardFasteningBuild",
+    "BoardFasteningVerificationPolicy",
     "HeatSetInsertBackend",
     "HeatSetInsertPolicy",
     "NoBoardFasteningBackend",
     "PrintedStandoffBackend",
     "PrintedStandoffPolicy",
+    "SnapRetentionBackend",
+    "SnapRetentionParameters",
+    "SnapRetentionPolicy",
     "add_board_insert_bosses",
     "add_board_standoffs",
+    "analyze_heat_set_insert_fit",
+    "analyze_mount_positions",
+    "analyze_no_board_fastening_fit",
+    "analyze_printed_standoff_fit",
     "derive_board_insert_boss_parameters",
     "derive_board_standoff_parameters",
+    "derive_snap_retention_parameters",
+    "expected_board_mounting_positions",
+    "mounting_finding",
 )

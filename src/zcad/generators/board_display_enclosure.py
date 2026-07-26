@@ -93,6 +93,12 @@ class BoardDisplayEnclosureParameters:
     board_fastener: str | None = None
     insert_boss_radial_wall_mm: float = 1.8
 
+    snap_clip_wall_mm: float = 1.2
+    snap_clip_height_mm: float = 4.0
+    snap_clip_overhang_mm: float = 0.6
+    snap_clip_clearance_mm: float = 0.25
+    snap_clip_flex_length_mm: float = 8.0
+
     corner_radius_mm: float = 4.0
 
     mounting_hole_diameter_mm: float = 3.2
@@ -112,6 +118,10 @@ class BoardDisplayEnclosureParameters:
             "lid_lip_wall_mm": self.lid_lip_wall_mm,
             "standoff_radial_wall_mm": (self.standoff_radial_wall_mm),
             "insert_boss_radial_wall_mm": (self.insert_boss_radial_wall_mm),
+            "snap_clip_wall_mm": self.snap_clip_wall_mm,
+            "snap_clip_height_mm": self.snap_clip_height_mm,
+            "snap_clip_overhang_mm": self.snap_clip_overhang_mm,
+            "snap_clip_flex_length_mm": self.snap_clip_flex_length_mm,
             "mounting_hole_diameter_mm": (self.mounting_hole_diameter_mm),
             "mounting_hole_edge_offset_mm": (self.mounting_hole_edge_offset_mm),
             "label_size_mm": self.label_size_mm,
