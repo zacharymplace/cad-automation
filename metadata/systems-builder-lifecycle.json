@@ -1,0 +1,55 @@
+{
+  "schema_version": "systems-builder-lifecycle-v1",
+  "system_id": "cad-automation",
+  "display_name": "Z$ CAD Automation",
+  "phase": "validate",
+  "condition": "ready",
+  "source": {
+    "repository": "zacharymplace/cad-automation",
+    "path": ".",
+    "commit": "93de427"
+  },
+  "evidence": [
+    {
+      "kind": "validation",
+      "reference": ".venv/bin/ruff check .",
+      "result": "pass"
+    },
+    {
+      "kind": "test",
+      "reference": ".venv/bin/pytest",
+      "result": "pass"
+    },
+    {
+      "kind": "observation",
+      "reference": "exports/default-enclosure-body.metadata.json",
+      "result": "informational"
+    },
+    {
+      "kind": "observation",
+      "reference": "exports/enclosure-fit-test-body.step",
+      "result": "informational"
+    },
+    {
+      "kind": "decision",
+      "reference": "docs/architecture.md",
+      "result": "informational"
+    }
+  ],
+  "last_verified_at": "2026-07-30T22:47:32Z",
+  "next_action": {
+    "description": "Produce one bounded, reproducible engineering evidence package containing a representative generated assembly, geometry validation, manufacturing exports, and a documented print-readiness decision.",
+    "command": "./scripts/ci-local.sh"
+  },
+  "blockers": [],
+  "capabilities": [
+    "parametric-cad-generation",
+    "json-driven-design",
+    "step-export",
+    "stl-export",
+    "geometry-validation",
+    "fit-calibration",
+    "board-display-enclosures",
+    "fastening-strategy-selection"
+  ]
+}
