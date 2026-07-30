@@ -3,11 +3,11 @@
   "system_id": "cad-automation",
   "display_name": "Z$ CAD Automation",
   "phase": "validate",
-  "condition": "ready",
+  "condition": "passing",
   "source": {
     "repository": "zacharymplace/cad-automation",
     "path": ".",
-    "commit": "93de427"
+    "commit": "b0eb6ce"
   },
   "evidence": [
     {
