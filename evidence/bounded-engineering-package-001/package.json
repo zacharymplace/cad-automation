@@ -1,0 +1,49 @@
+{
+  "schema_version": "cad-engineering-evidence-package-v1",
+  "package_id": "bounded-engineering-package-001",
+  "system_id": "cad-automation",
+  "source_commit": "2f71772",
+  "generated_at": "2026-07-31T01:47:01Z",
+  "representative_design": {
+    "name": "Pico 2 enclosure fit assembly",
+    "parts": [
+      {
+        "role": "body",
+        "step": "evidence/bounded-engineering-package-001/pico2-enclosure-fit-body.step",
+        "stl": "evidence/bounded-engineering-package-001/pico2-enclosure-fit-body.stl"
+      },
+      {
+        "role": "lid",
+        "step": "evidence/bounded-engineering-package-001/pico2-enclosure-fit-lid.step",
+        "stl": "evidence/bounded-engineering-package-001/pico2-enclosure-fit-lid.stl"
+      }
+    ]
+  },
+  "validation": {
+    "command": "./scripts/ci-local.sh",
+    "result": "pass",
+    "zcad_core_tests": 361,
+    "cad_automation_tests": 310,
+    "package_boundary": "pass"
+  },
+  "manufacturing_exports": {
+    "formats": [
+      "STEP",
+      "STL"
+    ],
+    "part_count": 2,
+    "export_count": 4
+  },
+  "print_readiness": {
+    "decision": "ready-for-bounded-test-print",
+    "scope": "Ready for one controlled physical fit test. Not yet production approved.",
+    "remaining_validation": [
+      "body-to-lid fit",
+      "Pico 2 mounting alignment",
+      "display clearance",
+      "cable clearance",
+      "slicer profile",
+      "physical print outcome"
+    ]
+  }
+}

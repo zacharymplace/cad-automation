@@ -7,7 +7,7 @@
   "source": {
     "repository": "zacharymplace/cad-automation",
     "path": ".",
-    "commit": "b0eb6ce"
+    "commit": "2f71772"
   },
   "evidence": [
     {
@@ -34,12 +34,22 @@
       "kind": "decision",
       "reference": "docs/architecture.md",
       "result": "informational"
+    },
+    {
+      "kind": "engineering-evidence-package",
+      "reference": "evidence/bounded-engineering-package-001/package.json",
+      "result": "pass"
+    },
+    {
+      "kind": "engineering-report",
+      "reference": "evidence/bounded-engineering-package-001/report.md",
+      "result": "pass"
     }
   ],
-  "last_verified_at": "2026-07-30T22:47:32Z",
+  "last_verified_at": "2026-07-31T01:52:16Z",
   "next_action": {
-    "description": "Produce one bounded, reproducible engineering evidence package containing a representative generated assembly, geometry validation, manufacturing exports, and a documented print-readiness decision.",
-    "command": "./scripts/ci-local.sh"
+    "description": "Slice and complete one controlled physical test print of the Pico 2 enclosure fit assembly, then record fit, clearance, slicer profile, and revision evidence.",
+    "command": "python3 -m json.tool evidence/bounded-engineering-package-001/package.json"
   },
   "blockers": [],
   "capabilities": [
