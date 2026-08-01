@@ -7,7 +7,7 @@
   "source": {
     "repository": "zacharymplace/cad-automation",
     "path": ".",
-    "commit": "7c170d2"
+    "commit": "33d9b82"
   },
   "evidence": [
     {
@@ -36,12 +36,12 @@
       "result": "informational"
     },
     {
-      "kind": "engineering-evidence-package",
+      "kind": "demonstration",
       "reference": "evidence/bounded-engineering-package-001/package.json",
       "result": "pass"
     },
     {
-      "kind": "engineering-report",
+      "kind": "observation",
       "reference": "evidence/bounded-engineering-package-001/report.md",
       "result": "pass"
     }
