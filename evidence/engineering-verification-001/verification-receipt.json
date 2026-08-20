@@ -1,0 +1,24 @@
+{
+  "schema": "zcad-engineering-verification-v1",
+  "verification_id": "engineering-verification-001",
+  "result": "VERIFIED",
+  "claim": "bounded-cad-engineering-evidence-ready",
+  "validation": {
+    "zcad_core_tests": 471,
+    "cad_automation_tests": 310,
+    "focused_geometry_tests": 44,
+    "package_compatibility": "PASS"
+  },
+  "artifacts_sha256": {
+    "pico2-enclosure-fit-body.step": "5e8238201ed4c354ec139d2208d87cfe7b2be96e48c9285e3eb94c415be5a4af",
+    "pico2-enclosure-fit-body.stl": "9cdb2b9df540cf9a85fe893e6d86d5cdefe934634f9f667bee6442b1fe371d0c",
+    "pico2-enclosure-fit-lid.step": "6c160a8f29c3b40548b4bd5998280e8452c828140f9f645dd086d21563776bce",
+    "pico2-enclosure-fit-lid.stl": "637b5bcb78cc03bc57c553f7ba797322b0f77455fcd04b91736f7c0f86631229"
+  },
+  "boundary": {
+    "digital_engineering_evidence": true,
+    "manufacturing_exports_present": true,
+    "physical_fit_verified": false,
+    "production_readiness_proven": false
+  }
+}

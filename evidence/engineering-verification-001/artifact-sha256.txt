@@ -1,0 +1,4 @@
+5e8238201ed4c354ec139d2208d87cfe7b2be96e48c9285e3eb94c415be5a4af  evidence/bounded-engineering-package-001/pico2-enclosure-fit-body.step
+9cdb2b9df540cf9a85fe893e6d86d5cdefe934634f9f667bee6442b1fe371d0c  evidence/bounded-engineering-package-001/pico2-enclosure-fit-body.stl
+6c160a8f29c3b40548b4bd5998280e8452c828140f9f645dd086d21563776bce  evidence/bounded-engineering-package-001/pico2-enclosure-fit-lid.step
+637b5bcb78cc03bc57c553f7ba797322b0f77455fcd04b91736f7c0f86631229  evidence/bounded-engineering-package-001/pico2-enclosure-fit-lid.stl
