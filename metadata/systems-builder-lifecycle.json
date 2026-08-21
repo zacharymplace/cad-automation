@@ -3,7 +3,7 @@
   "system_id": "cad-automation",
   "display_name": "Z$ CAD Automation",
   "phase": "validate",
-  "condition": "passing",
+  "condition": "blocked",
   "source": {
     "repository": "zacharymplace/cad-automation",
     "path": ".",
@@ -51,7 +51,11 @@
     "description": "Slice and complete one controlled physical test print of the Pico 2 enclosure fit assembly, then record fit, clearance, slicer profile, and revision evidence.",
     "command": "python3 -m json.tool evidence/bounded-engineering-package-001/package.json"
   },
-  "blockers": [],
+  "blockers": [
+    "The next validation gate requires a real controlled physical test print of the Pico 2 enclosure fit assembly.",
+    "Fit, clearance, slicer profile, and revision evidence must be recorded from the physical print.",
+    "Repository preparation, generated geometry, and software validation cannot substitute for physical execution evidence."
+  ],
   "capabilities": [
     "parametric-cad-generation",
     "json-driven-design",
