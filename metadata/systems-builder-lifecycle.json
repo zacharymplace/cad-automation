@@ -7,7 +7,7 @@
   "source": {
     "repository": "zacharymplace/cad-automation",
     "path": ".",
-    "commit": "8f70545f"
+    "commit": "ed5f910"
   },
   "evidence": [
     {
@@ -17,7 +17,12 @@
     },
     {
       "kind": "test",
-      "reference": ".venv/bin/pytest",
+      "reference": "./scripts/ci-local.sh",
+      "result": "pass"
+    },
+    {
+      "kind": "demonstration",
+      "reference": ".venv/bin/zcad designs/oxo-soap-dispenser-drip-tray.json",
       "result": "pass"
     },
     {
@@ -46,7 +51,7 @@
       "result": "pass"
     }
   ],
-  "last_verified_at": "2026-08-30T20:47:01Z",
+  "last_verified_at": "2026-08-30T23:45:08Z",
   "next_action": {
     "description": "Slice and complete one controlled physical test print of the Pico 2 enclosure fit assembly, then record fit, clearance, slicer profile, and revision evidence.",
     "command": "python3 -m json.tool evidence/bounded-engineering-package-001/package.json"
@@ -54,7 +59,8 @@
   "blockers": [
     "The next validation gate requires a real controlled physical test print of the Pico 2 enclosure fit assembly.",
     "Fit, clearance, slicer profile, and revision evidence must be recorded from the physical print.",
-    "Repository preparation, generated geometry, and software validation cannot substitute for physical execution evidence."
+    "Repository preparation, generated geometry, and software validation cannot substitute for physical execution evidence.",
+    "The drip-tray basin and grid are software-validated only; drainage behavior, counter-edge fit, dispenser fit, and printability remain physically unverified."
   ],
   "capabilities": [
     "parametric-cad-generation",
@@ -64,6 +70,7 @@
     "geometry-validation",
     "fit-calibration",
     "board-display-enclosures",
-    "fastening-strategy-selection"
+    "fastening-strategy-selection",
+    "sink-edge-drip-trays"
   ]
 }
