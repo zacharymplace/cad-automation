@@ -1,0 +1,23 @@
+{
+  "name": "oxo-soap-dispenser-drip-tray",
+  "type": "drip_tray",
+  "parameters": {
+    "width": 115,
+    "depth": 100,
+    "wall": 3,
+    "basin_height": 14,
+    "floor_back": 5,
+    "floor_front": 2.4,
+    "spout_length": 28,
+    "spout_tip_thickness": 1.4,
+    "corner_radius": 5,
+    "drip_groove": true,
+    "groove_depth": 0.5,
+    "groove_width": 2,
+    "groove_offset_from_tip": 5,
+    "grid_thickness": 3,
+    "grid_hole_diameter": 6,
+    "grid_hole_spacing": 12,
+    "grid_edge_margin": 8
+  }
+}

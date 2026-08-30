@@ -53,6 +53,10 @@ from zcad.generators.calibration.pico2_mount_coupon import (
     Pico2MountCouponParameters,
     build_pico2_mount_coupon,
 )
+from zcad.generators.drip_tray import (
+    DripTrayParameters,
+    build_drip_tray,
+)
 from zcad.generators.enclosure import (
     EnclosureParameters,
     build_enclosure,
@@ -167,6 +171,9 @@ def generate_parts(
 
     if design_type == "enclosure":
         return build_enclosure(EnclosureParameters(**raw_parameters))
+
+    if design_type == "drip_tray":
+        return build_drip_tray(DripTrayParameters(**raw_parameters))
 
     raise ValueError(f"Unsupported design type: {design_type}")
 
