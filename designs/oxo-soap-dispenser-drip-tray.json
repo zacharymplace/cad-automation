@@ -10,6 +10,8 @@
     "floor_front": 2.4,
     "spout_length": 28,
     "spout_tip_thickness": 1.4,
+    "spout_flare_margin": 15,
+    "spout_tip_bulge": 12,
     "corner_radius": 5,
     "drip_groove": true,
     "groove_depth": 0.5,

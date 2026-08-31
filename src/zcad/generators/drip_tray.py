@@ -1,18 +1,23 @@
 """Parametric sink-edge drip tray for liquid soap dispensers.
 
 A raised, perforated grid keeps the dispenser's base out of standing
-water. Drips fall through the grid onto a basin floor that tapers
-continuously from the back wall down to an open, wall-less spout that
-cantilevers past the counter edge, so collected water releases directly
-into the sink instead of pooling under the dispenser.
+water, resting on top of a shared `drainage_basin` that carries drips
+down a sloped floor and out an open spout into the sink. See
+`zcad.generators.drainage_basin` for how the basin itself works.
 """
 
-import math
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import cadquery as cq
 
+from zcad.generators.drainage_basin import (
+    DrainageBasinParameters,
+    build_drainage_basin,
+)
+
 ModelParts = dict[str, cq.Workplane]
+
+_BASIN_FIELD_NAMES = {field.name for field in fields(DrainageBasinParameters)}
 
 
 @dataclass(frozen=True)
@@ -27,6 +32,9 @@ class DripTrayParameters:
     floor_front: float = 2.4
     spout_length: float = 28.0
     spout_tip_thickness: float = 1.4
+    spout_flare_margin: float = 15.0
+    spout_tip_bulge: float = 0.0
+    spout_tip_fillet: float = 6.0
     corner_radius: float = 5.0
 
     drip_groove: bool = True
@@ -39,16 +47,23 @@ class DripTrayParameters:
     grid_hole_spacing: float = 12.0
     grid_edge_margin: float = 8.0
 
+    label: str = "Z$ CAD"
+    label_size: float = 4.0
+    label_height: float = 0.4
+
+    def basin_parameters(self) -> DrainageBasinParameters:
+        """The subset of fields the shared drainage basin needs."""
+        values = {
+            name: getattr(self, name)
+            for name in _BASIN_FIELD_NAMES
+            if hasattr(self, name)
+        }
+        return DrainageBasinParameters(**values)
+
     def validate(self) -> None:
+        self.basin_parameters().validate()
+
         positive_values = {
-            "width": self.width,
-            "depth": self.depth,
-            "wall": self.wall,
-            "basin_height": self.basin_height,
-            "floor_back": self.floor_back,
-            "floor_front": self.floor_front,
-            "spout_length": self.spout_length,
-            "spout_tip_thickness": self.spout_tip_thickness,
             "grid_thickness": self.grid_thickness,
             "grid_hole_diameter": self.grid_hole_diameter,
             "grid_hole_spacing": self.grid_hole_spacing,
@@ -58,30 +73,6 @@ class DripTrayParameters:
         for name, value in positive_values.items():
             if value <= 0:
                 raise ValueError(f"{name} must be greater than zero")
-
-        if self.corner_radius < 0:
-            raise ValueError("corner_radius cannot be negative")
-
-        if self.width <= 2 * self.wall:
-            raise ValueError("width must exceed twice the wall thickness")
-
-        if self.depth <= self.wall:
-            raise ValueError("depth must exceed the back wall thickness")
-
-        if self.basin_height <= self.floor_back:
-            raise ValueError("basin_height must exceed floor_back")
-
-        if self.floor_front >= self.floor_back:
-            raise ValueError(
-                "floor_front must be less than floor_back so the basin "
-                "floor slopes down toward the spout"
-            )
-
-        if self.spout_tip_thickness >= self.floor_front:
-            raise ValueError(
-                "spout_tip_thickness must be less than floor_front so the "
-                "spout keeps tapering down to a thin drip edge"
-            )
 
         if self.grid_hole_diameter >= self.grid_hole_spacing:
             raise ValueError(
@@ -96,115 +87,6 @@ class DripTrayParameters:
 
         if 2 * self.grid_edge_margin >= interior_depth:
             raise ValueError("grid_edge_margin leaves no room across the depth")
-
-        if self.drip_groove:
-            if self.groove_offset_from_tip >= self.spout_length:
-                raise ValueError(
-                    "groove_offset_from_tip must be less than spout_length"
-                )
-
-            if self.groove_depth >= self.spout_tip_thickness:
-                raise ValueError("groove_depth must be less than spout_tip_thickness")
-
-
-def _slope_cutter(
-    *,
-    span_width: float,
-    run: float,
-    height: float,
-    slack: float = 10.0,
-) -> cq.Workplane:
-    """A box pivoted at the local origin with its bottom face in the z=0
-    plane, ready to be rotated about the X axis into a tapered cutting
-    tool and translated into place."""
-    length = run + 2 * slack
-
-    return (
-        cq.Workplane("XY")
-        .box(span_width, length, height, centered=(True, True, False))
-        .translate((0, run / 2, 0))
-    )
-
-
-def _build_basin(
-    parameters: DripTrayParameters,
-) -> cq.Workplane:
-    """Build the basin with a continuously sloped, wall-less spout."""
-    interior_width = parameters.width - 2 * parameters.wall
-
-    y_back = -parameters.depth / 2 + parameters.wall
-    y_front = parameters.depth / 2
-    y_tip = parameters.depth / 2 + parameters.spout_length
-
-    outer = cq.Workplane("XY").box(
-        parameters.width,
-        parameters.depth,
-        parameters.basin_height,
-        centered=(True, True, False),
-    )
-
-    if parameters.corner_radius > 0:
-        outer = outer.edges("|Z and <Y").fillet(parameters.corner_radius)
-
-    spout_blank = (
-        cq.Workplane("XY")
-        .box(
-            interior_width,
-            parameters.spout_length,
-            parameters.floor_front,
-            centered=(True, False, False),
-        )
-        .translate((0, y_front, 0))
-    )
-
-    blank = outer.union(spout_blank)
-
-    basin_run = y_front - y_back
-    basin_drop = parameters.floor_back - parameters.floor_front
-    basin_angle = math.degrees(math.atan2(basin_drop, basin_run))
-
-    basin_cutter = _slope_cutter(
-        span_width=interior_width,
-        run=basin_run,
-        height=parameters.basin_height + 20,
-    )
-    basin_cutter = basin_cutter.rotate((0, 0, 0), (1, 0, 0), -basin_angle).translate(
-        (0, y_back, parameters.floor_back)
-    )
-
-    spout_run = y_tip - y_front
-    spout_drop = parameters.floor_front - parameters.spout_tip_thickness
-    spout_angle = math.degrees(math.atan2(spout_drop, spout_run))
-
-    spout_cutter = _slope_cutter(
-        span_width=interior_width,
-        run=spout_run,
-        height=parameters.basin_height + 20,
-        slack=2.0,
-    )
-    spout_cutter = spout_cutter.rotate((0, 0, 0), (1, 0, 0), -spout_angle).translate(
-        (0, y_front, parameters.floor_front)
-    )
-
-    body = blank.cut(basin_cutter).cut(spout_cutter)
-
-    if parameters.drip_groove:
-        y_groove = y_tip - parameters.groove_offset_from_tip
-
-        groove = (
-            cq.Workplane("XY")
-            .box(
-                interior_width + 4,
-                parameters.groove_width,
-                parameters.groove_depth + 1.0,
-                centered=(True, True, False),
-            )
-            .translate((0, y_groove - parameters.groove_width / 2, -1.0))
-        )
-
-        body = body.cut(groove)
-
-    return body
 
 
 def _build_grid(
@@ -257,6 +139,6 @@ def build_drip_tray(
     parameters.validate()
 
     return {
-        "basin": _build_basin(parameters),
+        "basin": build_drainage_basin(parameters.basin_parameters()),
         "grid": _build_grid(parameters),
     }
