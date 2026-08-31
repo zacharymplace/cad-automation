@@ -65,6 +65,10 @@ from zcad.generators.fit_coupon import (
     FitCouponParameters,
     build_fit_coupon,
 )
+from zcad.generators.sponge_caddy import (
+    SpongeCaddyParameters,
+    build_sponge_caddy,
+)
 from zcad.generators.gridfinity.bin import (
     GridfinityBinParameters,
     build_gridfinity_bin,
@@ -174,6 +178,9 @@ def generate_parts(
 
     if design_type == "drip_tray":
         return build_drip_tray(DripTrayParameters(**raw_parameters))
+
+    if design_type == "sponge_caddy":
+        return build_sponge_caddy(SpongeCaddyParameters(**raw_parameters))
 
     raise ValueError(f"Unsupported design type: {design_type}")
 

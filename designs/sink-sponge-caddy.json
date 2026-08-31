@@ -1,0 +1,33 @@
+{
+  "name": "sink-sponge-caddy",
+  "type": "sponge_caddy",
+  "parameters": {
+    "width": 150,
+    "depth": 100,
+    "wall": 3,
+    "basin_height": 16,
+    "floor_back": 6,
+    "floor_front": 2.6,
+    "spout_length": 30,
+    "spout_tip_thickness": 1.4,
+    "spout_flare_margin": 15,
+    "spout_tip_bulge": 12,
+    "corner_radius": 5,
+    "drip_groove": true,
+    "groove_depth": 0.5,
+    "groove_width": 2,
+    "groove_offset_from_tip": 5,
+    "rack_thickness": 3,
+    "rack_edge_margin": 8,
+    "rack_hole_diameter": 6,
+    "rack_hole_spacing": 14,
+    "rack_clearance": 1,
+    "sponge_slot_length": 80,
+    "sponge_slot_width": 18,
+    "sponge_slot_center_x": -40,
+    "brush_hole_diameter": 30,
+    "brush_hole_count": 2,
+    "brush_hole_spacing": 38,
+    "brush_holes_center_x": 40
+  }
+}
