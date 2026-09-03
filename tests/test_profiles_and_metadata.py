@@ -36,12 +36,16 @@ def test_build_part_record() -> None:
         10,
         10,
     )
+    solid = model.val()
+    bounds = solid.BoundingBox()
 
     record = build_part_record(
         design_name="test-cube",
         design_type="cube",
         part_name="main",
-        model=model,
+        valid_solid=solid.isValid(),
+        volume_mm3=solid.Volume(),
+        bounds_mm=(bounds.xlen, bounds.ylen, bounds.zlen),
         step_path=Path("exports/test-cube.step"),
         stl_path=Path("exports/test-cube.stl"),
         printer_profile={
