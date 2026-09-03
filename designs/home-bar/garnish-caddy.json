@@ -1,0 +1,15 @@
+{
+  "name": "garnish-caddy",
+  "type": "garnish_caddy",
+  "parameters": {
+    "width": 220,
+    "depth": 80,
+    "wall": 3,
+    "floor_thickness": 3,
+    "wall_height": 35,
+    "corner_radius": 6,
+    "compartment_count": 4,
+    "thumb_notch": true,
+    "thumb_notch_width": 25
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "grip-stand-fat-grip",
+  "type": "grip_stand",
+  "parameters": {
+    "base_width": 65,
+    "base_depth": 95,
+    "base_height": 6,
+    "corner_radius": 4,
+    "grip_diameter": 32,
+    "grip_hole_clearance": 1.0,
+    "ridge_height": 22,
+    "ridge_block_width": 46,
+    "ridge_block_length": 16,
+    "notch_spacing": 55,
+    "notch_side_wall": 4,
+    "notch_wall_min": 2,
+    "base_edge_margin": 8
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "ink-cap-tray",
+  "type": "ink_cap_tray",
+  "parameters": {
+    "width": 160,
+    "depth": 90,
+    "wall": 3,
+    "basin_height": 16,
+    "standalone_floor": 3,
+    "corner_radius": 5,
+    "rack_thickness": 4,
+    "rack_edge_margin": 10,
+    "cap_diameter": 13,
+    "cap_hole_clearance": 0.4,
+    "cap_count": 6,
+    "cap_spacing": 20,
+    "basin_style": "standalone"
+  }
+}

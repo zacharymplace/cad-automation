@@ -1,0 +1,22 @@
+{
+  "name": "ink-cap-tray-with-mixing-wells",
+  "type": "ink_cap_tray",
+  "parameters": {
+    "width": 230,
+    "depth": 90,
+    "wall": 3,
+    "basin_height": 16,
+    "standalone_floor": 3,
+    "corner_radius": 5,
+    "rack_thickness": 4,
+    "rack_edge_margin": 10,
+    "cap_diameter": 13,
+    "cap_hole_clearance": 0.4,
+    "cap_count": 4,
+    "cap_spacing": 20,
+    "mixing_well_count": 2,
+    "mixing_well_diameter": 25,
+    "mixing_well_spacing": 29,
+    "mixing_well_margin": 10
+  }
+}

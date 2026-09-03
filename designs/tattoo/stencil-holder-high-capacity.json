@@ -1,0 +1,16 @@
+{
+  "name": "stencil-holder-high-capacity",
+  "type": "stencil_holder",
+  "parameters": {
+    "width": 150,
+    "depth": 210,
+    "wall": 3,
+    "floor_thickness": 3,
+    "corner_radius": 5,
+    "back_wall_height": 70,
+    "side_wall_height": 35,
+    "front_wall_height": 8,
+    "thumb_notch": true,
+    "thumb_notch_width": 30
+  }
+}

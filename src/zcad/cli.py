@@ -65,9 +65,9 @@ from zcad.generators.fit_coupon import (
     FitCouponParameters,
     build_fit_coupon,
 )
-from zcad.generators.sponge_caddy import (
-    SpongeCaddyParameters,
-    build_sponge_caddy,
+from zcad.generators.garnish_caddy import (
+    GarnishCaddyParameters,
+    build_garnish_caddy,
 )
 from zcad.generators.gridfinity.bin import (
     GridfinityBinParameters,
@@ -77,9 +77,41 @@ from zcad.generators.gridfinity.fit_coupon import (
     GridfinityFitCouponParameters,
     build_gridfinity_fit_coupon,
 )
+from zcad.generators.grip_stand import (
+    GripStandParameters,
+    build_grip_stand,
+)
+from zcad.generators.ink_cap_tray import (
+    InkCapTrayParameters,
+    build_ink_cap_tray,
+)
+from zcad.generators.insert_tray import (
+    InsertTrayParameters,
+    build_insert_tray,
+)
+from zcad.generators.jigger_rack import (
+    JiggerRackParameters,
+    build_jigger_rack,
+)
+from zcad.generators.phone_stand import (
+    PhoneStandParameters,
+    build_phone_stand,
+)
+from zcad.generators.sponge_caddy import (
+    SpongeCaddyParameters,
+    build_sponge_caddy,
+)
+from zcad.generators.stencil_holder import (
+    StencilHolderParameters,
+    build_stencil_holder,
+)
 from zcad.generators.tolerance_coupon import (
     ToleranceCouponParameters,
     build_tolerance_coupon,
+)
+from zcad.generators.travel_case import (
+    TravelCaseParameters,
+    build_travel_case,
 )
 from zcad.generators.tray import (
     TrayParameters,
@@ -181,6 +213,30 @@ def generate_parts(
 
     if design_type == "sponge_caddy":
         return build_sponge_caddy(SpongeCaddyParameters(**raw_parameters))
+
+    if design_type == "phone_stand":
+        return build_phone_stand(PhoneStandParameters(**raw_parameters))
+
+    if design_type == "ink_cap_tray":
+        return build_ink_cap_tray(InkCapTrayParameters(**raw_parameters))
+
+    if design_type == "grip_stand":
+        return {"main": build_grip_stand(GripStandParameters(**raw_parameters))}
+
+    if design_type == "stencil_holder":
+        return {"main": build_stencil_holder(StencilHolderParameters(**raw_parameters))}
+
+    if design_type == "travel_case":
+        return {"main": build_travel_case(TravelCaseParameters(**raw_parameters))}
+
+    if design_type == "insert_tray":
+        return {"main": build_insert_tray(InsertTrayParameters(**raw_parameters))}
+
+    if design_type == "garnish_caddy":
+        return {"main": build_garnish_caddy(GarnishCaddyParameters(**raw_parameters))}
+
+    if design_type == "jigger_rack":
+        return {"main": build_jigger_rack(JiggerRackParameters(**raw_parameters))}
 
     raise ValueError(f"Unsupported design type: {design_type}")
 

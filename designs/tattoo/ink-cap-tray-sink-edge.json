@@ -1,0 +1,23 @@
+{
+  "name": "ink-cap-tray-sink-edge",
+  "type": "ink_cap_tray",
+  "parameters": {
+    "width": 160,
+    "depth": 90,
+    "wall": 3,
+    "basin_height": 16,
+    "floor_back": 6,
+    "floor_front": 2.6,
+    "spout_length": 30,
+    "spout_tip_thickness": 1.4,
+    "spout_flare_margin": 15,
+    "corner_radius": 5,
+    "rack_thickness": 4,
+    "rack_edge_margin": 10,
+    "cap_diameter": 13,
+    "cap_hole_clearance": 0.4,
+    "cap_count": 6,
+    "cap_spacing": 20,
+    "basin_style": "sink_edge"
+  }
+}

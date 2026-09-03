@@ -1,0 +1,26 @@
+{
+  "name": "phone-tablet-stand",
+  "type": "phone_stand",
+  "parameters": {
+    "device_width": 80,
+    "device_thickness": 12,
+    "base_width": 100,
+    "base_depth": 75,
+    "base_wall": 4,
+    "slot_offset": 40,
+    "slot_wall": 3,
+    "slot_height": 12,
+    "slot_clearance": 2,
+    "cradle_width": 100,
+    "cradle_height": 80,
+    "cradle_wall": 4,
+    "corner_radius": 4,
+    "knuckle_count": 5,
+    "knuckle_diameter": 10,
+    "knuckle_length": 14,
+    "knuckle_gap": 0.6,
+    "pin_hole_diameter": 4,
+    "pin_diameter": 4.2,
+    "pin_margin": 3
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "insert-tray",
+  "type": "insert_tray",
+  "parameters": {
+    "width": 170,
+    "depth": 215,
+    "floor_thickness": 3,
+    "corner_radius": 4,
+    "grip_stand_well_width": 66,
+    "grip_stand_well_depth": 102,
+    "grip_stand_well_wall": 3,
+    "grip_stand_well_wall_height": 8,
+    "ink_cap_tray_well_width": 162,
+    "ink_cap_tray_well_depth": 96,
+    "ink_cap_tray_well_wall": 3,
+    "ink_cap_tray_well_wall_height": 6,
+    "well_gap": 8
+  }
+}
