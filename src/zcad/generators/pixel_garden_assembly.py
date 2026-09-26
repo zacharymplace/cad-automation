@@ -10,6 +10,7 @@ from pathlib import Path
 
 import cadquery as cq
 
+from zcad.generators.garden_insertion import insertion_plan
 from zcad.generators.pixel_garden_module import (
     PixelGardenModuleParameters,
     build_module,
@@ -100,7 +101,8 @@ def build_garden_assembly(spec: dict) -> tuple[cq.Assembly, dict]:
                 )
     bounds = cq.Compound.makeCompound(placed).BoundingBox()
     report = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
+        "insertion_check": insertion_plan(module, instances),
         "module_count": len(cells),
         "unique_part_count": 1,
         "module_parameters": asdict(parameters),
@@ -116,7 +118,7 @@ def build_garden_assembly(spec: dict) -> tuple[cq.Assembly, dict]:
             "volume_tolerance_mm3": COLLISION_TOLERANCE_MM3,
         },
         "scope": (
-            "Nominal geometry only; insertion sequence, "
+            "Nominal geometry and vertical insertion only; "
             "physical fit and strength unverified"
         ),
     }
