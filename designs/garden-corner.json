@@ -1,0 +1,11 @@
+{
+  "pattern": [
+    "X...",
+    "X...",
+    "XXXX"
+  ],
+  "module_parameters": {
+    "size": 40.0,
+    "rail_clearance": 0.25
+  }
+}

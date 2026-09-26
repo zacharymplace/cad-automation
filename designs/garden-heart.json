@@ -1,0 +1,13 @@
+{
+  "pattern": [
+    ".X.X.",
+    "XXXXX",
+    "XXXXX",
+    ".XXX.",
+    "..X.."
+  ],
+  "module_parameters": {
+    "size": 40.0,
+    "rail_clearance": 0.25
+  }
+}
