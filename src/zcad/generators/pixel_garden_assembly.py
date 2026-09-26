@@ -11,6 +11,7 @@ from pathlib import Path
 import cadquery as cq
 
 from zcad.generators.garden_insertion import insertion_plan
+from zcad.generators.garden_preview import assembly_preview_svg
 from zcad.generators.pixel_garden_module import (
     PixelGardenModuleParameters,
     build_module,
@@ -140,9 +141,11 @@ def export_garden_assembly(source: Path, output: Path) -> dict:
         step = stage / "assembly.step"
         assembly.export(str(step), exportType="STEP", mode="default")
         (stage / "layout.json").write_bytes(data)
+        preview = stage / "assembly-preview.svg"
+        preview.write_text(assembly_preview_svg(report), encoding="utf-8")
         report["artifacts"] = {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
-            for path in (step, stage / "layout.json")
+            for path in (step, stage / "layout.json", preview)
         }
         (stage / "report.json").write_text(json.dumps(report, indent=2) + "\n")
         # Exclusive reservation prevents overwriting even an empty existing directory.
