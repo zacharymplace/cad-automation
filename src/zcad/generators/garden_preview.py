@@ -86,9 +86,9 @@ def assembly_preview_svg(report: dict) -> str:
     )
     SubElement(svg, "rect", width="100%", height="100%", fill="#f5f7f5")
 
-    def text(x, y, value, size=16, **attributes):
+    def text(x, y, value, size=16, parent=None, **attributes):
         SubElement(
-            svg,
+            svg if parent is None else parent,
             "text",
             x=str(x),
             y=str(y),
@@ -195,6 +195,7 @@ def assembly_preview_svg(report: dict) -> str:
             cy + 3,
             str(steps[item["name"]]) if status == "PASS" else "—",
             28,
+            parent=group,
             **{"text-anchor": "middle"},
         )
         text(
@@ -202,6 +203,7 @@ def assembly_preview_svg(report: dict) -> str:
             cy + 27,
             f"r{item['row']} c{item['column']}",
             12,
+            parent=group,
             **{"text-anchor": "middle"},
         )
     text(
