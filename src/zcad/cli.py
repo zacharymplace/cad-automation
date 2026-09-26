@@ -657,6 +657,12 @@ def run(
     """Run one CAD or registry-driven design command."""
     arguments = list(argv) if argv is not None else sys.argv[1:]
 
+    if arguments and arguments[0] == "garden-assembly":
+        from zcad.generators.pixel_garden_assembly import run_garden_assembly
+
+        run_garden_assembly(arguments[1:])
+        return
+
     if arguments and arguments[0] == "bundle-verify":
         parser = argparse.ArgumentParser(prog="zcad bundle-verify")
         parser.add_argument("directory", type=Path)
