@@ -1,0 +1,13 @@
+{
+  "name": "creeper-block-planter",
+  "type": "pixel_block_planter",
+  "parameters": {
+    "pixel_size": 10,
+    "face_pixels": 8,
+    "wall": 2.4,
+    "floor": 3,
+    "relief_depth": 1.0,
+    "pixel_inset": 0.2,
+    "drain_hole_diameter": 6
+  }
+}

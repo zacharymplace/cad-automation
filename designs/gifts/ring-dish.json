@@ -1,0 +1,16 @@
+{
+  "name": "ring-dish",
+  "type": "pixel_ring_dish",
+  "parameters": {
+    "pixel_size": 10,
+    "wall": 2.4,
+    "floor": 3,
+    "rim_height": 12,
+    "groove_depth": 0.5,
+    "groove_width": 0.8,
+    "cone_pixel": [3, 4],
+    "cone_base_diameter": 18,
+    "cone_top_diameter": 10,
+    "cone_height": 32
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "pixel-garden-module",
+  "type": "pixel_garden_module",
+  "parameters": {
+    "size": 40,
+    "height": 40,
+    "wall": 2,
+    "floor": 2.4,
+    "drain_hole_diameter": 6,
+    "corner_radius": 1.5,
+    "rail_depth": 3,
+    "rail_base_width": 6,
+    "rail_tip_width": 9,
+    "rail_clearance": 0.25,
+    "rail_end_gap": 1
+  }
+}

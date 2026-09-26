@@ -1,0 +1,14 @@
+{
+  "name": "photo-stand",
+  "type": "pixel_photo_stand",
+  "parameters": {
+    "pixel_size": 10,
+    "height": 14,
+    "groove_depth": 0.5,
+    "groove_width": 0.8,
+    "slot_width": 2.6,
+    "slot_depth": 9,
+    "slot_tilt_degrees": 12,
+    "slot_offset_y": 5
+  }
+}

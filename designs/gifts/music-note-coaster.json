@@ -1,0 +1,25 @@
+{
+  "name": "music-note-coaster",
+  "type": "pixel_coaster",
+  "parameters": {
+    "size": 92,
+    "thickness": 5,
+    "corner_radius": 6,
+    "rim_width": 5,
+    "recess_depth": 1.2,
+    "pixel_size": 7,
+    "pixel_inset": 0.3,
+    "pattern": [
+      "....XX..",
+      "....XXX.",
+      "....X.XX",
+      "....X..X",
+      "....X...",
+      "....X...",
+      "..XXX...",
+      ".XXXX...",
+      ".XXXX...",
+      "..XX...."
+    ]
+  }
+}

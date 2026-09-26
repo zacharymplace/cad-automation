@@ -1,0 +1,19 @@
+{
+  "name": "plant-marker-chili",
+  "type": "pixel_plant_marker",
+  "parameters": {
+    "pixel_size": 5,
+    "thickness": 3,
+    "groove_depth": 0.5,
+    "groove_width": 0.8,
+    "band_width": 44,
+    "band_height": 14,
+    "band_corner_radius": 2,
+    "label": "CHILI",
+    "label_size": 6,
+    "label_height": 0.6,
+    "stake_length": 110,
+    "stake_top_width": 16,
+    "stake_tip_width": 3
+  }
+}

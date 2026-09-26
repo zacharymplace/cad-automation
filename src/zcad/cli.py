@@ -28,6 +28,8 @@ from zcad.assemblies import (
 from zcad.assemblies.board_display import (
     analyze_board_display_product,
 )
+from zcad.bundle import build_bundle
+from zcad.bundle_manifest import verify_bundle
 from zcad.designs import (
     build_board_display_design,
     load_board_display_design,
@@ -96,6 +98,38 @@ from zcad.generators.jigger_rack import (
 from zcad.generators.phone_stand import (
     PhoneStandParameters,
     build_phone_stand,
+)
+from zcad.generators.pixel_block_planter import (
+    PixelBlockPlanterParameters,
+    build_pixel_block_planter,
+)
+from zcad.generators.pixel_coaster import (
+    PixelCoasterParameters,
+    build_pixel_coaster,
+)
+from zcad.generators.pixel_garden_module import (
+    PixelGardenModuleParameters,
+    build_pixel_garden_module,
+)
+from zcad.generators.pixel_heart_planter import (
+    PixelHeartPlanterParameters,
+    build_pixel_heart_planter,
+)
+from zcad.generators.pixel_hook import (
+    PixelHookParameters,
+    build_pixel_hook,
+)
+from zcad.generators.pixel_photo_stand import (
+    PixelPhotoStandParameters,
+    build_pixel_photo_stand,
+)
+from zcad.generators.pixel_plant_marker import (
+    PixelPlantMarkerParameters,
+    build_pixel_plant_marker,
+)
+from zcad.generators.pixel_ring_dish import (
+    PixelRingDishParameters,
+    build_pixel_ring_dish,
 )
 from zcad.generators.sponge_caddy import (
     SpongeCaddyParameters,
@@ -216,6 +250,30 @@ def generate_parts(
 
     if design_type == "phone_stand":
         return build_phone_stand(PhoneStandParameters(**raw_parameters))
+
+    if design_type == "pixel_heart_planter":
+        return build_pixel_heart_planter(PixelHeartPlanterParameters(**raw_parameters))
+
+    if design_type == "pixel_garden_module":
+        return build_pixel_garden_module(PixelGardenModuleParameters(**raw_parameters))
+
+    if design_type == "pixel_plant_marker":
+        return build_pixel_plant_marker(PixelPlantMarkerParameters(**raw_parameters))
+
+    if design_type == "pixel_block_planter":
+        return build_pixel_block_planter(PixelBlockPlanterParameters(**raw_parameters))
+
+    if design_type == "pixel_ring_dish":
+        return build_pixel_ring_dish(PixelRingDishParameters(**raw_parameters))
+
+    if design_type == "pixel_photo_stand":
+        return build_pixel_photo_stand(PixelPhotoStandParameters(**raw_parameters))
+
+    if design_type == "pixel_hook":
+        return build_pixel_hook(PixelHookParameters(**raw_parameters))
+
+    if design_type == "pixel_coaster":
+        return build_pixel_coaster(PixelCoasterParameters(**raw_parameters))
 
     if design_type == "ink_cap_tray":
         return build_ink_cap_tray(InkCapTrayParameters(**raw_parameters))
@@ -543,14 +601,79 @@ def _run_design_command(arguments: list[str]) -> None:
     raise ValueError(f"unknown design command: {command}")
 
 
+def _build_bundle_command_parser() -> argparse.ArgumentParser:
+    """Create the gift-bundle parser."""
+    parser = argparse.ArgumentParser(
+        prog="zcad bundle",
+        description=(
+            "Build every design in a folder and package the exports, sources, "
+            "and a recipient-facing guide as a folder plus zip."
+        ),
+    )
+    parser.add_argument("design_dir", type=Path)
+    parser.add_argument("--output", type=Path, default=Path("dist"))
+    parser.add_argument(
+        "--exports", type=Path, default=Path("exports"),
+        help="existing exports for --skip-build; fresh builds use isolated staging",
+    )
+    parser.add_argument("--name", default="starter-pack")
+    parser.add_argument("--title", default="Starter Pack")
+    parser.add_argument("--recipient", default="you")
+    parser.add_argument("--guide-html", type=Path, default=None)
+    parser.add_argument("--printer-profile", type=Path, default=None)
+    parser.add_argument("--printer-name", default="your printer")
+    parser.add_argument(
+        "--skip-build",
+        action="store_true",
+        help="package existing exports without regenerating them",
+    )
+    return parser
+
+
+def _run_bundle_command(arguments: list[str]) -> None:
+    """Package a folder of designs for the person printing them."""
+    args = _build_bundle_command_parser().parse_args(arguments)
+
+    bundle_dir = build_bundle(
+        design_dir=args.design_dir,
+        exports_dir=args.exports,
+        output_dir=args.output,
+        bundle_name=args.name,
+        title=args.title,
+        recipient=args.recipient,
+        build=not args.skip_build,
+        guide_html=args.guide_html,
+        printer_profile=args.printer_profile,
+        printer_name=args.printer_name,
+    )
+
+    print(f"Bundle: {bundle_dir}")
+    print(f"Zip:    {bundle_dir.parent / (bundle_dir.name + '.zip')}")
+
+
 def run(
     argv: list[str] | None = None,
-) -> None:
+) -> tuple[str, ...] | None:
     """Run one CAD or registry-driven design command."""
     arguments = list(argv) if argv is not None else sys.argv[1:]
 
+    if arguments and arguments[0] == "bundle-verify":
+        parser = argparse.ArgumentParser(prog="zcad bundle-verify")
+        parser.add_argument("directory", type=Path)
+        parser.add_argument("--manifest-sha256", default=None)
+        verification = parser.parse_args(arguments[1:])
+        print(json.dumps(verify_bundle(
+            verification.directory,
+            expected_manifest_sha256=verification.manifest_sha256,
+        ), indent=2))
+        return
+
     if arguments and arguments[0] == "products":
         _run_products_command(arguments[1:])
+        return
+
+    if arguments and arguments[0] == "bundle":
+        _run_bundle_command(arguments[1:])
         return
 
     if arguments and arguments[0] == "design":
@@ -560,6 +683,7 @@ def run(
     args = build_parser().parse_args(arguments)
     design = read_design(args.design)
     parts = generate_parts(design)
+    expected_parts = tuple(parts)
 
     printer_profile = load_printer_profile(args.printer_profile)
     material_profile = load_material_profile(args.material_profile)
@@ -602,6 +726,8 @@ def run(
         print(f"STEP: {part.step_path}")
         print(f"STL:  {part.stl_path}")
         print(f"META: {part.metadata_path}")
+
+    return expected_parts
 
 
 def main() -> None:

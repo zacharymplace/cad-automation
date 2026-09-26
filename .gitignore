@@ -11,3 +11,6 @@ exports/*
 # Python package build metadata
 *.egg-info/
 renders/
+
+# Gift bundles
+dist/

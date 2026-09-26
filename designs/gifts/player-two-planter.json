@@ -1,0 +1,27 @@
+{
+  "name": "player-two-planter",
+  "type": "pixel_heart_planter",
+  "parameters": {
+    "pixel_size": 12,
+    "height_pixels": 4,
+    "wall": 2.4,
+    "floor": 3,
+    "groove_depth": 0.6,
+    "groove_width": 1.0,
+    "drain_hole_diameter": 5,
+    "clearance": 0.5,
+    "lip_wall": 2,
+    "lip_height": 8,
+    "rib_height": 1.5,
+    "rib_width": 1.6,
+    "plate_thickness": 3,
+    "plate_margin": 6,
+    "plate_corner_radius": 6,
+    "strip_depth": 22,
+    "label": "PLAYER 2 HAS JOINED",
+    "label_size": 6.5,
+    "label_height": 0.8,
+    "subtitle": "SETH + BRITTNY  -  09.17.2026",
+    "subtitle_size": 4
+  }
+}

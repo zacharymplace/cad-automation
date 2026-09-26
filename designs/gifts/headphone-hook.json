@@ -1,0 +1,20 @@
+{
+  "name": "headphone-hook",
+  "type": "pixel_hook",
+  "parameters": {
+    "width": 40,
+    "plate_thickness": 4,
+    "plate_height": 70,
+    "arm_length": 30,
+    "arm_thickness": 5,
+    "lip_height": 12,
+    "lip_thickness": 4,
+    "corner_radius": 1.5,
+    "screw_hole_diameter": 4.2,
+    "countersink_diameter": 8.5,
+    "hole_inset": 6,
+    "pixel_size": 5,
+    "relief_depth": 1.0,
+    "pixel_inset": 0.2
+  }
+}

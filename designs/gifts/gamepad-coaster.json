@@ -1,0 +1,13 @@
+{
+  "name": "gamepad-coaster",
+  "type": "pixel_coaster",
+  "parameters": {
+    "size": 92,
+    "thickness": 5,
+    "corner_radius": 6,
+    "rim_width": 5,
+    "recess_depth": 1.2,
+    "pixel_size": 5,
+    "pixel_inset": 0.25
+  }
+}
