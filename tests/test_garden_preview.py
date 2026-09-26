@@ -14,6 +14,8 @@ def report():
         "insertion_check": {"status": "PASS", "assembly_order": ["b", "a"]},
         "module_count": 2,
         "pitch_mm": 40,
+        "connections": [],
+        "connection_count": 0,
         "instances": [
             {"name": "a", "row": 0, "column": 0, "position_mm": [0, 40, 0]},
             {"name": "b", "row": 1, "column": 1, "position_mm": [40, 0, 0]},
