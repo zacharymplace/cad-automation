@@ -71,10 +71,34 @@ def assembly_steps_html(report: dict) -> str:
         else:
             heading = f"Complete — {len(order)} modules installed"
             detail = "All modules are in their checked final positions."
+        counts_html = ""
+        if passed:
+            pairs = [{c["male"], c["female"]} for c in report["connections"]]
+            engaged = sum(ends <= installed for ends in pairs)
+            waiting = sum(len(ends & installed) == 1 for ends in pairs)
+            exposed = 4 * installed_count - 2 * engaged - waiting
+            counts = (
+                ("engaged", "Engaged pairs", engaged),
+                ("next", "Pairs added by next", len(mating)),
+                ("waiting", "Installed connectors awaiting mates", waiting),
+                ("exposed", "Installed permanently exposed edges", exposed),
+            )
+            counts_html = (
+                '<dl class="counts">'
+                + "".join(
+                    f'<div><dt>{label}</dt><dd data-count="{key}">{value}</dd></div>'
+                    for key, label, value in counts
+                )
+                + "</dl>"
+            )
+        for label in svg.iter("text"):
+            if label.text and "connected pairs ·" in label.text:
+                label.text = "Final layout: " + label.text
         frames.append(
             f'<section data-frame="{installed_count}"'
             + (" hidden" if installed_count else "")
             + f"><h2>{escape(heading)}</h2><p>{escape(detail)}</p>"
+            + counts_html
             + tostring(svg, encoding="unicode")
             + "</section>"
         )
@@ -98,6 +122,9 @@ main{max-width:1000px;margin:auto;padding:20px}h1{font-size:26px}h2{font-size:20
 nav{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 0}
 button{padding:10px 16px;font:inherit;cursor:pointer}input{vertical-align:middle}
 svg{width:100%;height:auto}section[hidden]{display:none}
+.counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.counts div{background:#fff;border:1px solid #cad8ce;border-radius:8px;padding:12px}
+.counts dt{font-size:14px}.counts dd{font-size:26px;font-weight:600;margin:6px 0 0}
 </style><main><h1>Garden / step through</h1>
 <p>Green = installed · Orange = next module and mates · Faint = future modules.
 Lower the next module from +Z at its shown XY position.</p>
