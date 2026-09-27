@@ -126,10 +126,21 @@ contact test. Thin membranes between the former Z levels are now detected at
 the sampled XY. Coverage remains lateral sampling: defects between these lines
 and exact opening dimensions remain unverified.
 
-Surrounding-material checks retain their three heights (-0.4, 0, +0.4 times plate
-thickness), with probes 0.1 mm outside the nominal boundary. They remain discrete
-point evidence, not continuous material coverage. Neither mesh feature method
-establishes full shape equivalence, minimum walls or printability.
+Surrounding-material checks now span the plate depth at the same XY locations
+0.1 mm outside the nominal boundary: 16 angular lines for holes and 22 lines for
+slots. `stl_coupon_material_vertical_coverage` replaces
+`stl_coupon_material_samples`. This method change is not a resolved old failure.
+Internal surface contact or coplanar contact fails conservatively. With no
+internal surface, midpoint occupancy must identify material; an empty line fails.
+Contacts on the two end faces are allowed. The report explicitly excludes
+1e-7 mm endpoint tolerance bands from verified coverage, records the verified
+interior Z interval, and rejects intervals no wider than twice that tolerance.
+All contacts inform the decision; only the displayed contact list is truncated.
+
+Thin internal gaps between the former Z samples are detected wherever they
+intersect a probe. Both mesh feature methods remain laterally sampled and do not
+establish full surrounding-band volume, global connectivity, minimum walls,
+full shape equivalence or printability.
 
 Other designs explicitly record feature `NOT_CHECKED`. Direct core callers must
 register `stl_feature_validator` to obtain product probes. A topology PASS alone
