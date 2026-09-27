@@ -247,6 +247,7 @@ def test_cli_captures_part_contract_before_exporter_can_mutate_it():
         validate_design_and_parts=lambda **kwargs: [],
         raise_for_validation_errors=lambda issues: None,
         ExportRequest=SimpleNamespace,
+        feature_checks=lambda **kwargs: [],
         export_parts=exporter,
     )
     assert run(["design.json"]) == ("planter", "saucer")

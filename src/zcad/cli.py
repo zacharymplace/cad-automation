@@ -34,6 +34,7 @@ from zcad.designs import (
     build_board_display_design,
     load_board_display_design,
 )
+from zcad.feature_validation import feature_checks
 from zcad.generators.board_display_enclosure import (
     analyze_board_display_enclosure_fit,
     build_board_display_enclosure,
@@ -513,6 +514,7 @@ def _run_design_build_command(
 
     result = export_parts(
         ExportRequest(
+            feature_validator=feature_checks,
             design_name=(design.product.lower().replace("_", "-")),
             design_type="board_display_enclosure",
             parameters={
@@ -741,6 +743,7 @@ def run(
 
     result = export_parts(
         ExportRequest(
+            feature_validator=feature_checks,
             design_name=design["name"],
             design_type=design["type"],
             parameters=design["parameters"],

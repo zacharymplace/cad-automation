@@ -18,9 +18,9 @@ The contract assumes the coupon generator's native coordinates and derives
 opening locations from effective dataclass parameters (including defaults).
 The clearance check establishes absence of material inside expected openings;
 the complementary band check below establishes surrounding material coverage.
-Neither verifies label clearance, physical fit, or print readiness. Export metadata retains
-its existing core-only validation scope; these additional checks currently run
-only in the two read-only automation validation commands.
+Neither verifies label clearance, physical fit, or print readiness. Application CLI exports and fresh bundle builds also run these checks before
+creating the output directory or writing artifacts. The combined report is
+returned in ExportResult and stored as design_validation in part metadata.
 
 Regression fixtures cover the real coupon, half-depth blockages, 0.02 mm internal
 membranes, complete blockage, missing openings, and obstructions in separate
@@ -42,7 +42,18 @@ solids. A shifted part, enlarged opening, or local cavity in the band fails.
 Separate solids that collectively cover the band may pass; connectivity and
 strength are not evaluated. Changes outside the band are outside this check.
 Both coupon checks run automatically in read-only CLI and catalog validation;
-other design types report NOT_CHECKED. Export validation remains unchanged.
+other design types report NOT_CHECKED. The application registers the same checker on both CLI export paths. Direct
+core export callers must explicitly supply feature_validator; core does not
+import application-specific geometry rules. Existing exports used with
+--skip-build are not regenerated or retrospectively feature-validated.
 
 This remains bounded nominal evidence, not a full dimensional inspection or
 physical validation.
+
+## Export failure behavior
+
+Core runs the application hook against isolated copies of the inspected shapes,
+before filesystem writes. FAIL results, exceptions, malformed results, and
+non-JSON evidence block export. Existing artifacts remain untouched on validation
+failure. This is pre-export geometry evidence, not verification of STEP/STL
+round-trip fidelity or transactional protection against later I/O failures.

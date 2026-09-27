@@ -1,4 +1,4 @@
-"""Product-specific nominal opening checks for read-only design validation."""
+"""Product-specific nominal opening checks for design validation and exports."""
 
 import math
 
@@ -116,23 +116,21 @@ def coupon_opening_checks(parts, parameters):
     return checks
 
 
-def validate_design(**kwargs):
-    """Append applicable product evidence before CLI/catalog policy evaluation."""
-    report = validate_geometry(**kwargs)
-    if kwargs["design_type"] != "tolerance_coupon":
-        report["checks"].extend(
+def feature_checks(*, design_type, parts, parameters):
+    """Shared product checks for read-only validation and export snapshots."""
+    if design_type != "tolerance_coupon":
+        return [
             {
                 "code": code,
                 "status": "NOT_CHECKED",
                 "message": "Only tolerance_coupon has an opening contract",
             }
             for code in ("coupon_opening_clearance", "coupon_surrounding_material")
-        )
-        return report
+        ]
     try:
-        checks = coupon_opening_checks(kwargs["parts"], kwargs.get("parameters") or {})
+        return coupon_opening_checks(parts, parameters)
     except Exception as error:
-        checks = [
+        return [
             {
                 "code": code,
                 "status": "FAIL",
@@ -141,11 +139,22 @@ def validate_design(**kwargs):
             }
             for code in ("coupon_opening_clearance", "coupon_surrounding_material")
         ]
+
+
+def validate_design(**kwargs):
+    """Append applicable product evidence before CLI/catalog policy evaluation."""
+    report = validate_geometry(**kwargs)
+    checks = feature_checks(
+        design_type=kwargs["design_type"],
+        parts=kwargs["parts"],
+        parameters=kwargs.get("parameters") or {},
+    )
     report["checks"].extend(checks)
     if any(c["status"] == "FAIL" for c in checks):
         report["evaluated_status"] = "FAIL"
-    report["scope"] += (
-        "; nominal coupon opening clearance and surrounding material "
-        "within declared plate interval"
-    )
+    if kwargs["design_type"] == "tolerance_coupon":
+        report["scope"] += (
+            "; nominal coupon opening clearance and surrounding material "
+            "within declared plate interval"
+        )
     return report
