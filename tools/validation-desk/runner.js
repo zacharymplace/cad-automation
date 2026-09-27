@@ -13,7 +13,7 @@ function validateReceipt(r) {
   return r;
 }
 if (typeof module !== 'undefined') module.exports = {validateReceipt};
-if (typeof document !== 'undefined') {
+if (typeof document !== 'undefined' && !globalThis.ZcadHistoryPage) {
   const picker = document.createElement('label'); picker.className='file'; picker.textContent='Open runner folder';
   const input=document.createElement('input'); input.type='file'; input.multiple=true; input.setAttribute('webkitdirectory',''); picker.append(input);
   document.querySelector('.actions').prepend(picker);

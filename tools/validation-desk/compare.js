@@ -40,7 +40,7 @@
   if(typeof module!=='undefined')module.exports=root.ZcadCompare;
 })(globalThis);
 
-if(typeof document!=='undefined'){
+if(typeof document!=='undefined' && !globalThis.ZcadHistoryPage){
   const section=node('section',undefined,'panel');section.style.marginTop='24px';
   section.append(node('h2','Compare completed runs'),node('p','Choose baseline A and comparison B. Order is your choice, not inferred chronology. Changes describe recorded evidence; they do not establish cause or current repository state.','muted'));
   const controls=node('div',undefined,'actions'),cards=node('div',undefined,'comparison-cards'),output=node('div');

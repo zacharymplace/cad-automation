@@ -1,0 +1,487 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'"><title>ZCAD · Run history</title><style>
+:root{font:15px system-ui;color:#e5eeeb;background:#101719;color-scheme:dark}*{box-sizing:border-box}body{margin:0}header{padding:22px 5%;border-bottom:1px solid #344443;display:flex;justify-content:space-between}main{max-width:1280px;margin:auto;padding:32px 5%}h1{font-size:36px;margin:10px 0}h2{font-size:21px}p{line-height:1.5}.muted,small{color:#a9bdb7}.notice{padding:14px 18px;background:#302d20;border-left:3px solid #c7ad65}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}.card{background:#182426;border:1px solid #364848;border-radius:9px;padding:18px;min-width:0}.stats b{display:block;font-size:30px;margin-top:6px}button,input,select{font:inherit;background:#213335;color:inherit;border:1px solid #4b6564;border-radius:6px;padding:9px 12px}button{cursor:pointer}button:hover{background:#324b4b}button:disabled{opacity:.45;cursor:default}:focus-visible{outline:3px solid #81ddca;outline-offset:3px}.filters,.actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px;align-items:start}.scroll{overflow:visible}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:14px 10px;border-bottom:1px solid #364848;vertical-align:top}th{font-size:12px;color:#aac0ba}td small{display:block;margin-top:5px}.pill{font-size:12px;border:1px solid #677b77;border-radius:5px;padding:3px 7px;display:inline-block}.PASS{color:#8ce1ba}.FAIL,.ERROR{color:#ffa89e}.RUNNING{color:#ead294}summary{cursor:pointer;padding:12px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:#101719;padding:12px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.selected{background:#223a39}footer{margin-top:30px;color:#a9bdb7;font-size:13px}#detail{scroll-margin-top:20px}@media(max-width:900px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}@media(max-width:550px){.pair{grid-template-columns:1fr}h1{font-size:28px}}
+.layout{display:block}#detail{margin-top:18px;border-color:#74bdae}#detail[hidden]{display:none}.pair>div{border:1px solid #425b56;border-radius:8px;padding:16px}.pair h3{margin-top:0}.filters input{flex:1;min-width:180px}td:last-child{min-width:180px}.selected{box-shadow:inset 3px 0 #81ddca}button[aria-pressed=true]{border-color:#81ddca;background:#30524a}#comparison:not(:empty){margin-top:20px;padding:18px;background:#101719;border-radius:8px}th{white-space:nowrap}h3{font-size:16px}@media(max-width:650px){header{gap:15px}.stats b{font-size:24px}td,th{padding:10px 7px}}
+#selection-tray{position:sticky;bottom:12px;margin:0 auto 12px;max-width:700px;background:#25413b;border:1px solid #72b7a6;border-radius:10px;padding:12px 18px;display:flex;gap:18px;justify-content:space-between;align-items:center;box-shadow:0 6px 25px #0008}#selection-tray[hidden]{display:none}.stats button:hover{border-color:#81ddca}body{padding-bottom:18px}@media(max-width:650px){#selection-tray{margin:0 12px 12px;font-size:13px}}
+td:first-child{max-width:280px;overflow-wrap:anywhere}td small{line-height:1.5}tbody tr:hover{background:#20302f}.scroll{max-height:none}thead th{position:sticky;top:0;background:#182426;z-index:1}
+.pagination{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}.pair p,#selection-tray span{overflow-wrap:anywhere}#selection-tray span{min-width:0}#selection-tray button{flex-shrink:0}
+
+button,input,select{min-height:44px}.pair button{margin:0 8px 8px 0}
+.mobile-label{display:none}
+@media(max-width:700px){
+ main{padding:22px 16px}.card{padding:14px}header{padding:18px 16px;flex-wrap:wrap}
+ .filters>*{width:100%;min-width:0}.filters input{flex-basis:100%}
+ .scroll{max-height:none;overflow:visible}
+ table,tbody,tr,td{display:block;width:100%}
+ thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%)}
+ tbody tr{border:1px solid #425b56;border-radius:8px;padding:10px;margin:12px 0}
+ td,td:first-child,td:last-child{max-width:none;min-width:0;border:0;padding:8px 4px}
+ .mobile-label{display:block;font-size:11px;letter-spacing:.06em;color:#aac0ba;margin-bottom:6px}
+ .pair{grid-template-columns:1fr}
+ #selection-tray{position:static;flex-wrap:wrap;margin:16px}
+ #selection-tray button{width:100%}
+}
+.repo-card{margin:12px 0}.repo-card p,.repo-candidate p{overflow-wrap:anywhere}.repo-candidate{padding:16px 0;border-bottom:1px solid #364848}
+</style><header><strong>ZCAD / CONTROL PLANE</strong><small>INTERACTION PROTOTYPE</small></header><main><p><a href="index.html">Open validation desk</a></p><small>LOCAL EVIDENCE / RUN HISTORY</small><h1>What needs attention?</h1><p class="muted">Inspect a run or choose two completed runs to compare.</p><p class="notice" id="mode-notice">Sample mode. Choose a reports folder to load real completed runs locally. Repository discovery remains simulated. No repository writes or command execution.</p><label>Open reports folder <input id="reports" type="file" webkitdirectory multiple></label><div class="actions"><button id="cancel-import" disabled>Cancel import</button><button id="clear-import" disabled>Clear imported evidence</button></div><p id="import-status" role="status"></p><div id="stats" class="stats"></div><div class="layout"><section class="card"><h2>Run history</h2><p class="muted">Select a reports folder above. Each receipt folder becomes one history entry; importing replaces the current history.</p><div class="filters"><input id="search" aria-label="Search runs, gates, and designs" placeholder="Search run, gate, or design"><select id="filter" aria-label="Filter runs"><option value="all">All runs</option><option value="attention">Needs review</option><option value="completed">Completed</option><option value="PASS">Recorded PASS</option><option value="unchecked">Integrity not checked</option><option value="integrity_review">All integrity review states</option><option value="integrity_problem">Integrity failure or error</option><option value="unbound">Unbound receipts</option><option value="load_error">Load errors</option><option value="catalog_unavailable">Catalog unavailable</option></select><select id="sort" aria-label="Sort runs"><option value="newest">Newest completed first</option><option value="review">Needs review first</option></select><select id="scale" aria-label="Sample history size"><option value="6">6 sample runs</option><option value="100">100 sample runs</option></select><button id="clear-filters">Clear filters</button><button id="reset">Reset demo</button></div><p class="muted">Needs review includes recorded failures, checkpoints, load errors, and integrity problems. Unchecked hashes are tracked separately.</p><p id="count" role="status" class="muted"></p><div class="scroll"><table role="table" aria-label="Sample run history"><thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">RUN / RECORDED FINISH</th><th scope="col" role="columnheader">OUTCOME / GATES</th><th scope="col" role="columnheader">ARTIFACT INTEGRITY</th><th scope="col" role="columnheader">ACTIONS</th></tr></thead><tbody id="rows" role="rowgroup"></tbody></table></div><nav class="pagination" aria-label="History pages"><button id="previous">Previous</button><span id="page-status" role="status"></span><button id="next">Next</button></nav></section><aside class="card" id="detail" hidden tabindex="-1" aria-live="polite"><h2>Inspect a run</h2><p class="muted">Select Inspect to see its recorded evidence.</p></aside></div><section class="card" style="margin-top:20px"><h2>Compare runs</h2><div class="pair"><div id="a"></div><div id="b"></div></div><div class="actions"><button id="compare" disabled>Show sample comparison</button><button id="clear">Clear selection</button></div><p id="selection-status" role="status" class="muted"></p><div id="comparison" aria-live="polite"></div></section><section class="card" style="margin-top:20px" aria-labelledby="repo-heading"><h2 id="repo-heading">Repository discovery <span class="pill">SAMPLE WORKFLOW</span></h2>
+<p>Choose a sample scope, review candidates, then add individual repositories to this overview.</p>
+<div class="filters"><select id="repo-scope" aria-label="Sample discovery scope"><option value="workspace">Sample workspace · /sample/dev</option><option value="empty">Sample empty folder</option><option value="denied">Sample inaccessible folder</option></select><button id="discover">Preview discovery</button><button id="clear-repos">Clear repository demo</button></div>
+<p class="muted">Preview covers immediate child folders only. No real folders are scanned. Adding a sample repository does not link it to historical runs.</p>
+<p id="repo-status" role="status">No discovery performed.</p><div id="repo-candidates"></div>
+<h3>Repositories in this overview</h3><div id="repo-list"></div>
+<p class="muted">Repository observations describe a separate moment in time. They do not update receipt SHAs, dirty states, gate outcomes, or artifact integrity.</p></section><footer>Local prototype · No network requests · No persistent storage · No repository writes</footer></main><script>
+globalThis.ZcadHistoryPage=true;
+(function(root){
+  'use strict';
+  const statuses=['PASS','FAIL','ERROR'];
+  function validate(d){
+    if(!d || d.schema_version!=='1.0' || !statuses.includes(d.status) || !Array.isArray(d.results)) throw Error('Expected a ZCAD schema 1.0 catalog report with status and results.');
+    if(d.design_count!==d.results.length || !d.counts) throw Error('Design count is missing or inconsistent.');
+    const counts={PASS:0,FAIL:0,ERROR:0}, paths=new Set();
+    for(const r of d.results){
+      if(!r || typeof r.path!=='string' || !r.path || paths.has(r.path) || !statuses.includes(r.status)) throw Error('Invalid or duplicate design result.');
+      paths.add(r.path);counts[r.status]++;
+      if(r.status!=='ERROR' && (!r.report || !Array.isArray(r.report.checks))) throw Error('Design report is missing checks.');
+      if(r.report){
+        if(!Array.isArray(r.report.checks)) throw Error('Invalid checks.');
+        for(const c of r.report.checks) if(!c || typeof c.code!=='string' || !['PASS','FAIL','ERROR','WARN','WARNING','NOT_CHECKED'].includes(c.status)) throw Error('Unsupported check status or code.');
+      }
+    }
+    for(const k of statuses) if(counts[k]!==d.counts[k]) throw Error('Reported counts do not match design results.');
+    if(d.status==='PASS' && (counts.FAIL || counts.ERROR || !d.results.length)) throw Error('PASS conflicts with reported results.');
+    return d;
+  }
+  function failed(r){return ['FAIL','ERROR'].includes(r.status);}
+  function unchecked(r){return (r.report?.checks??[]).some(c=>c.status==='NOT_CHECKED');}
+  function priority(r){return failed(r)?0:unchecked(r)?1:2;}
+  function visibleResults(results,query='',filter=''){
+    return results.filter(r=>(filter==='failed'?failed(r):filter==='unchecked'?unchecked(r):!filter||r.status===filter)
+      && (r.path+' '+(r.report?.design?.name??'')).toLowerCase().includes(query.toLowerCase()))
+      .sort((a,b)=>priority(a)-priority(b));
+  }
+  function selectResult(rows,current){return rows.some(r=>r.path===current)?current:rows[0]?.path;}
+  root.ZcadModel={validate,visibleResults,selectResult};
+  if(typeof module!=='undefined') module.exports=root.ZcadModel;
+})(globalThis);
+
+// Matches zcad.run_integrity artifact_integrity schema 1.0.
+async function verifyIntegrity(receipt, files, digest) {
+  const binding=receipt.artifact_integrity;
+  if(binding==null)return {status:'UNBOUND',reasons:['Receipt has no artifact hashes']};
+  try {
+    if(!['PASS','FAIL','ERROR','INTERRUPTED'].includes(receipt.status))throw Error('Receipt is not finalized');
+    if(binding.schema_version!=='1.0'||binding.algorithm!=='sha256')throw Error('Unsupported artifact integrity schema');
+    const names=[];
+    for(const gate of receipt.gates||[])for(const stream of ['stdout','stderr']){
+      const name=gate[stream];
+      if(typeof name!=='string'||!name||['.','..','receipt.json','receipt.tmp'].includes(name)||/[\\/]/.test(name))throw Error('Invalid artifact filename');
+      names.push(name);
+    }
+    if(!names.length||new Set(names).size!==names.length)throw Error('Expected nonempty, unique gate artifact names');
+    names.sort();
+    if(!binding.files||Array.isArray(binding.files)||typeof binding.files!=='object'||JSON.stringify(Object.keys(binding.files).sort())!==JSON.stringify(names))throw Error('Hash inventory does not match gate artifact references');
+    for(const name of names){
+      const e=binding.files[name];
+      if(!e||JSON.stringify(Object.keys(e).sort())!==JSON.stringify(['sha256','size_bytes'])||!Number.isSafeInteger(e.size_bytes)||e.size_bytes<0||typeof e.sha256!=='string'||!/^[0-9a-f]{64}$/.test(e.sha256))throw Error('Malformed hash record: '+name);
+    }
+    const reasons=[];
+    for(const name of names){
+      const f=files.get(name),e=binding.files[name];
+      if(!f){reasons.push('Missing artifact: '+name);continue;}
+      if(f.size!==e.size_bytes){reasons.push('Changed artifact: '+name+' (size mismatch)');continue;}
+      if(f.size>10*1024*1024)throw Error('Verification limit exceeded: '+name+' (10 MiB)');
+      const bytes=await f.arrayBuffer();
+      if(bytes.byteLength!==e.size_bytes||await digest(bytes)!==e.sha256)reasons.push('Changed artifact: '+name+' (SHA-256 mismatch)');
+    }
+    return {status:reasons.length?'FAIL':'PASS',file_count:names.length,reasons};
+  }catch(e){return {status:'ERROR',reasons:[e.message]};}
+}
+if(typeof module!=='undefined')module.exports={verifyIntegrity};
+
+// Receipt schema follows zcad.local_ci v1. No provenance is regenerated.
+function validateReceipt(r) {
+  if (!r || r.schema_version !== '1.0' || !['RUNNING','PASS','FAIL','ERROR','INTERRUPTED'].includes(r.status)) throw Error('Unsupported runner receipt.');
+  if (r.gates !== undefined && !Array.isArray(r.gates)) throw Error('Invalid gate list.');
+  for (const g of r.gates || []) {
+    if (!g || typeof g.name !== 'string' || !['RUNNING','PASS','FAIL','ERROR','INTERRUPTED'].includes(g.status) || !Array.isArray(g.command) || !g.command.every(v=>typeof v==='string')) throw Error('Invalid gate record.');
+  }
+  for (const phase of ['repositories_before','repositories_after']) {
+    if (r[phase] === undefined) continue;
+    if (!r[phase] || typeof r[phase] !== 'object' || Array.isArray(r[phase])) throw Error('Invalid repository snapshots.');
+    for (const s of Object.values(r[phase])) if (!s || typeof s.commit !== 'string' || typeof s.dirty !== 'boolean') throw Error('Invalid repository state.');
+  }
+  return r;
+}
+if (typeof module !== 'undefined') module.exports = {validateReceipt};
+if (typeof document !== 'undefined' && !globalThis.ZcadHistoryPage) {
+  const picker = document.createElement('label'); picker.className='file'; picker.textContent='Open runner folder';
+  const input=document.createElement('input'); input.type='file'; input.multiple=true; input.setAttribute('webkitdirectory',''); picker.append(input);
+  document.querySelector('.actions').prepend(picker);
+  const panel=node('section',undefined,'panel'); panel.hidden=true; $('origin').after(panel);
+  const oldReset=reset; reset=function(){oldReset();panel.hidden=true;panel.replaceChildren();};
+  $('example').addEventListener('click',()=>{panel.hidden=true;panel.replaceChildren();});
+  input.onchange=async()=>{
+    const id=++loadId; reset();
+    try {
+      const files=Array.from(input.files); const receipts=files.filter(f=>f.name==='receipt.json');
+      if(receipts.length!==1) throw Error('Choose one completed or checkpointed run folder containing receipt.json.');
+      const rf=receipts[0], prefix=rf.webkitRelativePath.slice(0,-rf.name.length);
+      const byName=new Map(files.filter(f=>f.webkitRelativePath.slice(0,-f.name.length)===prefix).map(f=>[f.name,f]));
+      async function read(name){const f=byName.get(name);if(!f)throw Error(name+' is missing');if(f.size>10*1024*1024)throw Error(name+' exceeds 10 MiB');return f.text();}
+      const raw=await read('receipt.json'), r=validateReceipt(JSON.parse(raw));
+      const integrity=await verifyIntegrity(r,byName,async bytes=>{
+        if(!globalThis.crypto?.subtle)throw Error('SHA-256 unavailable in this browser context');
+        const hash=await crypto.subtle.digest('SHA-256',bytes);
+        return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+      });
+      let catalog, catalogError;try{catalog=ZcadModel.validate(JSON.parse(await read('catalog.json')));}catch(e){catalogError=e.message;}
+      if(id!==loadId)return;
+      if(catalog)load(catalog,'Runner catalog · '+rf.webkitRelativePath);
+      panel.hidden=false; panel.append(node('h2','Local runner · recorded '+r.status));
+      $('origin').textContent='Recorded execution-time evidence. Current repository state and freshness are unknown. Files remain in this tab.';
+      panel.append(node('p','Started: '+(r.started_at??'Not recorded')+' · Finished: '+(r.finished_at??'Not recorded')+' · Exit code: '+(r.exit_code??'Not recorded')));
+      panel.append(node('p',r.scope??'Scope not recorded'),node('p','Observed Git state changed: '+(r.observed_git_state_changed===undefined?'Not recorded':String(r.observed_git_state_changed))));
+      const integrityPanel=node('div',undefined,'notice');
+      integrityPanel.append(node('strong','Artifact integrity: '+integrity.status));
+      for(const reason of integrity.reasons)integrityPanel.append(node('p',reason));
+      if(integrity.status==='PASS')integrityPanel.append(node('p',integrity.file_count+' referenced files match the supplied receipt (SHA-256 and byte size).'));
+      integrityPanel.append(node('p','Integrity is separate from gate success. Receipt authenticity and current repository state are unverified. Extra files are outside the binding. Browser file selection cannot check filesystem symlink metadata.'));
+      panel.prepend(integrityPanel);
+      if(integrity.status!=='PASS')$('origin').textContent+=' Artifact integrity: '+integrity.status+'; displayed catalog and logs are unverified.';
+      for(const key of ['error','provenance_error','integrity_error'])if(r[key])panel.append(node('p',key+': '+r[key],'ERROR'));
+      if(r.status==='PASS' && (!r.finished_at || r.exit_code!==0 || r.observed_git_state_changed!==false || !r.repositories_before || !r.repositories_after || !r.gates?.length || r.gates.some(g=>g.status!=='PASS')))panel.append(node('p','Receipt is incomplete or inconsistent with its recorded PASS.','ERROR'));
+      panel.append(node('h2','Gate results'));
+      const passing=node('details');passing.append(node('summary','Passing gates'));
+      for(const g of [...(r.gates||[])].sort((a,b)=>(a.status==='PASS')-(b.status==='PASS'))){
+        const box=node('div',undefined,'check');box.append(badge(g.status),node('strong',g.name),node('p','Exit code: '+(g.returncode??'Not recorded')),node('pre',JSON.stringify(g.command)));
+        if(g.error)box.append(node('p',g.error));
+        if(g.name==='catalog' && catalog){const jump=node('button','View catalog findings');jump.onclick=showCatalogFindings;box.append(jump);}
+        for(const key of ['stdout','stderr'])if(typeof g[key]==='string'){
+          const d=node('details');d.append(node('summary',key+': '+g[key]));
+          const pre=node('pre','Expand to read log');d.append(pre);let loaded=false;
+          d.ontoggle=async()=>{if(!d.open||loaded)return;loaded=true;try{pre.textContent=await read(g[key]);}catch(e){pre.textContent=e.message;}};box.append(d);
+        }
+        (g.status==='PASS'?passing:panel).append(box);
+      }
+      panel.append(passing,node('h2','Repository snapshots at execution time'));
+      const table=node('table');table.style.cssText='width:100%;text-align:left;overflow-wrap:anywhere;table-layout:fixed';
+      const head=node('tr');for(const s of ['Repository / snapshot','Commit SHA','Dirty state'])head.append(node('th',s));table.append(head);
+      for(const phase of ['repositories_before','repositories_after']){
+        if(!r[phase])panel.append(node('p',phase+': Not recorded'));
+        for(const [name,s] of Object.entries(r[phase]||{})){
+          const tr=node('tr');tr.append(node('td',name+' / '+phase.replace('repositories_','')),node('td',s.commit),node('td',s.dirty?'Dirty':'Clean'));table.append(tr);
+        }
+      }
+      panel.append(table);
+      const original=node('details');original.append(node('summary','Original receipt JSON · includes paths and porcelain state'),node('pre',raw));panel.append(original);
+      if(catalogError)panel.append(node('p','Catalog unavailable or rejected: '+catalogError,'ERROR'));
+      else {$('identity').prepend(node('p','Execution provenance is recorded in the runner panel above. Catalog JSON itself does not contain it.'));}
+    }catch(e){if(id===loadId){reset();$('error').textContent='Runner bundle rejected: '+e.message;}}
+    finally{input.value='';}
+  };
+}
+
+// Comparisons describe recorded evidence only; neither input is rewritten.
+(function(root){
+  function stable(value){
+    if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
+    if(value && typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';
+    return JSON.stringify(value);
+  }
+  function changes(left,right,key){
+    const group=items=>{const m=new Map();for(const item of items){const k=key(item);if(!m.has(k))m.set(k,[]);m.get(k).push(item);}return m;};
+    const a=group(left),b=group(right);
+    return [...new Set([...a.keys(),...b.keys()])].map(k=>{
+      const before=a.get(k)||[],after=b.get(k)||[];
+      const ambiguous=before.length>1||after.length>1;
+      const same=stable(before)===stable(after);
+      return {key:k,before,after,kind:ambiguous?'Ambiguous identity':!before.length?'Added':!after.length?'Removed':same?'Unchanged':'Changed'};
+    });
+  }
+  function compareRuns(a,b){
+    const gates=changes(a.receipt.gates||[],b.receipt.gates||[],g=>g.name);
+    const designs=a.catalog&&b.catalog?changes(a.catalog.results,b.catalog.results,r=>r.path):null;
+    return {gates,designs,policyChanged:a.catalog&&b.catalog?stable(a.catalog.policy)!==stable(b.catalog.policy):null};
+  }
+  function findings(a,b){return changes(a?.report?.checks||[],b?.report?.checks||[],c=>JSON.stringify([c.code,c.part_name??null]));}
+  async function readBundle(files,validateReceipt,validateCatalog,verify,digest){
+    const list=Array.from(files),receipts=list.filter(f=>f.name==='receipt.json');
+    if(receipts.length!==1)throw Error('Select exactly one run folder containing receipt.json.');
+    const rf=receipts[0],prefix=rf.webkitRelativePath.slice(0,-rf.name.length),map=new Map();
+    for(const f of list.filter(f=>f.webkitRelativePath.slice(0,-f.name.length)===prefix)){
+      if(map.has(f.name))throw Error('Duplicate filename: '+f.name);map.set(f.name,f);
+    }
+    async function read(name){const f=map.get(name);if(!f)throw Error(name+' is missing');if(f.size>10*1024*1024)throw Error(name+' exceeds 10 MiB');return f.text();}
+    const raw=await read('receipt.json'),receipt=validateReceipt(JSON.parse(raw));
+    if(!['PASS','FAIL','ERROR','INTERRUPTED'].includes(receipt.status)||typeof receipt.finished_at!=='string'||!Number.isFinite(Date.parse(receipt.finished_at)))throw Error('A completed run with a valid finished_at is required.');
+    const integrity=await verify(receipt,map,digest);
+    let catalog=null,catalogError=null;
+    try{catalog=validateCatalog(JSON.parse(await read('catalog.json')));}catch(e){catalogError=e.message;}
+    return {receipt,raw,integrity,catalog,catalogError,label:prefix||rf.name};
+  }
+  root.ZcadCompare={compareRuns,findings,readBundle};
+  if(typeof module!=='undefined')module.exports=root.ZcadCompare;
+})(globalThis);
+
+if(typeof document!=='undefined' && !globalThis.ZcadHistoryPage){
+  const section=node('section',undefined,'panel');section.style.marginTop='24px';
+  section.append(node('h2','Compare completed runs'),node('p','Choose baseline A and comparison B. Order is your choice, not inferred chronology. Changes describe recorded evidence; they do not establish cause or current repository state.','muted'));
+  const controls=node('div',undefined,'actions'),cards=node('div',undefined,'comparison-cards'),output=node('div');
+  section.append(controls,cards,output);document.querySelector('footer').before(section);
+  const runs=[null,null],versions=[0,0],slots=[];
+  const digest=async bytes=>{if(!globalThis.crypto?.subtle)throw Error('SHA-256 unavailable');const hash=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');};
+  function evidence(title,value){const d=node('details');d.append(node('summary',title),node('pre',typeof value==='string'?value:JSON.stringify(value,null,2)));return d;}
+  function showCard(i,run){const card=slots[i];card.replaceChildren(node('h3',i?'Comparison B':'Baseline A'),node('p',run.label),node('p','Recorded run: '+run.receipt.status),node('p','Artifact integrity: '+run.integrity.status));
+    card.append(node('p','Started: '+(run.receipt.started_at??'Not recorded')+' · Finished: '+run.receipt.finished_at),node('p','Exit: '+(run.receipt.exit_code??'Not recorded')));
+    if(run.integrity.status==='PASS')card.append(node('p',run.integrity.file_count+' referenced files match.'));
+    for(const reason of run.integrity.reasons||[])card.append(node('p',reason));
+    card.append(node('p','Integrity checks artifact bytes, independently of gate success.','muted'),evidence('Integrity scope & limits','Receipt authenticity and current repository state are unverified. Extra files are outside the binding; browser selection cannot check symlink metadata.'));
+    for(const phase of ['repositories_before','repositories_after'])card.append(evidence(phase.replaceAll('_',' '),run.receipt[phase]??'Not recorded'));
+    card.append(evidence('Original receipt JSON',run.raw));
+    if(run.catalogError)card.append(node('p','Catalog unavailable: '+run.catalogError,'ERROR'));
+  }
+  function table(title,rows,label){
+    const wrap=node('div',undefined,'table-wrap'),t=node('table');t.append(node('caption',title));
+    const h=node('tr');for(const s of ['Identity','Change','Baseline A','Comparison B']){const th=node('th',s);th.scope='col';h.append(th);}const head=node('thead');head.append(h);t.append(head);
+    const body=node('tbody');for(const r of rows){const tr=node('tr');tr.append(node('td',r.key),node('td',r.kind),node('td',r.before.length?r.before.map(label).join(' | '):'Not present'),node('td',r.after.length?r.after.map(label).join(' | '):'Not present'));body.append(tr);}t.append(body);wrap.append(t);return wrap;
+  }
+  function renderComparison(){output.replaceChildren();if(!runs.every(Boolean)){output.append(node('p','Load both completed runs to compare.'));return;}
+    const result=ZcadCompare.compareRuns(...runs);
+    if(runs.some(r=>r.integrity.status!=='PASS'))output.append(node('p','At least one run is unbound or has an integrity problem. Treat these differences as unverified.','notice'));
+    output.append(node('p','Gates match by name; designs by exact path. Renamed designs appear as added and removed. Removed checks are not evidence of a fix. Duplicate identities are marked ambiguous.','muted'));
+    const changed=result.gates.filter(r=>r.kind!=='Unchanged');output.append(table('Gate changes ('+changed.length+')',changed,g=>g.status+' · exit '+(g.returncode??'not recorded')));
+    for(const r of changed)output.append(evidence('Gate evidence: '+r.key,{baseline:r.before,comparison:r.after}));
+    const same=node('details');same.append(node('summary','Unchanged gates'),table('Unchanged gate records',result.gates.filter(r=>r.kind==='Unchanged'),g=>g.status));output.append(same);
+    if(!result.designs){output.append(node('p','Design comparison unavailable: both valid catalogs are required.','notice'));return;}
+    if(result.policyChanged)output.append(node('p','Reported catalog policy differs; outcomes may not be directly comparable.','notice'),evidence('Catalog policies',{baseline:runs[0].catalog.policy??null,comparison:runs[1].catalog.policy??null}));
+    const designs=result.designs.filter(r=>r.kind!=='Unchanged');output.append(table('Design changes ('+designs.length+')',designs,r=>r.status));
+    for(const r of designs){const d=node('details');d.append(node('summary',r.key+' · '+r.kind));
+      const findings=ZcadCompare.findings(r.before[0],r.after[0]).filter(c=>c.kind!=='Unchanged');
+      d.append(table('Changed checks',findings,c=>c.status+(c.message?' · '+c.message:'')));
+      for(const f of findings)d.append(evidence('Check evidence: '+f.key,{baseline:f.before,comparison:f.after}));
+      d.append(evidence('Complete design evidence (includes policy, coverage and dimensions)',{baseline:r.before,comparison:r.after}));output.append(d);
+    }
+    output.append(node('p',result.designs.filter(r=>r.kind==='Unchanged').length+' unchanged designs.'));
+  }
+  for(let i=0;i<2;i++){
+    const card=node('div');slots.push(card);cards.append(card);
+    const label=node('label',i?'Open comparison B':'Open baseline A','file'),input=document.createElement('input');input.type='file';input.multiple=true;input.setAttribute('webkitdirectory','');label.append(input);controls.append(label);
+    input.onchange=async()=>{if(!input.files.length)return;const version=++versions[i];runs[i]=null;card.replaceChildren(node('p','Reading '+(i?'comparison B':'baseline A')+'…'));renderComparison();try{
+      const run=await ZcadCompare.readBundle(input.files,validateReceipt,ZcadModel.validate,verifyIntegrity,digest);
+      if(version!==versions[i])return;runs[i]=run;showCard(i,run);renderComparison();
+    }catch(e){if(version===versions[i]){card.replaceChildren(node('p',e.message,'ERROR'));renderComparison();}}finally{input.value='';}};
+  }
+  const clear=node('button','Clear comparison');clear.onclick=()=>{for(let i=0;i<2;i++){versions[i]++;runs[i]=null;slots[i].replaceChildren();}renderComparison();};controls.append(clear);$('clear').addEventListener('click',()=>clear.onclick());renderComparison();
+}
+
+const sampleRuns=[
+{id:'sample-06',finish:'2026-09-27T03:30:00Z',status:'ERROR',gates:'5/5 PASS; repository changed',integrity:'Not checked',completed:true,sha:'sample-sha-f',dirty:true,note:'Sample: all gates passed, but observed repository state changed during execution.'},
+{id:'sample-05',finish:'2026-09-27T03:20:00Z',status:'FAIL',gates:'catalog FAIL',integrity:'Not checked',completed:true,sha:'sample-sha-e',dirty:false,note:'Sample: catalog reports a failing dimension check.'},
+{id:'sample-04',finish:'2026-09-27T03:10:00Z',status:'PASS',gates:'5/5 PASS',integrity:'Not checked',completed:true,sha:'sample-sha-d',dirty:false,note:'Sample: passing gates. Artifact hashes have not been checked.'},
+{id:'sample-03',finish:'2026-09-27T03:00:00Z',status:'PASS',gates:'5/5 PASS',integrity:'FAIL (simulated)',completed:true,sha:'sample-sha-c',dirty:false,note:'Sample: recorded PASS, but a simulated changed artifact makes its evidence unverified.'},
+{id:'sample-02',finish:null,status:'RUNNING',gates:'tests RUNNING',integrity:'Not checked',completed:false,sha:'sample-sha-b',dirty:false,note:'Sample checkpoint, not proof the process is still alive. No completed receipt yet.'},
+{id:'sample-01',finish:null,status:'Load error',gates:'Malformed receipt',integrity:'Unavailable',completed:false,note:'Sample: invalid JSON. Folder remains visible; no outcome or completion time is inferred.'}
+ ];
+let importVersion=0,realMode=false;let runs=sampleRuns,page=0;const pageSize=20;let matchingIds=new Set(),displayedIds=new Set();
+function receiptConcerns(receipt){
+ const concerns=[];
+ if(receipt.status==='PASS'){
+  if(receipt.exit_code!==0)concerns.push('Recorded PASS has a missing or nonzero exit code');
+  if(!receipt.gates?.length)concerns.push('Recorded PASS has no gate records');
+  else if(receipt.gates.some(g=>g.status!=='PASS'))concerns.push('Recorded PASS includes a non-passing gate');
+  if(!receipt.repositories_before||!receipt.repositories_after)concerns.push('Recorded PASS is missing repository snapshots');
+  if(receipt.observed_git_state_changed!==false)concerns.push('Recorded PASS lacks an unchanged-state observation');
+ }
+ if(receipt.started_at&&Date.parse(receipt.started_at)>Date.parse(receipt.finished_at))concerns.push('Recorded finish precedes start');
+ return concerns;
+}
+function importedConcerns(r){
+ const b=r.bundle;if(!b)return [];
+ const reasons=[];
+ if(r.status!=='PASS')reasons.push('Recorded run '+r.status);
+ if(r.integrity!=='PASS')reasons.push('Artifact integrity '+r.integrity);
+ if(b.catalogError)reasons.push('Catalog unavailable: '+b.catalogError);
+ if(b.catalog?.status!=='PASS'&&b.catalog)reasons.push('Recorded catalog '+b.catalog.status);
+ if(b.receipt.observed_git_state_changed===true)reasons.push('Repository state changed during execution');
+ return [...reasons,...receiptConcerns(b.receipt)];
+}
+function reviewReason(r){if(r.bundle)return importedConcerns(r).join(' · ')||'No recorded failure or receipt concern detected';if(r.loadError)return r.loadError;if(r.status==='Load error')return 'Receipt could not be read';if(r.status==='RUNNING')return 'Checkpoint only · process state unknown';if(r.integrity.startsWith('FAIL'))return 'Artifact mismatch · evidence unverified';if(r.status==='ERROR')return 'Repository changed during execution';if(r.status==='FAIL')return 'Catalog gate failed';return 'No recorded failure';}
+function localTime(value){return value?new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)):'Completion not recorded';}
+let pair=[null,null],selected=null;const $=id=>document.getElementById(id),n=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
+function motionBehavior(){return typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';}
+function pill(text){const e=n('span',text);e.className='pill '+text;return e;}
+function attention(r){if(r.bundle)return importedConcerns(r).length>0;return r.status!=='PASS'||r.integrity.startsWith('FAIL')||(realMode&&r.integrity!=='PASS')||!!r.bundle?.catalogError;}
+function filteredRuns(){const q=$('search').value.toLowerCase(),f=$('filter').value;return runs.filter(r=>(r.id+' '+r.gates+' '+(r.bundle?.catalog?.results||[]).map(d=>d.path+' '+(d.report?.design?.name??'')).join(' ')).toLowerCase().includes(q)&&(f==='all'||f==='attention'&&attention(r)||f==='completed'&&r.completed||f==='unchecked'&&r.integrity==='Not checked'||f==='integrity_review'&&r.integrity!=='PASS'||f==='integrity_problem'&&/^(FAIL|ERROR)/.test(r.integrity)||f==='unbound'&&r.integrity==='UNBOUND'||f==='load_error'&&r.status==='Load error'||f==='catalog_unavailable'&&!!r.bundle?.catalogError||f===r.status)).sort((a,b)=>($('sort').value==='review'?(Number(attention(b))-Number(attention(a))):0)||(Date.parse(b.finish)||0)-(Date.parse(a.finish)||0));}
+function render(){const visible=filteredRuns();$('count').textContent=visible.length+' of '+runs.length+(realMode?' imported runs · times in ':' sample runs · times in ')+Intl.DateTimeFormat().resolvedOptions().timeZone+' · '+($('sort').value==='review'?'review priority, then completion time':'completion times newest first; unknown times last');matchingIds=new Set(visible.map(r=>r.id));page=Math.min(page,Math.max(0,Math.ceil(visible.length/pageSize)-1));const pageRows=visible.slice(page*pageSize,(page+1)*pageSize);displayedIds=new Set(pageRows.map(r=>r.id));$('page-status').textContent=visible.length?'Rows '+(page*pageSize+1)+'–'+(page*pageSize+pageRows.length)+' of '+visible.length:'No matching rows';$('previous').disabled=page===0;$('next').disabled=(page+1)*pageSize>=visible.length;$('rows').replaceChildren();for(const r of pageRows){const tr=n('tr');tr.setAttribute('role','row');if(selected===r.id)tr.className='selected';const id=n('td',r.id);const time=n('small',localTime(r.finish));time.title=r.finish||'Unknown';id.append(time);const outcome=n('td');outcome.append(pill(r.status),n('small',r.gates),n('small',reviewReason(r)));const integrity=n('td',r.integrity);if(r.bundle){integrity.append(n('small',r.integrity==='PASS'?r.bundle.integrity.file_count+' referenced files match':(r.bundle.integrity.reasons||[]).join(' · ')));}if(r.integrity==='Not checked')integrity.append(n('small','No hash verification performed'));const actions=n('td');for(const [label,action]of [['Inspect',()=>inspect(r)],['Use as A',()=>choose(0,r)],['Use as B',()=>choose(1,r)]]){const b=n('button',label);b.style.margin='0 5px 5px 0';b.disabled=label!=='Inspect'&&!r.completed;b.onclick=action;b.setAttribute('aria-label',label+' · '+r.id);if(label==='Inspect')b.dataset.runId=r.id;if(label==='Use as A'||label==='Use as B'){const chosen=pair[label==='Use as A'?0:1]?.id===r.id;b.setAttribute('aria-pressed',String(chosen));if(chosen)b.textContent=label==='Use as A'?'Selected A':'Selected B';}actions.append(b);}if(!r.completed)actions.append(n('small',r.status==='Load error'?'Comparison unavailable: receipt could not be read.':'Comparison unavailable: completed receipt required.'));
+for(const [cell,label]of [[id,'Run / recorded finish'],[outcome,'Outcome / gates'],[integrity,'Artifact integrity'],[actions,'Actions']]){cell.setAttribute('role','cell');const heading=n('span',label);heading.className='mobile-label';heading.setAttribute('aria-hidden','true');cell.prepend(heading);}
+tr.append(id,outcome,integrity,actions);$('rows').append(tr);}if(!visible.length){const tr=n('tr'),td=n('td','No matching runs. Clear the search or change the filter.');td.colSpan=4;tr.append(td);$('rows').append(tr);}updateVisibility();}
+function inspect(r){if(r.bundle){inspectBundle(r);return;}selected=r.id;render();const d=$('detail');d.hidden=false;d.replaceChildren(n('h2',r.id),pill(r.status),n('p',reviewReason(r)),n('p',r.note||r.loadError||'No additional details'),n('p','Recorded completion: '+(r.finish||'Not recorded')),n('p','Artifact integrity: '+r.integrity));if(r.sha){const details=n('details');details.append(n('summary','Recorded repository snapshot'),n('pre',JSON.stringify({commit:r.sha,dirty:r.dirty,source:'SAMPLE execution-time observation'},null,2)));d.append(details);}d.append(n('p','Real implementation: verify selected artifact bytes before presenting a hash result. Receipt authenticity and current repository state remain separate.'));const close=n('button','Close inspection');close.onclick=()=>{d.hidden=true;selected=null;render();const buttons=Array.from($('rows').querySelectorAll('button'));(buttons.find(b=>b.dataset.runId===r.id)||$('search')).focus();};d.prepend(close);d.scrollIntoView({block:'nearest',behavior:motionBehavior()});d.focus({preventScroll:true});}
+function updateVisibility(){for(let i=0;i<2;i++){const el=$('visibility-'+i);if(el)el.textContent=pair[i]&&!matchingIds.has(pair[i].id)?'Hidden by current filters · selection retained':pair[i]&&!displayedIds.has(pair[i].id)?'On another history page · selection retained':'';}}
+function revealRun(r){
+  if(!matchingIds.has(r.id)){$('search').value='';$('filter').value='all';}
+  const index=filteredRuns().findIndex(row=>row.id===r.id);
+  page=Math.max(0,Math.floor(index/pageSize));render();
+  const button=Array.from($('rows').querySelectorAll('button')).find(b=>b.dataset.runId===r.id);
+  if(button){button.scrollIntoView({block:'center',behavior:motionBehavior()});button.focus({preventScroll:true});}
+}
+function clearFilters(){$('search').value='';$('filter').value='all';page=0;render();}
+$('clear-filters').onclick=clearFilters;
+$('previous').onclick=()=>{page--;render();};
+$('next').onclick=()=>{page++;render();};
+function choose(i,r){pair[i]=r;drawPair();render();}
+function drawPair(){$('compare').textContent=realMode?'Compare recorded runs':'Show sample comparison';for(let i=0;i<2;i++){const el=$(i?'b':'a');el.replaceChildren(n('h3',i?'Comparison B':'Baseline A'));const visibility=n('small');visibility.id='visibility-'+i;el.append(visibility);const r=pair[i];el.append(n('p',r?r.id+' · recorded '+r.status:'Choose a completed run'));if(r){el.append(n('p','Recorded finish: '+localTime(r.finish)),n('p','Artifact integrity: '+r.integrity));if(r.bundle){for(const concern of receiptConcerns(r.bundle.receipt))el.append(n('p',concern));el.append(n('p','Exit: '+(r.bundle.receipt.exit_code??'Not recorded')),evidence('Recorded repository provenance',{before:r.bundle.receipt.repositories_before??null,after:r.bundle.receipt.repositories_after??null}),evidence('Integrity details',r.bundle.integrity));}const reveal=n('button','Find in history');reveal.title='Clear filters if needed and jump to this run';reveal.onclick=()=>revealRun(r);el.append(reveal);const remove=n('button','Remove '+(i?'B':'A'));remove.onclick=()=>{pair[i]=null;drawPair();render();};el.append(remove);}}$('compare').disabled=!pair.every(Boolean);$('clear').disabled=!pair.some(Boolean);const swapButton=$('swap');if(swapButton)swapButton.disabled=!pair.some(Boolean);$('selection-status').textContent=pair.every(Boolean)?(pair[0].id===pair[1].id?'Same run on both sides — useful as a no-change check.':(Date.parse(pair[0].finish)>Date.parse(pair[1].finish)?'A → B compares a newer run to an older run. Swap to reverse direction.':'A → B follows the selected direction; run times do not establish a shared code lineage.')):pair.some(Boolean)?'Choose the remaining comparison slot from the history table.':'Choose baseline A and comparison B from any completed rows.';$('comparison').replaceChildren();updateTray();}
+$('compare').onclick=()=>{const [a,b]=pair;if(a.bundle&&b.bundle){compareImported(a,b);return;}const out=$('comparison');out.replaceChildren(n('h3','Sample comparison'),n('p',a.id===b.id?'Same run selected on both sides; no differences.':'Recorded outcome: '+a.status+' → '+b.status),n('p','A gates: '+a.gates),n('p','B gates: '+b.gates),n('p','This interaction does not compute real findings or verify artifacts. The implemented view will use the existing comparison engine.'));};
+const swap=n('button','Swap A / B');swap.id='swap';swap.onclick=()=>{pair.reverse();drawPair();render();};$('clear').before(swap);$('clear').onclick=()=>{pair=[null,null];drawPair();render();};$('reset').onclick=()=>{importVersion++;$('cancel-import').disabled=true;$('clear-import').disabled=true;realMode=false;$('scale').disabled=false;$('mode-notice').textContent='Sample mode. Repository discovery is simulated.';$('import-status').textContent='';$('search').value='';$('filter').value='all';$('sort').value='newest';$('scale').value='6';runs=sampleRuns;page=0;renderStats();selected=null;pair=[null,null];drawPair();render();$('detail').hidden=true;$('detail').replaceChildren(n('h2','Inspect a run'),n('p','Select Inspect to see its recorded evidence.'));};const refilter=()=>{page=0;render();};$('search').oninput=refilter;$('filter').onchange=refilter;$('sort').onchange=refilter;
+function renderStats(){$('stats').replaceChildren();for(const [label,value]of [[realMode?'Imported runs':'Sample runs',runs.length],['Need review',runs.filter(attention).length],['Completed',runs.filter(r=>r.completed).length],[realMode?'Integrity needs review':'Integrity not checked',runs.filter(r=>realMode?r.integrity!=='PASS':r.integrity==='Not checked').length]]){const c=n('button',label);c.className='card';c.style.textAlign='left';c.append(n('b',value));c.onclick=()=>{$('filter').value=({'Sample runs':'all','Imported runs':'all','Need review':'attention','Completed':'completed','Integrity not checked':'unchecked','Integrity needs review':'integrity_review'})[label];page=0;render();};$('stats').append(c);}}
+renderStats();
+const tray=n('div');tray.id='selection-tray';tray.setAttribute('aria-label','Comparison selection');document.body.append(tray);
+function updateTray(){if(!document.getElementById('selection-tray'))return;tray.hidden=!pair.some(Boolean);tray.replaceChildren(n('span','A: '+(pair[0]?.id??'Choose a run')+'  /  B: '+(pair[1]?.id??'Choose a run')));const jump=n('button','Review selection');jump.onclick=()=>{$('a').parentElement.scrollIntoView({block:'center',behavior:motionBehavior()});$('compare').disabled?$('clear').focus({preventScroll:true}):$('compare').focus({preventScroll:true});};tray.append(jump);}
+$('scale').onchange=()=>{page=0;runs=$('scale').value==='6'?sampleRuns:Array.from({length:100},(_,i)=>{const base=sampleRuns[i%6];return {...base,id:'sample-'+String(100-i).padStart(3,'0')+(i%9===0?'-extended-catalog-validation-history-example':''),finish:base.finish?new Date(Date.parse('2026-09-27T03:30:00Z')-i*3600000).toISOString():null};});pair=[null,null];selected=null;$('detail').hidden=true;renderStats();drawPair();render();};
+
+const repoSamples=[
+{id:'automation',name:'cad-automation',path:'/sample/dev/cad-automation',branch:'main',sha:'sample-current-automation',dirty:false},
+{id:'core',name:'zcad-core',path:'/sample/dev/zcad-core',branch:null,sha:'sample-current-core',dirty:true},
+{id:'restricted',name:'restricted-project',path:'/sample/dev/restricted-project',error:'Access unavailable · repository identity not established'}
+];
+const observationTime='2026-09-27T03:40:00Z';
+let trackedRepos=new Set(),discoveryScope=null;
+function renderRepos(){
+ const list=$('repo-list');list.replaceChildren();
+ if(!trackedRepos.size)list.append(n('p','No sample repositories added.'));
+ for(const r of repoSamples.filter(r=>trackedRepos.has(r.id))){
+  const card=n('div');card.className='card repo-card';
+  card.append(n('h3',r.name),n('p',r.path),pill(r.dirty?'Changes observed':'Clean observed'),n('p',r.branch?'Branch: '+r.branch:'Detached HEAD · no branch checked out'),n('p','Sample observation: '+localTime(observationTime)));
+  const details=n('details');details.append(n('summary','Observation evidence'),n('pre',JSON.stringify({source:'SYNTHETIC repository observation',observed_at:observationTime,sha:r.sha,dirty:r.dirty,branch:r.branch},null,2)));
+  card.append(details,n('p','Historical run association: not established'));
+  const remove=n('button','Remove from overview');remove.setAttribute('aria-label','Remove '+r.name+' from overview');
+  remove.onclick=()=>{trackedRepos.delete(r.id);renderRepos();renderCandidates();$('repo-status').textContent=r.name+' removed from this demo overview.';};card.append(remove);list.append(card);
+ }
+}
+function renderCandidates(){
+ const root=$('repo-candidates');root.replaceChildren();
+ if(discoveryScope!=='workspace')return;
+ root.append(n('h3','2 repository candidates · 1 inaccessible folder'));
+ for(const r of repoSamples){
+  const row=n('div');row.className='repo-candidate';row.append(n('strong',r.name),n('p',r.path));
+  if(r.error)row.append(n('p',r.error));
+  else{const add=n('button',trackedRepos.has(r.id)?'Added to overview':'Add sample repository');add.disabled=trackedRepos.has(r.id);add.setAttribute('aria-label','Add '+r.name+' to overview');add.onclick=()=>{trackedRepos.add(r.id);renderRepos();renderCandidates();$('repo-status').textContent=r.name+' added · historical runs unchanged.';};row.append(add);}
+  root.append(row);
+ }
+}
+$('discover').onclick=()=>{discoveryScope=$('repo-scope').value;renderCandidates();$('repo-status').textContent=discoveryScope==='workspace'?'Sample discovery complete. Review candidates below.':discoveryScope==='empty'?'Sample discovery complete: no repositories found. Existing overview entries retained.':'Sample discovery unavailable: folder access denied. No results inferred; existing overview entries retained.';};
+$('clear-repos').onclick=()=>{trackedRepos.clear();discoveryScope=null;$('repo-scope').value='workspace';renderRepos();renderCandidates();$('repo-status').textContent='No discovery performed.';};
+const resetHistory=$('reset').onclick;$('reset').onclick=()=>{resetHistory();$('clear-repos').onclick();};
+renderRepos();
+
+function evidence(title,value){const d=n('details');d.append(n('summary',title),n('pre',typeof value==='string'?value:JSON.stringify(value,null,2)));return d;}
+
+function designPriority(r){return r.status!=='PASS'?0:(r.report?.checks||[]).some(c=>c.status==='NOT_CHECKED')?1:2;}
+function labeledCell(label,text){const td=n('td',text),hint=n('span',label);hint.className='mobile-label';hint.setAttribute('aria-hidden','true');td.prepend(hint);return td;}
+function designDetails(result){
+ const d=n('details'),checks=result.report?.checks||[];
+ const failing=checks.filter(c=>!['PASS','NOT_CHECKED'].includes(c.status)),unchecked=checks.filter(c=>c.status==='NOT_CHECKED'),passing=checks.filter(c=>c.status==='PASS');
+ d.open=designPriority(result)<2;
+ d.append(n('summary',result.path+' · '+result.status+' · '+failing.length+' findings · '+unchecked.length+' unchecked'));
+ if(result.error)d.append(n('p',typeof result.error==='string'?result.error:JSON.stringify(result.error)));
+ d.append(n('p','Recorded coverage: '+(result.report?.coverage??'Not recorded')));
+ if(result.report?.scope)d.append(n('p',result.report.scope));
+ for(const [title,items]of [['Findings',failing],['Unchecked areas',unchecked]]){
+  if(!items.length)continue;d.append(n('h3',title));
+  for(const c of items)d.append(n('p',c.status+' · '+c.code+(c.part_name?' / '+c.part_name:'')+' · '+(c.message??'No message recorded')));
+ }
+ if(!checks.length)d.append(n('p','No checks recorded. No passing coverage inferred.'));
+ const pass=n('details');pass.append(n('summary','Passing checks ('+passing.length+')'));
+ for(const c of passing)pass.append(n('p',c.code+(c.part_name?' / '+c.part_name:'')+' · '+(c.message??'')));d.append(pass);
+ const measured=checks.filter(c=>Array.isArray(c.actual_mm)||Array.isArray(c.limits_mm));
+ if(measured.length){
+  d.append(n('h3','Recorded dimensions (mm)'));const table=n('table'),head=n('thead'),row=n('tr');
+  for(const label of ['Part / check','Axis','Actual (mm)','Limit (mm)']){const th=n('th',label);th.scope='col';row.append(th);}head.append(row);table.append(head);
+  const body=n('tbody');for(const c of measured)for(const [i,axis]of ['X','Y','Z'].entries()){const tr=n('tr');tr.append(labeledCell('Part / check',(c.part_name??'Unspecified part')+' / '+c.code),labeledCell('Axis',axis),labeledCell('Actual (mm)',c.actual_mm?.[i]===undefined?'Not recorded':String(c.actual_mm[i])),labeledCell('Limit (mm)',c.limits_mm?.[i]===undefined?'Not recorded':String(c.limits_mm[i])));body.append(tr);}
+  table.append(body);d.append(table);
+ }
+ d.append(evidence('Complete recorded design evidence',result));return d;
+}
+function inspectBundle(r){
+ selected=r.id;render();const d=$('detail'),b=r.bundle;d.hidden=false;
+ const close=n('button','Close inspection');close.onclick=()=>{d.hidden=true;selected=null;render();revealRun(r);};
+ d.replaceChildren(close,n('h2',r.id),n('p','Recorded run: '+r.status+' · Artifact integrity: '+r.integrity),
+ n('p','Started: '+(b.receipt.started_at??'Not recorded')+' · Finished: '+b.receipt.finished_at+' · Exit: '+(b.receipt.exit_code??'Not recorded')),
+ n('p','Integrity binds artifact bytes only. Receipt authenticity, current repository state and filesystem symlink metadata are unverified. Extra files are outside the binding.'),
+ evidence('Integrity result',b.integrity),evidence('Execution-time repositories before',b.receipt.repositories_before??'Not recorded'),evidence('Execution-time repositories after',b.receipt.repositories_after??'Not recorded'));
+ const concerns=importedConcerns(r);
+ if(concerns.length){d.append(n('h3','Needs review'));for(const reason of concerns)d.append(n('p',reason));}
+ d.append(n('p','Receipt concerns are viewer observations. The recorded run status and artifact integrity result remain separate.'));
+ const passing=n('details');passing.append(n('summary','Passing gates'));
+ for(const g of b.receipt.gates||[])(g.status==='PASS'?passing:d).append(evidence(g.name+' · '+g.status,g));
+ d.append(passing);
+ if(b.catalogError)d.append(n('p','Catalog unavailable: '+b.catalogError));
+ else{d.append(n('h3','Catalog findings'));for(const result of [...b.catalog.results].sort((a,b)=>designPriority(a)-designPriority(b)))d.append(designDetails(result));d.append(evidence('Recorded catalog policy',b.catalog.policy??'Not recorded'));}
+ d.append(evidence('Original receipt JSON',b.raw));d.scrollIntoView({block:'nearest',behavior:motionBehavior()});d.focus({preventScroll:true});
+}
+function changeTable(title,rows,label){
+ const section=n('section');section.append(n('h3',title));
+ if(!rows.length){section.append(n('p','No changes in recorded evidence.'));return section;}
+ const table=n('table'),head=n('thead'),h=n('tr');
+ for(const text of ['Identity','Change','A','B']){const th=n('th',text);th.scope='col';h.append(th);}head.append(h);table.append(head);
+ const body=n('tbody');
+ for(const row of rows){const tr=n('tr');for(const [heading,text]of [['Identity',row.key],['Change',row.kind],['A',row.before.length?row.before.map(label).join(' | '):'Not present'],['B',row.after.length?row.after.map(label).join(' | '):'Not present']]){const cell=n('td',text),caption=n('span',heading);caption.className='mobile-label';cell.prepend(caption);tr.append(cell);}body.append(tr);}
+ table.append(body);section.append(table);return section;
+}
+function compareImported(a,b){
+ const out=$('comparison'),diff=ZcadCompare.compareRuns(a.bundle,b.bundle);
+ out.replaceChildren(n('h3','Recorded evidence · A → B'));
+ if(a.integrity!=='PASS'||b.integrity!=='PASS')out.append(n('p','One or both runs have unverified or unbound artifacts.'));
+ out.append(n('p','Exact gate names and design paths are compared. Removed findings do not establish a fix; duplicate identities remain ambiguous.'));
+ out.append(changeTable('Gate changes',diff.gates.filter(g=>g.kind!=='Unchanged'),g=>g.status));
+for(const g of diff.gates.filter(g=>g.kind!=='Unchanged'))out.append(evidence(g.key+' · '+g.kind,g));
+ if(diff.policyChanged)out.append(n('p','Catalog policies differ.'));
+ if(diff.designs===null)out.append(n('p','Design comparison unavailable: both valid catalogs are required.'));
+ else {out.append(changeTable('Design changes',diff.designs.filter(r=>r.kind!=='Unchanged'),r=>r.status));}
+if(diff.designs)for(const r of diff.designs.filter(r=>r.kind!=='Unchanged')){
+ const design=n('details');design.append(n('summary',r.key+' · '+r.kind));
+ if(r.before.length>1||r.after.length>1)design.append(n('p','Ambiguous design identity: check pairing is unavailable.'));
+ else{
+  const findings=ZcadCompare.findings(r.before[0],r.after[0]);
+  const changed=findings.filter(f=>f.kind!=='Unchanged');
+  design.append(changeTable('Changed checks',changed,c=>c.status+(c.message?' · '+c.message:'')));
+  if(!changed.length)design.append(n('p','No check-record changes. Inspect complete evidence for changed dimensions, coverage, or other design fields.'));
+  if(changed.some(f=>f.kind==='Removed'))design.append(n('p','Removed checks are absent from B; this does not establish resolution.'));
+  for(const f of changed)design.append(evidence('Check evidence · '+f.key,f));
+  const same=n('details');same.append(n('summary',findings.filter(f=>f.kind==='Unchanged').length+' unchanged check records'),changeTable('Unchanged checks',findings.filter(f=>f.kind==='Unchanged'),c=>c.status));design.append(same);
+ }
+ design.append(evidence('Complete A/B design evidence',{baseline:r.before,comparison:r.after}));out.append(design);
+}
+ out.append(n('p',diff.gates.filter(g=>g.kind!=='Unchanged').length+' changed gate records · '+(diff.designs?.filter(r=>r.kind!=='Unchanged').length??'Unavailable')+' changed design records'));
+}
+$('cancel-import').onclick=()=>{
+ importVersion++;$('cancel-import').disabled=true;$('reports').value='';
+ $('import-status').textContent='Import canceled · '+runs.length+' fully processed folders retained. Remaining folders were not assessed.';
+};
+$('clear-import').onclick=()=>{
+ importVersion++;runs=[];pair=[null,null];selected=null;page=0;realMode=true;
+ $('detail').hidden=true;$('detail').replaceChildren();$('reports').value='';$('cancel-import').disabled=true;$('clear-import').disabled=true;$('scale').disabled=true;
+ $('mode-notice').textContent='No imported evidence loaded. Choose a reports folder, or Reset demo to explore sample data.';
+ $('import-status').textContent='Imported evidence cleared from this page. Original files were not changed.';
+ renderStats();drawPair();render();
+};
+$('reports').onchange=async()=>{
+ const files=Array.from($('reports').files);if(!files.length)return;
+ const version=++importVersion;$('cancel-import').disabled=false;$('clear-import').disabled=false;$('search').value='';$('filter').value='all';realMode=true;runs=[];pair=[null,null];selected=null;page=0;$('detail').hidden=true;$('scale').disabled=true;
+ $('mode-notice').textContent='Imported evidence · files stay in this tab. Integrity is independent of gate success. Repository discovery below remains simulated.';
+ renderStats();drawPair();render();
+ const groups=new Map();
+ for(const f of files){const prefix=f.webkitRelativePath.slice(0,-f.name.length);if(!groups.has(prefix))groups.set(prefix,[]);groups.get(prefix).push(f);}
+ const candidates=[...groups].filter(([,fs])=>fs.some(f=>f.name==='receipt.json'));
+ const digest=async bytes=>{if(!globalThis.crypto?.subtle)throw Error('SHA-256 unavailable');return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');};
+ for(const [prefix,fs]of candidates){
+  if(version!==importVersion)return;$('import-status').textContent='Reading and verifying '+(runs.length+1)+' of '+candidates.length+' run folders…';
+  let row;try{const bundle=await ZcadCompare.readBundle(fs,validateReceipt,ZcadModel.validate,verifyIntegrity,digest);
+   row={id:prefix.replace(/\/$/,''),finish:bundle.receipt.finished_at,status:bundle.receipt.status,gates:(bundle.receipt.gates||[]).map(g=>g.name+' '+g.status).join(' · '),integrity:bundle.integrity.status,completed:true,bundle};
+  }catch(e){row={id:prefix,finish:null,status:'Load error',gates:'Receipt not accepted as completed',integrity:'Unavailable',completed:false,loadError:e.message};}
+  if(version!==importVersion)return;runs.push(row);renderStats();render();
+ }
+ if(version!==importVersion)return;
+ $('import-status').textContent=candidates.length?runs.length+' run folders read · '+runs.filter(r=>r.completed).length+' completed receipts · '+runs.filter(r=>r.integrity==='PASS').length+' integrity PASS · '+runs.filter(r=>r.loadError).length+' rejected or incomplete.':'No receipt.json found in selected files.';
+ $('reports').value='';$('cancel-import').disabled=true;
+};
+drawPair();render();
+
+</script></html>
