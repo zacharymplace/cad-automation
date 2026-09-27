@@ -55,8 +55,8 @@ physical validation.
 Core runs the application hook against isolated copies of the inspected shapes,
 before filesystem writes. FAIL results, exceptions, malformed results, and
 non-JSON evidence block export. Existing artifacts remain untouched on validation
-failure. This is pre-export geometry evidence, not verification of STEP/STL
-round-trip fidelity or transactional protection against later I/O failures.
+failure. This is pre-export geometry evidence; STEP round-trip evidence and
+publication behavior are described below.
 
 ## STEP round-trip evidence
 
@@ -74,5 +74,26 @@ feature coverage, even though STEP reimport and geometry inspection occurred.
 Direct core calls without a feature validator retain their previous behavior.
 
 These results do not establish full geometric equivalence, STL fidelity,
-physical fit, or print readiness. Failure during later STL/metadata writes is
-not transactional. STEP bytes are held in memory until publication.
+physical fit, or print readiness. STEP bytes are held in memory until publication.
+
+## Export-set publication
+
+All STEP, STL, and metadata files for the request are generated in temporary
+storage before publication. Metadata and returned paths reference the final
+destination. A late STL or metadata failure leaves the destination unchanged.
+
+Publication prepares incoming files and backups beside the destination so file
+replacement stays on the same filesystem. A caught replacement failure restores
+previous files and removes newly published files. Unrelated files are preserved;
+stale files outside the current request are not removed. Symbolic-link output
+directories and symbolic-link or non-file targets are rejected.
+
+If rollback itself fails, the operation raises an explicit recovery error and
+retains its backup directory. Do not delete that directory before recovery.
+Successful publication and successful rollback remove publication staging.
+
+This is a single-writer contract. It provides rollback for caught failures, not
+crash/power-loss recovery or atomic visibility across the whole file set.
+Concurrent readers can observe replacement in progress; concurrent writers are
+unsupported. Newly created ancestor directories may remain after a failed
+publication setup. No claim of filesystem durability is made.
