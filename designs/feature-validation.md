@@ -57,3 +57,22 @@ before filesystem writes. FAIL results, exceptions, malformed results, and
 non-JSON evidence block export. Existing artifacts remain untouched on validation
 failure. This is pre-export geometry evidence, not verification of STEP/STL
 round-trip fidelity or transactional protection against later I/O failures.
+
+## STEP round-trip evidence
+
+When an application feature validator is registered, core stages every STEP in
+an external temporary directory, reimports and inspects all parts, then runs the
+same feature validator on those reimported shapes. A failed import, geometry
+inspection, or feature check blocks publication before the output directory is
+created or existing artifacts are changed. Temporary files are cleaned up.
+
+The design report includes a separate `step_round_trip` object with status,
+checks, scope, and `step_sha256_by_part`. The exact staged bytes are published;
+STEP is not regenerated after checking. Both coupon opening clearance and
+surrounding material must pass. Unsupported designs report `NOT_CHECKED` for
+feature coverage, even though STEP reimport and geometry inspection occurred.
+Direct core calls without a feature validator retain their previous behavior.
+
+These results do not establish full geometric equivalence, STL fidelity,
+physical fit, or print readiness. Failure during later STL/metadata writes is
+not transactional. STEP bytes are held in memory until publication.
