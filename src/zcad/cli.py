@@ -515,6 +515,7 @@ def _run_design_build_command(
         ExportRequest(
             design_name=(design.product.lower().replace("_", "-")),
             design_type="board_display_enclosure",
+            parameters={"schema_version": design.schema_version, "product": design.product},
             parts=parts,
             output_directory=args.output,
             printer_profile=printer_profile,
@@ -710,6 +711,7 @@ def run(
         ExportRequest(
             design_name=design["name"],
             design_type=design["type"],
+            parameters=design["parameters"],
             parts=parts,
             output_directory=args.output,
             printer_profile=printer_profile,
