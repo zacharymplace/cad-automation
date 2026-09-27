@@ -133,7 +133,9 @@ def test_spout_tip_bulge_reaches_further_at_the_corners() -> None:
     near_corner_x = half_width * 0.8
     partway_up_bulge = tip_y + parameters.spout_tip_bulge * 0.4
 
-    corner_reaches_bulge = basin.isInside(cq.Vector(near_corner_x, partway_up_bulge, 0.2))
+    corner_reaches_bulge = basin.isInside(
+        cq.Vector(near_corner_x, partway_up_bulge, 0.2)
+    )
     center_does_not_reach_bulge = not basin.isInside(
         cq.Vector(0, tip_y + parameters.spout_tip_bulge - 2, 0.2)
     )

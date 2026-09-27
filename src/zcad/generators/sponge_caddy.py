@@ -138,9 +138,7 @@ class SpongeCaddyParameters:
 
         for x, _ in brush_positions:
             if abs(x) + brush_radius >= self.width / 2:
-                raise ValueError(
-                    "brush hole layout places a hole outside the rack"
-                )
+                raise ValueError("brush hole layout places a hole outside the rack")
 
             if slot_left - brush_radius < x < slot_right + brush_radius:
                 raise ValueError("brush holes overlap the sponge slot")
@@ -193,9 +191,15 @@ def _build_rack(
     span_y = (count_y - 1) * parameters.rack_hole_spacing
 
     hole_radius = parameters.rack_hole_diameter / 2
-    slot_keepout_x = parameters.sponge_slot_width / 2 + hole_radius + parameters.rack_clearance
-    slot_keepout_y = parameters.sponge_slot_length / 2 + hole_radius + parameters.rack_clearance
-    brush_keepout = parameters.brush_hole_diameter / 2 + hole_radius + parameters.rack_clearance
+    slot_keepout_x = (
+        parameters.sponge_slot_width / 2 + hole_radius + parameters.rack_clearance
+    )
+    slot_keepout_y = (
+        parameters.sponge_slot_length / 2 + hole_radius + parameters.rack_clearance
+    )
+    brush_keepout = (
+        parameters.brush_hole_diameter / 2 + hole_radius + parameters.rack_clearance
+    )
 
     def blocked(x: float, y: float) -> bool:
         if (

@@ -20,7 +20,7 @@ jobs:
         with:
           repository: zacharymplace/zcad-core
           token: ${{ secrets.ZCAD_CORE_TOKEN }}
-          ref: v0.1.1
+          ref: 3ce1d41a2f7b8ad80d3a759d45eb1093a7ab7ed8
           path: zcad-core
 
       - uses: actions/setup-python@v5
@@ -28,6 +28,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install core and product
+        id: install
         working-directory: cad-automation
         run: |
           python -m pip install --upgrade pip
@@ -53,3 +54,23 @@ jobs:
         working-directory: cad-automation
         run: |
           pytest -q
+
+      - name: Validate catalog
+        if: ${{ always() && steps.install.outcome == 'success' }}
+        working-directory: cad-automation
+        run: |
+          mkdir -p validation-reports
+          python -m zcad.cli validate-catalog \
+            designs/validation-catalog.example.json \
+            --policy designs/validation-policy.example.json \
+            --printer-profile profiles/printers/prusa-mk4.json \
+            --json > validation-reports/catalog.json
+
+      - name: Upload catalog report
+        if: ${{ always() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-validation
+          path: cad-automation/validation-reports/catalog.json
+          if-no-files-found: error
+          retention-days: 14

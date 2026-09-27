@@ -515,7 +515,10 @@ def _run_design_build_command(
         ExportRequest(
             design_name=(design.product.lower().replace("_", "-")),
             design_type="board_display_enclosure",
-            parameters={"schema_version": design.schema_version, "product": design.product},
+            parameters={
+                "schema_version": design.schema_version,
+                "product": design.product,
+            },
             parts=parts,
             output_directory=args.output,
             printer_profile=printer_profile,
@@ -614,7 +617,9 @@ def _build_bundle_command_parser() -> argparse.ArgumentParser:
     parser.add_argument("design_dir", type=Path)
     parser.add_argument("--output", type=Path, default=Path("dist"))
     parser.add_argument(
-        "--exports", type=Path, default=Path("exports"),
+        "--exports",
+        type=Path,
+        default=Path("exports"),
         help="existing exports for --skip-build; fresh builds use isolated staging",
     )
     parser.add_argument("--name", default="starter-pack")
@@ -662,7 +667,9 @@ def run(
         from zcad.catalog_validation import run_catalog
 
         run_catalog(
-            arguments[1:], read_design=read_design, generate_parts=generate_parts,
+            arguments[1:],
+            read_design=read_design,
+            generate_parts=generate_parts,
             load_printer_profile=load_printer_profile,
         )
         return
@@ -671,7 +678,9 @@ def run(
         from zcad.validation_cli import run_validation
 
         run_validation(
-            arguments[1:], read_design=read_design, generate_parts=generate_parts,
+            arguments[1:],
+            read_design=read_design,
+            generate_parts=generate_parts,
             load_printer_profile=load_printer_profile,
         )
         return
@@ -687,10 +696,15 @@ def run(
         parser.add_argument("directory", type=Path)
         parser.add_argument("--manifest-sha256", default=None)
         verification = parser.parse_args(arguments[1:])
-        print(json.dumps(verify_bundle(
-            verification.directory,
-            expected_manifest_sha256=verification.manifest_sha256,
-        ), indent=2))
+        print(
+            json.dumps(
+                verify_bundle(
+                    verification.directory,
+                    expected_manifest_sha256=verification.manifest_sha256,
+                ),
+                indent=2,
+            )
+        )
         return
 
     if arguments and arguments[0] == "products":

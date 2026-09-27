@@ -114,9 +114,7 @@ class DrainageBasinParameters:
                 )
 
             if self.groove_depth >= self.spout_tip_thickness:
-                raise ValueError(
-                    "groove_depth must be less than spout_tip_thickness"
-                )
+                raise ValueError("groove_depth must be less than spout_tip_thickness")
 
 
 def _edge_centered_near(

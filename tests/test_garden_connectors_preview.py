@@ -8,10 +8,15 @@ from zcad.generators.pixel_garden_assembly import build_garden_assembly
 NS = {"s": "http://www.w3.org/2000/svg"}
 
 
-@pytest.mark.parametrize("pattern,pairs,exposed", [
-    (["X"], 0, 4), (["XX"], 1, 6), (["X", "X"], 1, 6),
-    (["XXX", "X.X", "XXX"], 8, 16),
-])
+@pytest.mark.parametrize(
+    "pattern,pairs,exposed",
+    [
+        (["X"], 0, 4),
+        (["XX"], 1, 6),
+        (["X", "X"], 1, 6),
+        (["XXX", "X.X", "XXX"], 8, 16),
+    ],
+)
 def test_connector_mapping(pattern, pairs, exposed):
     _, report = build_garden_assembly({"pattern": pattern})
     svg = ET.fromstring(assembly_preview_svg(report))
@@ -32,8 +37,11 @@ def test_connector_mapping(pattern, pairs, exposed):
     for connection in report["connections"]:
         for role, sign, other in (("male", "+", "female"), ("female", "-", "male")):
             g = by_name[connection[role]]
-            c = next(c for c in g.findall("s:g", NS)
-                     if c.get("data-side") == sign + connection["axis"])
+            c = next(
+                c
+                for c in g.findall("s:g", NS)
+                if c.get("data-side") == sign + connection["axis"]
+            )
             assert c.get("data-mate") == connection[other]
             assert c.get("data-state") == "connected"
 
