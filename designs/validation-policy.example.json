@@ -1,5 +1,6 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
+  "build_volume_orientation": "xy_90",
   "required_checks": [
     "shape_stack",
     "solid_topology",

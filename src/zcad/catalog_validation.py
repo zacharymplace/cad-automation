@@ -65,6 +65,9 @@ def run_catalog(arguments, *, read_design, generate_parts, load_printer_profile)
                     parts=parts,
                     parameters=design["parameters"],
                     printer_profile=profile,
+                    build_volume_orientation=policy.get(
+                        "build_volume_orientation", "generated"
+                    ),
                 )
                 report["policy_result"] = evaluate_policy(report, policy)
             results.append(

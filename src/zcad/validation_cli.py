@@ -52,6 +52,9 @@ def run_validation(arguments, *, read_design, generate_parts, load_printer_profi
                 parts=parts,
                 parameters=design["parameters"],
                 printer_profile=profile,
+                build_volume_orientation=policy.get(
+                    "build_volume_orientation", "generated"
+                ),
             )
         report["policy_result"] = evaluate_policy(report, policy)
     except (OSError, ValueError, TypeError, KeyError) as error:
