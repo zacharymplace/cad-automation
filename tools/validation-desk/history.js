@@ -209,3 +209,56 @@ $('reports').onchange=async()=>{
  $('reports').value='';$('cancel-import').disabled=true;
 };
 drawPair();render();
+
+let inventoryVersion=0,inventorySnapshot=null,inventoryPage=0;
+function renderInventory(){
+ const out=$('inventory-table');out.replaceChildren();
+ if(!inventorySnapshot)return;
+ const query=$('inventory-search').value.trim().toLowerCase(),filter=$('inventory-filter').value;
+ const rows=inventorySnapshot.repositories.filter(r=>(r.path+' '+(r.branch??'')+' '+(r.head??'')).toLowerCase().includes(query)&&(!filter||filter==='all'||filter==='error'&&r.status==='ERROR'||filter==='changed'&&r.status==='OBSERVED'&&r.dirty||filter==='clean'&&r.status==='OBSERVED'&&!r.dirty||filter==='detached'&&r.status==='OBSERVED'&&r.branch===null));
+ inventoryPage=Math.min(inventoryPage,Math.max(0,Math.ceil(rows.length/20)-1));
+ $('inventory-page').textContent=rows.length?'Rows '+(inventoryPage*20+1)+'–'+Math.min(rows.length,(inventoryPage+1)*20)+' of '+rows.length+' matching · '+inventorySnapshot.repositories.length+' total':'No matching repositories';
+ $('inventory-prev').disabled=inventoryPage===0;
+ $('inventory-next').disabled=(inventoryPage+1)*20>=rows.length;
+ const table=n('table');table.setAttribute('aria-label','Imported repository observations');
+ const head=n('thead'),headers=n('tr');
+ for(const label of ['Repository','Observed state','Branch','Details']){const th=n('th',label);th.scope='col';headers.append(th);}head.append(headers);table.append(head);
+ const body=n('tbody');
+ for(const r of rows.slice(inventoryPage*20,(inventoryPage+1)*20)){
+  const row=n('tr'),name=labeledCell('Repository',r.path.split('/').filter(Boolean).pop()||r.path);name.title=r.path;
+  const state=labeledCell('Observed state',r.status==='ERROR'?'Observation error':r.dirty?'Changes observed':'Clean observed');
+  const branch=labeledCell('Branch',r.status==='ERROR'?'Unavailable':r.branch??'Detached HEAD');
+  const details=labeledCell('Details','');details.append(evidence('Observation',r));
+  row.append(name,state,branch,details);body.append(row);
+ }
+ if(!rows.length){const row=n('tr'),cell=n('td','No matching repositories. Clear the search or change the filter.');cell.colSpan=4;row.append(cell);body.append(row);}
+ table.append(body);out.append(table);
+}
+for(const id of ['inventory-search','inventory-filter'])$(id)[id==='inventory-search'?'oninput':'onchange']=()=>{inventoryPage=0;renderInventory();};
+$('inventory-prev').onclick=()=>{inventoryPage--;renderInventory();};
+$('inventory-next').onclick=()=>{inventoryPage++;renderInventory();};
+$('inventory-clear-filters').onclick=()=>{$('inventory-search').value='';$('inventory-filter').value='all';inventoryPage=0;renderInventory();};
+$('clear-inventory').onclick=()=>{
+ inventoryVersion++;$('inventory').value='';$('inventory-results').replaceChildren();
+ inventorySnapshot=null;inventoryPage=0;$('inventory-controls').hidden=true;$('inventory-table').replaceChildren();
+ $('inventory-status').textContent='No repository snapshot loaded.';
+};
+$('inventory').onchange=async()=>{
+ const file=$('inventory').files?.[0];if(!file)return;
+ const version=++inventoryVersion;
+ $('inventory-status').textContent='Reading repository snapshot…';
+ try{
+  if(file.size>5*1024*1024)throw Error('Snapshot exceeds 5 MiB');
+  const raw=await file.text();
+  const snapshot=ZcadRepositories.validateInventory(JSON.parse(raw));
+  if(version!==inventoryVersion)return;
+  const out=$('inventory-results');out.replaceChildren();
+  out.append(n('p','Snapshot: '+localTime(snapshot.finished_at)+' · '+snapshot.root));
+  out.append(evidence('Scan scope and timing',{root:snapshot.root,started_at:snapshot.started_at,finished_at:snapshot.finished_at,max_depth:snapshot.max_depth,coverage:'Stops at repository roots. Nested repositories and bare repositories excluded.'}));
+  if(snapshot.issues.length)out.append(evidence(snapshot.issues.length+' scan issues',snapshot.issues));
+  out.append(evidence('Original inventory JSON',raw));
+  inventorySnapshot=snapshot;inventoryPage=0;$('inventory-search').value='';$('inventory-filter').value='all';$('inventory-controls').hidden=false;renderInventory();
+  $('inventory-status').textContent=snapshot.repositories.length+' repository records · '+snapshot.repositories.filter(r=>r.status==='ERROR').length+' observation errors · '+snapshot.issues.length+' scan issues. Imported snapshot; live state and authenticity unverified.';
+ }catch(e){if(version!==inventoryVersion)return;$('inventory-status').textContent='Import rejected: '+e.message+'. Previous snapshot retained.';}
+ if(version===inventoryVersion)$('inventory').value='';
+};

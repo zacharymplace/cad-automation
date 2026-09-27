@@ -13,6 +13,7 @@ for name in ("index", "history"):
         "RUNNER": "runner.js",
         "INTEGRITY": "integrity.js",
         "HISTORY": "history.js",
+        "REPOSITORIES": "repositories.js",
         "FIXTURE": "fixtures/historical-report.json",
     }.items():
         token = "/* " + marker + " */"

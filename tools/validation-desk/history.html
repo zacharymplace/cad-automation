@@ -21,13 +21,13 @@ button,input,select{min-height:44px}.pair button{margin:0 8px 8px 0}
  #selection-tray button{width:100%}
 }
 .repo-card{margin:12px 0}.repo-card p,.repo-candidate p{overflow-wrap:anywhere}.repo-candidate{padding:16px 0;border-bottom:1px solid #364848}
-</style><header><strong>ZCAD / CONTROL PLANE</strong><small>INTERACTION PROTOTYPE</small></header><main><p><a href="index.html">Open validation desk</a></p><small>LOCAL EVIDENCE / RUN HISTORY</small><h1>What needs attention?</h1><p class="muted">Inspect a run or choose two completed runs to compare.</p><p class="notice" id="mode-notice">Sample mode. Choose a reports folder to load real completed runs locally. Repository discovery remains simulated. No repository writes or command execution.</p><label>Open reports folder <input id="reports" type="file" webkitdirectory multiple></label><div class="actions"><button id="cancel-import" disabled>Cancel import</button><button id="clear-import" disabled>Clear imported evidence</button></div><p id="import-status" role="status"></p><div id="stats" class="stats"></div><div class="layout"><section class="card"><h2>Run history</h2><p class="muted">Select a reports folder above. Each receipt folder becomes one history entry; importing replaces the current history.</p><div class="filters"><input id="search" aria-label="Search runs, gates, and designs" placeholder="Search run, gate, or design"><select id="filter" aria-label="Filter runs"><option value="all">All runs</option><option value="attention">Needs review</option><option value="completed">Completed</option><option value="PASS">Recorded PASS</option><option value="unchecked">Integrity not checked</option><option value="integrity_review">All integrity review states</option><option value="integrity_problem">Integrity failure or error</option><option value="unbound">Unbound receipts</option><option value="load_error">Load errors</option><option value="catalog_unavailable">Catalog unavailable</option></select><select id="sort" aria-label="Sort runs"><option value="newest">Newest completed first</option><option value="review">Needs review first</option></select><select id="scale" aria-label="Sample history size"><option value="6">6 sample runs</option><option value="100">100 sample runs</option></select><button id="clear-filters">Clear filters</button><button id="reset">Reset demo</button></div><p class="muted">Needs review includes recorded failures, checkpoints, load errors, and integrity problems. Unchecked hashes are tracked separately.</p><p id="count" role="status" class="muted"></p><div class="scroll"><table role="table" aria-label="Sample run history"><thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">RUN / RECORDED FINISH</th><th scope="col" role="columnheader">OUTCOME / GATES</th><th scope="col" role="columnheader">ARTIFACT INTEGRITY</th><th scope="col" role="columnheader">ACTIONS</th></tr></thead><tbody id="rows" role="rowgroup"></tbody></table></div><nav class="pagination" aria-label="History pages"><button id="previous">Previous</button><span id="page-status" role="status"></span><button id="next">Next</button></nav></section><aside class="card" id="detail" hidden tabindex="-1" aria-live="polite"><h2>Inspect a run</h2><p class="muted">Select Inspect to see its recorded evidence.</p></aside></div><section class="card" style="margin-top:20px"><h2>Compare runs</h2><div class="pair"><div id="a"></div><div id="b"></div></div><div class="actions"><button id="compare" disabled>Show sample comparison</button><button id="clear">Clear selection</button></div><p id="selection-status" role="status" class="muted"></p><div id="comparison" aria-live="polite"></div></section><section class="card" style="margin-top:20px" aria-labelledby="repo-heading"><h2 id="repo-heading">Repository discovery <span class="pill">SAMPLE WORKFLOW</span></h2>
+</style><header><strong>ZCAD / CONTROL PLANE</strong><small>INTERACTION PROTOTYPE</small></header><main><p><a href="index.html">Open validation desk</a></p><small>LOCAL EVIDENCE / RUN HISTORY</small><h1>What needs attention?</h1><p class="muted">Inspect a run or choose two completed runs to compare.</p><p class="notice" id="mode-notice">Sample mode. Choose a reports folder to load real completed runs locally. Import a separate repository snapshot below. No repository writes or command execution.</p><label>Open reports folder <input id="reports" type="file" webkitdirectory multiple></label><div class="actions"><button id="cancel-import" disabled>Cancel import</button><button id="clear-import" disabled>Clear imported evidence</button></div><p id="import-status" role="status"></p><div id="stats" class="stats"></div><div class="layout"><section class="card"><h2>Run history</h2><p class="muted">Select a reports folder above. Each receipt folder becomes one history entry; importing replaces the current history.</p><div class="filters"><input id="search" aria-label="Search runs, gates, and designs" placeholder="Search run, gate, or design"><select id="filter" aria-label="Filter runs"><option value="all">All runs</option><option value="attention">Needs review</option><option value="completed">Completed</option><option value="PASS">Recorded PASS</option><option value="unchecked">Integrity not checked</option><option value="integrity_review">All integrity review states</option><option value="integrity_problem">Integrity failure or error</option><option value="unbound">Unbound receipts</option><option value="load_error">Load errors</option><option value="catalog_unavailable">Catalog unavailable</option></select><select id="sort" aria-label="Sort runs"><option value="newest">Newest completed first</option><option value="review">Needs review first</option></select><select id="scale" aria-label="Sample history size"><option value="6">6 sample runs</option><option value="100">100 sample runs</option></select><button id="clear-filters">Clear filters</button><button id="reset">Reset demo</button></div><p class="muted">Needs review includes recorded failures, checkpoints, load errors, and integrity problems. Unchecked hashes are tracked separately.</p><p id="count" role="status" class="muted"></p><div class="scroll"><table role="table" aria-label="Sample run history"><thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">RUN / RECORDED FINISH</th><th scope="col" role="columnheader">OUTCOME / GATES</th><th scope="col" role="columnheader">ARTIFACT INTEGRITY</th><th scope="col" role="columnheader">ACTIONS</th></tr></thead><tbody id="rows" role="rowgroup"></tbody></table></div><nav class="pagination" aria-label="History pages"><button id="previous">Previous</button><span id="page-status" role="status"></span><button id="next">Next</button></nav></section><aside class="card" id="detail" hidden tabindex="-1" aria-live="polite"><h2>Inspect a run</h2><p class="muted">Select Inspect to see its recorded evidence.</p></aside></div><section class="card" style="margin-top:20px"><h2>Compare runs</h2><div class="pair"><div id="a"></div><div id="b"></div></div><div class="actions"><button id="compare" disabled>Show sample comparison</button><button id="clear">Clear selection</button></div><p id="selection-status" role="status" class="muted"></p><div id="comparison" aria-live="polite"></div></section><section class="card" style="margin-top:20px" aria-labelledby="repo-heading"><h2 id="repo-heading">Repository observations</h2><p>Import the JSON produced by discover.py. These are recorded local observations, not live state or run provenance.</p><label>Import repository snapshot <input id="inventory" type="file" accept=".json,application/json"></label><button id="clear-inventory">Clear repository snapshot</button><p id="inventory-status" role="status">No repository snapshot loaded.</p><div id="inventory-results"></div><div id="inventory-controls" hidden><div class="filters"><input id="inventory-search" aria-label="Search repositories" placeholder="Search name, path, branch or SHA"><select id="inventory-filter" aria-label="Repository state"><option value="all">All states</option><option value="changed">Changes observed</option><option value="clean">Clean observed</option><option value="error">Observation errors</option><option value="detached">Detached HEAD</option></select><button id="inventory-clear-filters">Clear filters</button></div><div id="inventory-table"></div><nav class="pagination" aria-label="Repository pages"><button id="inventory-prev">Previous</button><span id="inventory-page" role="status"></span><button id="inventory-next">Next</button></nav></div><details><summary>Simulated discovery workflow</summary>
 <p>Choose a sample scope, review candidates, then add individual repositories to this overview.</p>
 <div class="filters"><select id="repo-scope" aria-label="Sample discovery scope"><option value="workspace">Sample workspace · /sample/dev</option><option value="empty">Sample empty folder</option><option value="denied">Sample inaccessible folder</option></select><button id="discover">Preview discovery</button><button id="clear-repos">Clear repository demo</button></div>
 <p class="muted">Preview covers immediate child folders only. No real folders are scanned. Adding a sample repository does not link it to historical runs.</p>
 <p id="repo-status" role="status">No discovery performed.</p><div id="repo-candidates"></div>
 <h3>Repositories in this overview</h3><div id="repo-list"></div>
-<p class="muted">Repository observations describe a separate moment in time. They do not update receipt SHAs, dirty states, gate outcomes, or artifact integrity.</p></section><footer>Local prototype · No network requests · No persistent storage · No repository writes</footer></main><script>
+</details><p class="muted">Repository observations describe a separate moment in time. They do not update receipt SHAs, dirty states, gate outcomes, or artifact integrity.</p></section><footer>Local prototype · No network requests · No persistent storage · No repository writes</footer></main><script>
 globalThis.ZcadHistoryPage=true;
 (function(root){
   'use strict';
@@ -272,6 +272,26 @@ if(typeof document!=='undefined' && !globalThis.ZcadHistoryPage){
   const clear=node('button','Clear comparison');clear.onclick=()=>{for(let i=0;i<2;i++){versions[i]++;runs[i]=null;slots[i].replaceChildren();}renderComparison();};controls.append(clear);$('clear').addEventListener('click',()=>clear.onclick());renderComparison();
 }
 
+(function(root){
+  function validateInventory(value){
+    const fail=()=>{throw Error('Invalid repository inventory');};
+    const text=x=>typeof x==='string'&&x.length>0;
+    const date=x=>text(x)&&Number.isFinite(Date.parse(x));
+    if(!value||value.schema_version!=='zcad-repository-inventory/1'||!text(value.root)||!date(value.started_at)||!date(value.finished_at)||Date.parse(value.started_at)>Date.parse(value.finished_at)||!Number.isInteger(value.max_depth)||value.max_depth<0||value.max_depth>6||!Number.isInteger(value.visited_directories)||value.visited_directories<0||!Array.isArray(value.repositories)||!Array.isArray(value.issues))fail();
+    const paths=new Set();
+    for(const r of value.repositories){
+      if(!r||!text(r.path)||paths.has(r.path)||!date(r.started_at)||!date(r.observed_at)||Date.parse(r.started_at)>Date.parse(r.observed_at))fail();
+      paths.add(r.path);
+      if(r.status==='OBSERVED'){
+        if(!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(r.head)||typeof r.dirty!=='boolean'||!(r.branch===null||text(r.branch)))fail();
+      }else if(r.status!=='ERROR'||!text(r.error))fail();
+    }
+    for(const issue of value.issues)if(!issue||!text(issue.path)||!text(issue.reason))fail();
+    return value;
+  }
+  root.ZcadRepositories={validateInventory};
+})(typeof module==='object'?module.exports:globalThis);
+
 const sampleRuns=[
 {id:'sample-06',finish:'2026-09-27T03:30:00Z',status:'ERROR',gates:'5/5 PASS; repository changed',integrity:'Not checked',completed:true,sha:'sample-sha-f',dirty:true,note:'Sample: all gates passed, but observed repository state changed during execution.'},
 {id:'sample-05',finish:'2026-09-27T03:20:00Z',status:'FAIL',gates:'catalog FAIL',integrity:'Not checked',completed:true,sha:'sample-sha-e',dirty:false,note:'Sample: catalog reports a failing dimension check.'},
@@ -483,5 +503,58 @@ $('reports').onchange=async()=>{
  $('reports').value='';$('cancel-import').disabled=true;
 };
 drawPair();render();
+
+let inventoryVersion=0,inventorySnapshot=null,inventoryPage=0;
+function renderInventory(){
+ const out=$('inventory-table');out.replaceChildren();
+ if(!inventorySnapshot)return;
+ const query=$('inventory-search').value.trim().toLowerCase(),filter=$('inventory-filter').value;
+ const rows=inventorySnapshot.repositories.filter(r=>(r.path+' '+(r.branch??'')+' '+(r.head??'')).toLowerCase().includes(query)&&(!filter||filter==='all'||filter==='error'&&r.status==='ERROR'||filter==='changed'&&r.status==='OBSERVED'&&r.dirty||filter==='clean'&&r.status==='OBSERVED'&&!r.dirty||filter==='detached'&&r.status==='OBSERVED'&&r.branch===null));
+ inventoryPage=Math.min(inventoryPage,Math.max(0,Math.ceil(rows.length/20)-1));
+ $('inventory-page').textContent=rows.length?'Rows '+(inventoryPage*20+1)+'–'+Math.min(rows.length,(inventoryPage+1)*20)+' of '+rows.length+' matching · '+inventorySnapshot.repositories.length+' total':'No matching repositories';
+ $('inventory-prev').disabled=inventoryPage===0;
+ $('inventory-next').disabled=(inventoryPage+1)*20>=rows.length;
+ const table=n('table');table.setAttribute('aria-label','Imported repository observations');
+ const head=n('thead'),headers=n('tr');
+ for(const label of ['Repository','Observed state','Branch','Details']){const th=n('th',label);th.scope='col';headers.append(th);}head.append(headers);table.append(head);
+ const body=n('tbody');
+ for(const r of rows.slice(inventoryPage*20,(inventoryPage+1)*20)){
+  const row=n('tr'),name=labeledCell('Repository',r.path.split('/').filter(Boolean).pop()||r.path);name.title=r.path;
+  const state=labeledCell('Observed state',r.status==='ERROR'?'Observation error':r.dirty?'Changes observed':'Clean observed');
+  const branch=labeledCell('Branch',r.status==='ERROR'?'Unavailable':r.branch??'Detached HEAD');
+  const details=labeledCell('Details','');details.append(evidence('Observation',r));
+  row.append(name,state,branch,details);body.append(row);
+ }
+ if(!rows.length){const row=n('tr'),cell=n('td','No matching repositories. Clear the search or change the filter.');cell.colSpan=4;row.append(cell);body.append(row);}
+ table.append(body);out.append(table);
+}
+for(const id of ['inventory-search','inventory-filter'])$(id)[id==='inventory-search'?'oninput':'onchange']=()=>{inventoryPage=0;renderInventory();};
+$('inventory-prev').onclick=()=>{inventoryPage--;renderInventory();};
+$('inventory-next').onclick=()=>{inventoryPage++;renderInventory();};
+$('inventory-clear-filters').onclick=()=>{$('inventory-search').value='';$('inventory-filter').value='all';inventoryPage=0;renderInventory();};
+$('clear-inventory').onclick=()=>{
+ inventoryVersion++;$('inventory').value='';$('inventory-results').replaceChildren();
+ inventorySnapshot=null;inventoryPage=0;$('inventory-controls').hidden=true;$('inventory-table').replaceChildren();
+ $('inventory-status').textContent='No repository snapshot loaded.';
+};
+$('inventory').onchange=async()=>{
+ const file=$('inventory').files?.[0];if(!file)return;
+ const version=++inventoryVersion;
+ $('inventory-status').textContent='Reading repository snapshot…';
+ try{
+  if(file.size>5*1024*1024)throw Error('Snapshot exceeds 5 MiB');
+  const raw=await file.text();
+  const snapshot=ZcadRepositories.validateInventory(JSON.parse(raw));
+  if(version!==inventoryVersion)return;
+  const out=$('inventory-results');out.replaceChildren();
+  out.append(n('p','Snapshot: '+localTime(snapshot.finished_at)+' · '+snapshot.root));
+  out.append(evidence('Scan scope and timing',{root:snapshot.root,started_at:snapshot.started_at,finished_at:snapshot.finished_at,max_depth:snapshot.max_depth,coverage:'Stops at repository roots. Nested repositories and bare repositories excluded.'}));
+  if(snapshot.issues.length)out.append(evidence(snapshot.issues.length+' scan issues',snapshot.issues));
+  out.append(evidence('Original inventory JSON',raw));
+  inventorySnapshot=snapshot;inventoryPage=0;$('inventory-search').value='';$('inventory-filter').value='all';$('inventory-controls').hidden=false;renderInventory();
+  $('inventory-status').textContent=snapshot.repositories.length+' repository records · '+snapshot.repositories.filter(r=>r.status==='ERROR').length+' observation errors · '+snapshot.issues.length+' scan issues. Imported snapshot; live state and authenticity unverified.';
+ }catch(e){if(version!==inventoryVersion)return;$('inventory-status').textContent='Import rejected: '+e.message+'. Previous snapshot retained.';}
+ if(version===inventoryVersion)$('inventory').value='';
+};
 
 </script></html>
