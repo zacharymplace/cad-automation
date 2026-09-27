@@ -6,8 +6,7 @@ import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 
-from zcad_core.validation.design_report import validate_design
-
+from zcad.feature_validation import validate_design
 from zcad.validation_policy import evaluate_policy, load_policy
 
 
