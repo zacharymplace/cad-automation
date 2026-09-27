@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'"><title>ZCAD · Validation desk</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#101719;color:#e4edeb}*{box-sizing:border-box}body{margin:0}header{padding:22px 5%;border-bottom:1px solid #334044;display:flex;justify-content:space-between;align-items:center}header strong{letter-spacing:.16em}small,.muted{color:#a7b8b7}main{max-width:1280px;margin:auto;padding:40px 5%}h1{font-size:36px;letter-spacing:-.04em;margin:8px 0}h2{font-size:21px}p{line-height:1.6}button,.file,select,input{font:inherit;border:1px solid #455759;border-radius:7px;background:#1c292c;color:inherit;padding:10px 14px}button,.file{cursor:pointer}button:hover,.file:hover{background:#2d4244}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #73ded0;outline-offset:3px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.file input{position:absolute;width:1px;height:1px;opacity:0}.file:focus-within{outline:3px solid #73ded0}.notice{border-left:3px solid #ddbd72;background:#29291f;padding:14px 18px;margin:20px 0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}.stat,.panel{background:#172225;border:1px solid #334044;border-radius:10px;padding:20px}.stat b{display:block;font-size:28px;margin-top:7px}.layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2fr);gap:18px}.row{width:100%;text-align:left;margin-top:10px;display:block;overflow-wrap:anywhere}.row[aria-pressed=true]{border-color:#73ded0;background:#223b3d}.badge{display:inline-block;font-size:12px;padding:4px 8px;border:1px solid #607174;border-radius:5px;margin:3px 6px 3px 0;color:#cbd6d5}.PASS{color:#80e2bc;border-color:#397c64}.FAIL,.ERROR{color:#ffaca4;border-color:#b96158}.WARN,.WARNING,.NOT_CHECKED{color:#e9ce8d;border-color:#907b48}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:#101719;padding:14px;border-radius:6px;max-height:450px;overflow:auto}.check{border-top:1px solid #344246;padding:13px 0}.check p{margin:5px 0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input{min-width:0;width:100%}summary{cursor:pointer;padding:10px 0}#error{color:#ffaca4}footer{margin-top:24px;color:#a7b8b7;font-size:13px}@media(max-width:760px){main{padding:25px 5%}.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header{font-size:12px}}
+.layout{align-items:start}.panel{min-width:0}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}caption{text-align:left;color:#a7b8b7;padding:8px 0}th,td{text-align:left;padding:9px;border-bottom:1px solid #344246;overflow-wrap:anywhere}th{color:#a7b8b7}details.evidence{border-top:1px solid #344246;margin-top:16px}h3{margin:22px 0 10px}.check strong{overflow-wrap:anywhere}
+</style>
+<header><strong>ZCAD / INTERNAL</strong><small>READ-ONLY · PROTOTYPE</small></header>
+<main><small>ENGINEERING / VALIDATION</small><h1>Validation desk</h1><p class="muted">Inspect the evidence behind each design. Geometry validation is not product readiness.</p>
+<div class="actions"><label class="file">Open catalog JSON<input id="file" type="file" accept=".json,application/json"></label><button id="example">Explore historical report</button><button id="clear">Clear</button></div>
+<p id="error" role="alert"></p><div id="origin" class="notice">No report loaded. Open a catalog report from your CLI or CI artifacts. Files stay in this browser tab.</div>
+<div id="workspace" hidden><div id="stats" class="stats"></div><details class="panel"><summary>Run identity &amp; configuration</summary><div id="identity"></div><h3>Reported policy</h3><pre id="policy"></pre></details>
+<div class="layout" style="margin-top:18px"><section class="panel"><h2>Designs</h2><div class="filters"><input id="query" aria-label="Search designs" placeholder="Search name or path"><select id="status" aria-label="Filter status"><option value="">All results</option><option>PASS</option><option>FAIL</option><option>ERROR</option></select></div><div id="list"></div></section><section class="panel" id="detail" aria-live="polite"></section></div>
+<details class="panel" style="margin-top:18px"><summary>Original report JSON</summary><pre id="raw"></pre></details></div><footer>No repo connection · No validation execution · No uploads · No inferred freshness</footer></main>
+<script>(function(root){
+  'use strict';
+  const statuses=['PASS','FAIL','ERROR'];
+  function validate(d){
+    if(!d || d.schema_version!=='1.0' || !statuses.includes(d.status) || !Array.isArray(d.results)) throw Error('Expected a ZCAD schema 1.0 catalog report with status and results.');
+    if(d.design_count!==d.results.length || !d.counts) throw Error('Design count is missing or inconsistent.');
+    const counts={PASS:0,FAIL:0,ERROR:0}, paths=new Set();
+    for(const r of d.results){
+      if(!r || typeof r.path!=='string' || !r.path || paths.has(r.path) || !statuses.includes(r.status)) throw Error('Invalid or duplicate design result.');
+      paths.add(r.path);counts[r.status]++;
+      if(r.status!=='ERROR' && (!r.report || !Array.isArray(r.report.checks))) throw Error('Design report is missing checks.');
+      if(r.report){
+        if(!Array.isArray(r.report.checks)) throw Error('Invalid checks.');
+        for(const c of r.report.checks) if(!c || typeof c.code!=='string' || !['PASS','FAIL','ERROR','WARN','WARNING','NOT_CHECKED'].includes(c.status)) throw Error('Unsupported check status or code.');
+      }
+    }
+    for(const k of statuses) if(counts[k]!==d.counts[k]) throw Error('Reported counts do not match design results.');
+    if(d.status==='PASS' && (counts.FAIL || counts.ERROR || !d.results.length)) throw Error('PASS conflicts with reported results.');
+    return d;
+  }
+  root.ZcadModel={validate};
+  if(typeof module!=='undefined') module.exports=root.ZcadModel;
+})(globalThis);
+</script><script>
+'use strict';
+const historical={
+  "schema_version": "1.0",
+  "status": "PASS",
+  "policy": {
+    "schema_version": "1.0",
+    "required_checks": [
+      "brep_validity",
+      "build_volume",
+      "finite_bounds",
+      "positive_volume",
+      "shape_stack",
+      "solid_topology"
+    ],
+    "fail_on_warnings": true
+  },
+  "design_count": 3,
+  "counts": {
+    "PASS": 3,
+    "FAIL": 0,
+    "ERROR": 0
+  },
+  "results": [
+    {
+      "path": "gifts/pixel-garden-module.json",
+      "status": "PASS",
+      "report": {
+        "schema_version": "1.0",
+        "design": {
+          "name": "pixel-garden-module",
+          "type": "pixel_garden_module"
+        },
+        "scope": "pre-export geometry and declared printer-profile rules; not product readiness",
+        "evaluated_status": "PASS",
+        "coverage": "PARTIAL",
+        "checks": [
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "main"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "main"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "main"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "main"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "main"
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "main",
+            "actual_mm": [
+              43,
+              43,
+              40
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "declared_parameters",
+            "status": "PASS",
+            "message": "Declared values only; not measured wall thickness",
+            "checked_parameters": [
+              "floor",
+              "wall"
+            ],
+            "issues": []
+          },
+          {
+            "code": "solid_intersections",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "manufacturing",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "physical_fit",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "artifact_integrity",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          }
+        ],
+        "warning_count": 0,
+        "policy_result": {
+          "status": "PASS",
+          "policy": {
+            "schema_version": "1.0",
+            "required_checks": [
+              "brep_validity",
+              "build_volume",
+              "finite_bounds",
+              "positive_volume",
+              "shape_stack",
+              "solid_topology"
+            ],
+            "fail_on_warnings": true
+          },
+          "reasons": []
+        }
+      }
+    },
+    {
+      "path": "gifts/player-two-planter.json",
+      "status": "PASS",
+      "report": {
+        "schema_version": "1.0",
+        "design": {
+          "name": "player-two-planter",
+          "type": "pixel_heart_planter"
+        },
+        "scope": "pre-export geometry and declared printer-profile rules; not product readiness",
+        "evaluated_status": "PASS",
+        "coverage": "PARTIAL",
+        "checks": [
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "planter"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "planter"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "planter"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "planter"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "planter"
+          },
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "saucer"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "saucer"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "saucer"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "saucer"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "saucer"
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "planter",
+            "actual_mm": [
+              108,
+              96,
+              48
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "saucer",
+            "actual_mm": [
+              125.0000002,
+              135.0000002,
+              11
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "declared_parameters",
+            "status": "PASS",
+            "message": "Declared values only; not measured wall thickness",
+            "checked_parameters": [
+              "floor",
+              "label_height",
+              "label_size",
+              "wall"
+            ],
+            "issues": []
+          },
+          {
+            "code": "solid_intersections",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "manufacturing",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "physical_fit",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "artifact_integrity",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          }
+        ],
+        "warning_count": 0,
+        "policy_result": {
+          "status": "PASS",
+          "policy": {
+            "schema_version": "1.0",
+            "required_checks": [
+              "brep_validity",
+              "build_volume",
+              "finite_bounds",
+              "positive_volume",
+              "shape_stack",
+              "solid_topology"
+            ],
+            "fail_on_warnings": true
+          },
+          "reasons": []
+        }
+      }
+    },
+    {
+      "path": "gifts/gamepad-coaster.json",
+      "status": "PASS",
+      "report": {
+        "schema_version": "1.0",
+        "design": {
+          "name": "gamepad-coaster",
+          "type": "pixel_coaster"
+        },
+        "scope": "pre-export geometry and declared printer-profile rules; not product readiness",
+        "evaluated_status": "PASS",
+        "coverage": "PARTIAL",
+        "checks": [
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "main"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "main"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "main"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "main"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "main"
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "main",
+            "actual_mm": [
+              92,
+              92,
+              5
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "declared_parameters",
+            "status": "NOT_CHECKED",
+            "message": "No parameters covered by existing profile rules"
+          },
+          {
+            "code": "solid_intersections",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "manufacturing",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "physical_fit",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "artifact_integrity",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          }
+        ],
+        "warning_count": 0,
+        "policy_result": {
+          "status": "PASS",
+          "policy": {
+            "schema_version": "1.0",
+            "required_checks": [
+              "brep_validity",
+              "build_volume",
+              "finite_bounds",
+              "positive_volume",
+              "shape_stack",
+              "solid_topology"
+            ],
+            "fail_on_warnings": true
+          },
+          "reasons": []
+        }
+      }
+    }
+  ]
+}
+;
+const $=id=>document.getElementById(id);let report=null,selected=null,loadId=0;
+function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
+function badge(s){return node('span',s,'badge '+s);}
+function reset(){report=null;selected=null;$('workspace').hidden=true;$('error').textContent='';$('origin').textContent='No report loaded. Open a catalog report from your CLI or CI artifacts. Files stay in this browser tab.';}
+function load(data,label){try{report=ZcadModel.validate(data);selected=report.results[0]?.path;$('query').value='';$('status').value='';$('error').textContent='';$('origin').textContent=label+' — Freshness unknown. This report cannot establish the current repository state.';$('workspace').hidden=false;
+$('stats').replaceChildren(...[['Designs',report.design_count],['PASS',report.counts.PASS],['FAIL',report.counts.FAIL],['ERROR',report.counts.ERROR]].map(([k,v])=>{const n=node('div',k,'stat');n.append(node('b',String(v)));return n;}));
+$('identity').replaceChildren(node('p','Catalog outcome: '+report.status),node('p','Commit: not recorded in this supported catalog format'),node('p','Run timestamp: not recorded'),node('p','Printer profile: not recorded'),node('p','Catalog identity and input hashes: not recorded'),node('p','Artifact links: unavailable in this catalog format'));
+$('policy').textContent=JSON.stringify(report.policy??'Not recorded',null,2);$('raw').textContent=JSON.stringify(report,null,2);render();}catch(e){reset();$('error').textContent='Report rejected: '+e.message;}}
+function render(){const q=$('query').value.toLowerCase(),s=$('status').value;const rows=report.results.filter(r=>(!s||r.status===s)&&(r.path+' '+(r.report?.design?.name??'')).toLowerCase().includes(q));if(!rows.some(r=>r.path===selected))selected=rows[0]?.path;
+$('list').replaceChildren();for(const r of rows){const b=node('button',undefined,'row');b.setAttribute('aria-pressed',String(r.path===selected));b.append(badge(r.status),node('div',r.report?.design?.name??r.path),node('small',r.path));b.onclick=()=>{selected=r.path;render();};$('list').append(b);}if(!rows.length)$('list').append(node('p','No matching designs.'));
+const d=$('detail');d.replaceChildren();const r=rows.find(x=>x.path===selected);if(!r){d.append(node('p','Select a matching design to inspect its evidence.'));return;}d.append(node('h2',r.report?.design?.name??r.path),badge(r.status),badge('Coverage: '+(r.report?.coverage??'UNKNOWN')),node('p',r.report?.scope??'Scope not recorded.'));
+const checks=r.report?.checks??[],policy=r.report?.policy_result;
+if(r.status==='ERROR'){d.append(node('h3','Design error'),node('pre',JSON.stringify(r,null,2)));}
+if(policy){const p=node('p','Policy result: ');p.append(badge(policy.status??'UNKNOWN'));d.append(p);if(Array.isArray(policy.reasons)&&policy.reasons.length){d.append(node('h3','Policy reasons'));for(const reason of policy.reasons)d.append(node('p',typeof reason==='string'?reason:JSON.stringify(reason)));}}
+const attention=checks.filter(c=>['ERROR','FAIL','WARN','WARNING'].includes(c.status));
+const priority={ERROR:0,FAIL:1,WARN:2,WARNING:2};attention.sort((a,b)=>priority[a.status]-priority[b.status]);
+d.append(node('h3','Failures & warnings ('+attention.length+')'));
+if(!attention.length)d.append(node('p','No failing or warning checks reported.','muted'));
+for(const c of attention)d.append(checkNode(c));
+const unchecked=checks.filter(c=>c.status==='NOT_CHECKED');
+d.append(node('h3','Unchecked areas ('+unchecked.length+')'));
+if(!unchecked.length)d.append(node('p','No NOT_CHECKED entries reported. This does not establish complete coverage.','muted'));
+for(const c of unchecked)d.append(checkNode(c));
+const dimensions=checks.filter(c=>Array.isArray(c.actual_mm)||Array.isArray(c.limits_mm));
+if(dimensions.length){d.append(node('h3','Dimensions'));const wrap=node('div',undefined,'table-wrap'),table=node('table');table.append(node('caption','Reported axis-aligned dimensions in millimeters; original precision retained.'));const head=node('thead'),tr=node('tr');for(const title of ['Part / check','Axis','Actual (mm)','Limit (mm)']){const th=node('th',title);th.scope='col';tr.append(th);}head.append(tr);table.append(head);const body=node('tbody');for(const c of dimensions){for(const [i,axis] of ['X','Y','Z'].entries()){const row=node('tr');row.append(node('td',(c.part_name??'Unspecified part')+' / '+c.code),node('td',axis),node('td',measurement(c.actual_mm,i)),node('td',measurement(c.limits_mm,i)));body.append(row);}}table.append(body);wrap.append(table);d.append(wrap);}
+const passed=checks.filter(c=>c.status==='PASS'),passing=node('details',undefined,'evidence');passing.append(node('summary','Passing checks ('+passed.length+')'));for(const c of passed)passing.append(checkNode(c));d.append(passing);
+if(policy){const raw=node('details',undefined,'evidence');raw.append(node('summary','Policy JSON'),node('pre',JSON.stringify(policy,null,2)));d.append(raw);}}
+function measurement(values,i){return Array.isArray(values)&&typeof values[i]==='number'&&Number.isFinite(values[i])?String(values[i]):'Not recorded';}
+function checkNode(c){const a=node('div',undefined,'check');a.append(badge(c.status),node('strong',c.code+(c.part_name?' / '+c.part_name:'')),node('p',c.message??''));const extra=Object.fromEntries(Object.entries(c).filter(([k])=>!['status','code','part_name','message','actual_mm','limits_mm'].includes(k)));if(Object.keys(extra).length){const details=node('details');details.append(node('summary','Check details'),node('pre',JSON.stringify(extra,null,2)));a.append(details);}return a;}
+$('file').onchange=async e=>{const id=++loadId;const f=e.target.files[0];if(!f)return;reset();try{if(f.size>10*1024*1024)throw Error('File exceeds 10 MiB.');const text=await f.text();if(id!==loadId)return;load(JSON.parse(text),'Imported file: '+f.name);}catch(err){if(id===loadId){reset();$('error').textContent='Report rejected: '+err.message;}}finally{e.target.value='';}};
+$('example').onclick=()=>{loadId++;load(structuredClone(historical),'HISTORICAL EVIDENCE · Saved September 26, 2026 · Run time and commit unverified');};$('clear').onclick=()=>{loadId++;reset();};$('query').oninput=render;$('status').onchange=render;
+</script><script>// Receipt schema follows zcad.local_ci v1. No provenance is regenerated.
+function validateReceipt(r) {
+  if (!r || r.schema_version !== '1.0' || !['RUNNING','PASS','FAIL','ERROR','INTERRUPTED'].includes(r.status)) throw Error('Unsupported runner receipt.');
+  if (r.gates !== undefined && !Array.isArray(r.gates)) throw Error('Invalid gate list.');
+  for (const g of r.gates || []) {
+    if (!g || typeof g.name !== 'string' || !['RUNNING','PASS','FAIL','ERROR','INTERRUPTED'].includes(g.status) || !Array.isArray(g.command) || !g.command.every(v=>typeof v==='string')) throw Error('Invalid gate record.');
+  }
+  for (const phase of ['repositories_before','repositories_after']) {
+    if (r[phase] === undefined) continue;
+    if (!r[phase] || typeof r[phase] !== 'object' || Array.isArray(r[phase])) throw Error('Invalid repository snapshots.');
+    for (const s of Object.values(r[phase])) if (!s || typeof s.commit !== 'string' || typeof s.dirty !== 'boolean') throw Error('Invalid repository state.');
+  }
+  return r;
+}
+if (typeof module !== 'undefined') module.exports = {validateReceipt};
+if (typeof document !== 'undefined') {
+  const picker = document.createElement('label'); picker.className='file'; picker.textContent='Open runner folder';
+  const input=document.createElement('input'); input.type='file'; input.multiple=true; input.setAttribute('webkitdirectory',''); picker.append(input);
+  document.querySelector('.actions').prepend(picker);
+  const panel=node('section',undefined,'panel'); panel.hidden=true; $('origin').after(panel);
+  const oldReset=reset; reset=function(){oldReset();panel.hidden=true;panel.replaceChildren();};
+  $('example').addEventListener('click',()=>{panel.hidden=true;panel.replaceChildren();});
+  input.onchange=async()=>{
+    const id=++loadId; reset();
+    try {
+      const files=Array.from(input.files); const receipts=files.filter(f=>f.name==='receipt.json');
+      if(receipts.length!==1) throw Error('Choose one completed or checkpointed run folder containing receipt.json.');
+      const rf=receipts[0], prefix=rf.webkitRelativePath.slice(0,-rf.name.length);
+      const byName=new Map(files.filter(f=>f.webkitRelativePath.slice(0,-f.name.length)===prefix).map(f=>[f.name,f]));
+      async function read(name){const f=byName.get(name);if(!f)throw Error(name+' is missing');if(f.size>10*1024*1024)throw Error(name+' exceeds 10 MiB');return f.text();}
+      const raw=await read('receipt.json'), r=validateReceipt(JSON.parse(raw));
+      let catalog, catalogError;try{catalog=ZcadModel.validate(JSON.parse(await read('catalog.json')));}catch(e){catalogError=e.message;}
+      if(id!==loadId)return;
+      if(catalog)load(catalog,'Runner catalog · '+rf.webkitRelativePath);
+      panel.hidden=false; panel.append(node('h2','Local runner · recorded '+r.status));
+      $('origin').textContent='Recorded execution-time evidence. Current repository state and freshness are unknown. Files remain in this tab.';
+      panel.append(node('p','Started: '+(r.started_at??'Not recorded')+' · Finished: '+(r.finished_at??'Not recorded')+' · Exit code: '+(r.exit_code??'Not recorded')));
+      panel.append(node('p',r.scope??'Scope not recorded'),node('p','Observed Git state changed: '+(r.observed_git_state_changed===undefined?'Not recorded':String(r.observed_git_state_changed))));
+      panel.append(node('p','Receipt and companion files are displayed as supplied. This runner format records no artifact hashes; their binding is not cryptographically verified.'));
+      for(const key of ['error','provenance_error'])if(r[key])panel.append(node('p',key+': '+r[key],'ERROR'));
+      if(r.status==='PASS' && (!r.finished_at || r.exit_code!==0 || r.observed_git_state_changed!==false || !r.repositories_before || !r.repositories_after || !r.gates?.length || r.gates.some(g=>g.status!=='PASS')))panel.append(node('p','Receipt is incomplete or inconsistent with its recorded PASS.','ERROR'));
+      panel.append(node('h2','Gate results'));
+      const passing=node('details');passing.append(node('summary','Passing gates'));
+      for(const g of [...(r.gates||[])].sort((a,b)=>(a.status==='PASS')-(b.status==='PASS'))){
+        const box=node('div',undefined,'check');box.append(badge(g.status),node('strong',g.name),node('p','Exit code: '+(g.returncode??'Not recorded')),node('pre',JSON.stringify(g.command)));
+        if(g.error)box.append(node('p',g.error));
+        for(const key of ['stdout','stderr'])if(typeof g[key]==='string'){
+          const d=node('details');d.append(node('summary',key+': '+g[key]));
+          const pre=node('pre','Expand to read log');d.append(pre);let loaded=false;
+          d.ontoggle=async()=>{if(!d.open||loaded)return;loaded=true;try{pre.textContent=await read(g[key]);}catch(e){pre.textContent=e.message;}};box.append(d);
+        }
+        (g.status==='PASS'?passing:panel).append(box);
+      }
+      panel.append(passing,node('h2','Repository snapshots at execution time'));
+      const table=node('table');table.style.cssText='width:100%;text-align:left;overflow-wrap:anywhere;table-layout:fixed';
+      const head=node('tr');for(const s of ['Repository / snapshot','Commit SHA','Dirty state'])head.append(node('th',s));table.append(head);
+      for(const phase of ['repositories_before','repositories_after']){
+        if(!r[phase])panel.append(node('p',phase+': Not recorded'));
+        for(const [name,s] of Object.entries(r[phase]||{})){
+          const tr=node('tr');tr.append(node('td',name+' / '+phase.replace('repositories_','')),node('td',s.commit),node('td',s.dirty?'Dirty':'Clean'));table.append(tr);
+        }
+      }
+      panel.append(table);
+      const original=node('details');original.append(node('summary','Original receipt JSON · includes paths and porcelain state'),node('pre',raw));panel.append(original);
+      if(catalogError)panel.append(node('p','Catalog unavailable or rejected: '+catalogError,'ERROR'));
+      else {$('identity').prepend(node('p','Execution provenance is recorded in the runner panel above. Catalog JSON itself does not contain it.'));}
+    }catch(e){if(id===loadId){reset();$('error').textContent='Runner bundle rejected: '+e.message;}}
+    finally{input.value='';}
+  };
+}
+</script></html>

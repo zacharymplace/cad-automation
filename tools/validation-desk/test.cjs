@@ -1,0 +1,10 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {validate}=require('./model.js');
+const fixture=require('./fixtures/historical-report.json');
+test('accept observed historical catalog format',()=>assert.equal(validate(structuredClone(fixture)).design_count,3));
+test('reject misleading counts',()=>{const r=structuredClone(fixture);r.counts.PASS=4;assert.throws(()=>validate(r));});
+test('reject PASS with failing design',()=>{const r=structuredClone(fixture);r.results[0].status='FAIL';r.counts.PASS--;r.counts.FAIL++;assert.throws(()=>validate(r));});
+test('retain error without fabricated checks',()=>{const r={schema_version:'1.0',status:'ERROR',design_count:1,counts:{PASS:0,FAIL:0,ERROR:1},results:[{path:'bad.json',status:'ERROR',error:'Cannot load design'}]};assert.equal(validate(r).results[0].error,'Cannot load design');});
+test('reject unknown versions and check statuses',()=>{const r=structuredClone(fixture);r.schema_version='2.0';assert.throws(()=>validate(r));r.schema_version='1.0';r.results[0].report.checks[0].status='READY';assert.throws(()=>validate(r));});
+test('reject duplicate paths',()=>{const r=structuredClone(fixture);r.results[1].path=r.results[0].path;assert.throws(()=>validate(r));});

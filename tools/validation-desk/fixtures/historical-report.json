@@ -1,0 +1,394 @@
+{
+  "schema_version": "1.0",
+  "status": "PASS",
+  "policy": {
+    "schema_version": "1.0",
+    "required_checks": [
+      "brep_validity",
+      "build_volume",
+      "finite_bounds",
+      "positive_volume",
+      "shape_stack",
+      "solid_topology"
+    ],
+    "fail_on_warnings": true
+  },
+  "design_count": 3,
+  "counts": {
+    "PASS": 3,
+    "FAIL": 0,
+    "ERROR": 0
+  },
+  "results": [
+    {
+      "path": "gifts/pixel-garden-module.json",
+      "status": "PASS",
+      "report": {
+        "schema_version": "1.0",
+        "design": {
+          "name": "pixel-garden-module",
+          "type": "pixel_garden_module"
+        },
+        "scope": "pre-export geometry and declared printer-profile rules; not product readiness",
+        "evaluated_status": "PASS",
+        "coverage": "PARTIAL",
+        "checks": [
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "main"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "main"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "main"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "main"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "main"
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "main",
+            "actual_mm": [
+              43,
+              43,
+              40
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "declared_parameters",
+            "status": "PASS",
+            "message": "Declared values only; not measured wall thickness",
+            "checked_parameters": [
+              "floor",
+              "wall"
+            ],
+            "issues": []
+          },
+          {
+            "code": "solid_intersections",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "manufacturing",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "physical_fit",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "artifact_integrity",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          }
+        ],
+        "warning_count": 0,
+        "policy_result": {
+          "status": "PASS",
+          "policy": {
+            "schema_version": "1.0",
+            "required_checks": [
+              "brep_validity",
+              "build_volume",
+              "finite_bounds",
+              "positive_volume",
+              "shape_stack",
+              "solid_topology"
+            ],
+            "fail_on_warnings": true
+          },
+          "reasons": []
+        }
+      }
+    },
+    {
+      "path": "gifts/player-two-planter.json",
+      "status": "PASS",
+      "report": {
+        "schema_version": "1.0",
+        "design": {
+          "name": "player-two-planter",
+          "type": "pixel_heart_planter"
+        },
+        "scope": "pre-export geometry and declared printer-profile rules; not product readiness",
+        "evaluated_status": "PASS",
+        "coverage": "PARTIAL",
+        "checks": [
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "planter"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "planter"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "planter"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "planter"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "planter"
+          },
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "saucer"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "saucer"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "saucer"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "saucer"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "saucer"
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "planter",
+            "actual_mm": [
+              108,
+              96,
+              48
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "saucer",
+            "actual_mm": [
+              125.0000002,
+              135.0000002,
+              11
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "declared_parameters",
+            "status": "PASS",
+            "message": "Declared values only; not measured wall thickness",
+            "checked_parameters": [
+              "floor",
+              "label_height",
+              "label_size",
+              "wall"
+            ],
+            "issues": []
+          },
+          {
+            "code": "solid_intersections",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "manufacturing",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "physical_fit",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "artifact_integrity",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          }
+        ],
+        "warning_count": 0,
+        "policy_result": {
+          "status": "PASS",
+          "policy": {
+            "schema_version": "1.0",
+            "required_checks": [
+              "brep_validity",
+              "build_volume",
+              "finite_bounds",
+              "positive_volume",
+              "shape_stack",
+              "solid_topology"
+            ],
+            "fail_on_warnings": true
+          },
+          "reasons": []
+        }
+      }
+    },
+    {
+      "path": "gifts/gamepad-coaster.json",
+      "status": "PASS",
+      "report": {
+        "schema_version": "1.0",
+        "design": {
+          "name": "gamepad-coaster",
+          "type": "pixel_coaster"
+        },
+        "scope": "pre-export geometry and declared printer-profile rules; not product readiness",
+        "evaluated_status": "PASS",
+        "coverage": "PARTIAL",
+        "checks": [
+          {
+            "code": "shape_stack",
+            "status": "PASS",
+            "message": "Expected a nonempty stack of shapes",
+            "part_name": "main"
+          },
+          {
+            "code": "solid_topology",
+            "status": "PASS",
+            "message": "All stack items contain only solids",
+            "part_name": "main"
+          },
+          {
+            "code": "brep_validity",
+            "status": "PASS",
+            "message": "BRep validity",
+            "part_name": "main"
+          },
+          {
+            "code": "positive_volume",
+            "status": "PASS",
+            "message": "Aggregate and individual solid volumes must be finite and positive",
+            "part_name": "main"
+          },
+          {
+            "code": "finite_bounds",
+            "status": "PASS",
+            "message": "Finite bounds with positive XYZ dimensions",
+            "part_name": "main"
+          },
+          {
+            "code": "build_volume",
+            "status": "PASS",
+            "message": "Axis-aligned dimensions in generated orientation; no packing or rotation search",
+            "part_name": "main",
+            "actual_mm": [
+              92,
+              92,
+              5
+            ],
+            "limits_mm": [
+              250,
+              210,
+              210
+            ]
+          },
+          {
+            "code": "declared_parameters",
+            "status": "NOT_CHECKED",
+            "message": "No parameters covered by existing profile rules"
+          },
+          {
+            "code": "solid_intersections",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "manufacturing",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "physical_fit",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          },
+          {
+            "code": "artifact_integrity",
+            "status": "NOT_CHECKED",
+            "message": "Outside this pre-export validation scope"
+          }
+        ],
+        "warning_count": 0,
+        "policy_result": {
+          "status": "PASS",
+          "policy": {
+            "schema_version": "1.0",
+            "required_checks": [
+              "brep_validity",
+              "build_volume",
+              "finite_bounds",
+              "positive_volume",
+              "shape_stack",
+              "solid_topology"
+            ],
+            "fail_on_warnings": true
+          },
+          "reasons": []
+        }
+      }
+    }
+  ]
+}
