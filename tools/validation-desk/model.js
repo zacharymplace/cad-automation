@@ -18,6 +18,15 @@
     if(d.status==='PASS' && (counts.FAIL || counts.ERROR || !d.results.length)) throw Error('PASS conflicts with reported results.');
     return d;
   }
-  root.ZcadModel={validate};
+  function failed(r){return ['FAIL','ERROR'].includes(r.status);}
+  function unchecked(r){return (r.report?.checks??[]).some(c=>c.status==='NOT_CHECKED');}
+  function priority(r){return failed(r)?0:unchecked(r)?1:2;}
+  function visibleResults(results,query='',filter=''){
+    return results.filter(r=>(filter==='failed'?failed(r):filter==='unchecked'?unchecked(r):!filter||r.status===filter)
+      && (r.path+' '+(r.report?.design?.name??'')).toLowerCase().includes(query.toLowerCase()))
+      .sort((a,b)=>priority(a)-priority(b));
+  }
+  function selectResult(rows,current){return rows.some(r=>r.path===current)?current:rows[0]?.path;}
+  root.ZcadModel={validate,visibleResults,selectResult};
   if(typeof module!=='undefined') module.exports=root.ZcadModel;
 })(globalThis);

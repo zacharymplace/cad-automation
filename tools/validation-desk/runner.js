@@ -55,6 +55,7 @@ if (typeof document !== 'undefined') {
       for(const g of [...(r.gates||[])].sort((a,b)=>(a.status==='PASS')-(b.status==='PASS'))){
         const box=node('div',undefined,'check');box.append(badge(g.status),node('strong',g.name),node('p','Exit code: '+(g.returncode??'Not recorded')),node('pre',JSON.stringify(g.command)));
         if(g.error)box.append(node('p',g.error));
+        if(g.name==='catalog' && catalog){const jump=node('button','View catalog findings');jump.onclick=showCatalogFindings;box.append(jump);}
         for(const key of ['stdout','stderr'])if(typeof g[key]==='string'){
           const d=node('details');d.append(node('summary',key+': '+g[key]));
           const pre=node('pre','Expand to read log');d.append(pre);let loaded=false;
