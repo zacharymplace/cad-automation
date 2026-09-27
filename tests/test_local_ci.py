@@ -113,13 +113,13 @@ def test_main_receipt_and_changed_state(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner,
         "repositories",
-        lambda: {"app": app, "cad-automation": app, "core": core},
+        lambda: {"cad-automation": app, "zcad-core": core},
     )
     calls = []
 
     def state(path):
         calls.append(path)
-        return {"commit": "a" if len(calls) <= 3 else "b", "dirty": False}
+        return {"commit": "a" if len(calls) <= 2 else "b", "dirty": False}
 
     monkeypatch.setattr(runner, "snapshot", state)
     monkeypatch.setattr(runner, "gates", lambda p: [("good", [p, "-c", "pass"])])

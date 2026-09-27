@@ -11,9 +11,14 @@ editable from its Git checkout. The runner discovers the core actually imported 
 this Python interpreter, rather than assuming the adjacent folder is in use.
 No dependencies are installed and no network or Git write operations are performed.
 
-The gates run sequentially: automation formatting, lint, full automation tests,
-then the example catalog and its committed policy using the Prusa profile.
-This does not run the core repository's own test suite. Ordinary gate failures
+The gates run sequentially: automation formatting, lint, full core tests, full
+automation tests, viewer verification, then the example catalog and its committed
+policy using the Prusa profile. The required `core-tests` gate uses the runner's
+Python interpreter and runs `python -m pytest tests -q` in the detected core
+checkout. All other gates run in the automation checkout. Each gate records its
+absolute `working_directory` in the receipt. The existing environment must provide
+the test dependencies for both repositories; the runner installs nothing.
+Ordinary gate failures
 do not skip later gates. Each gate defaults to a 1800-second timeout; set
 `--timeout SECONDS` to change that limit.
 
@@ -40,7 +45,10 @@ entry only displays instructions; local validation does not depend on Actions.
 # Artifact integrity
 
 New finalized receipts include `artifact_integrity`: SHA-256 and byte size for
-each gate's stdout and stderr, including `catalog.json`. Existing receipt fields
+each gate's stdout and stderr, including `catalog.json`. Receipt fields
+are retained; core tests add `core-tests.stdout.log` and `core-tests.stderr.log`
+to the binding (12 artifacts for a completed six-gate run). Older receipts remain
+verifiable with their original inventory. Existing receipt fields
 and schema version remain unchanged for viewer compatibility. Hashing failure
 makes the run ERROR (exit 2). Checkpoints are not finalized evidence.
 

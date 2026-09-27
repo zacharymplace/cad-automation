@@ -47,6 +47,7 @@ def gates(python):
     return [
         ("format", [python, "-m", "ruff", "format", "--check", "src", "tests"]),
         ("lint", [python, "-m", "ruff", "check", "src", "tests"]),
+        ("core-tests", [python, "-m", "pytest", "tests", "-q"]),
         ("tests", [python, "-m", "pytest", "tests", "-q"]),
         ("viewer", [python, "tools/validation-desk/verify.py"]),
         (
@@ -73,14 +74,16 @@ def write_receipt(output, receipt):
     temporary.replace(output / "receipt.json")
 
 
-def run_gates(root, output, commands, receipt, timeout):
+def run_gates(root, output, commands, receipt, timeout, *, working_directories=None):
     """Continue after failures; checkpoint each gate and retain interrupted logs."""
     receipt["gates"] = []
     for name, command in commands:
+        working_directory = Path((working_directories or {}).get(name, root)).resolve()
         stdout_name = "catalog.json" if name == "catalog" else f"{name}.stdout.log"
         entry = {
             "name": name,
             "command": command,
+            "working_directory": str(working_directory),
             "status": "RUNNING",
             "stdout": stdout_name,
             "stderr": f"{name}.stderr.log",
@@ -95,7 +98,7 @@ def run_gates(root, output, commands, receipt, timeout):
             try:
                 result = subprocess.run(
                     command,
-                    cwd=root,
+                    cwd=working_directory,
                     stdout=out,
                     stderr=err,
                     timeout=timeout,
@@ -154,7 +157,7 @@ def main():
         "started_at": datetime.now(UTC).isoformat(),
         "python": sys.executable,
         "python_version": sys.version,
-        "scope": "Automation gates against the imported core checkout; "
+        "scope": "Automation gates and imported core checkout tests; "
         "observed Git state, not an immutable source attestation",
     }
     code = 2
@@ -166,6 +169,7 @@ def main():
             gates(sys.executable),
             receipt,
             args.timeout,
+            working_directories={"core-tests": repos["zcad-core"]},
         )
         code = 0 if all(g["status"] == "PASS" for g in receipt["gates"]) else 1
         receipt["status"] = "PASS" if code == 0 else "FAIL"
