@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "required_checks": [
+    "shape_stack",
+    "solid_topology",
+    "brep_validity",
+    "positive_volume",
+    "finite_bounds",
+    "build_volume"
+  ],
+  "fail_on_warnings": true
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "designs": [
+    "gifts/pixel-garden-module.json",
+    "gifts/player-two-planter.json",
+    "gifts/gamepad-coaster.json"
+  ]
+}

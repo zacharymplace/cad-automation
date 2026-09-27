@@ -658,6 +658,15 @@ def run(
     """Run one CAD or registry-driven design command."""
     arguments = list(argv) if argv is not None else sys.argv[1:]
 
+    if arguments and arguments[0] == "validate-catalog":
+        from zcad.catalog_validation import run_catalog
+
+        run_catalog(
+            arguments[1:], read_design=read_design, generate_parts=generate_parts,
+            load_printer_profile=load_printer_profile,
+        )
+        return
+
     if arguments and arguments[0] == "validate":
         from zcad.validation_cli import run_validation
 
