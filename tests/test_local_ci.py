@@ -134,3 +134,7 @@ def test_main_receipt_and_changed_state(tmp_path, monkeypatch):
     )
     assert receipt["observed_git_state_changed"] is True
     assert receipt["status"] == "ERROR"
+    from zcad.run_integrity import verify
+
+    folder = next((tmp_path / "reports").iterdir())
+    assert verify(folder)["status"] == "PASS"

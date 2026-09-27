@@ -37,3 +37,26 @@ output parent rather than the default system temporary directory.
 
 The GitHub workflow has no push or pull-request triggers. Its optional manual
 entry only displays instructions; local validation does not depend on Actions.
+# Artifact integrity
+
+New finalized receipts include `artifact_integrity`: SHA-256 and byte size for
+each gate's stdout and stderr, including `catalog.json`. Existing receipt fields
+and schema version remain unchanged for viewer compatibility. Hashing failure
+makes the run ERROR (exit 2). Checkpoints are not finalized evidence.
+
+Verify a completed folder without running checks or changing files:
+
+```bash
+.venv/bin/python -m zcad.run_integrity /path/to/run-folder
+```
+
+Exit 0 means referenced artifact bytes match the supplied receipt, even if the
+run itself failed. Exit 1 means changed/missing artifacts or an older UNBOUND
+receipt. Exit 2 means malformed input or an operational error. Extra files are
+outside the binding. Symlink artifacts and path traversal are rejected.
+
+The receipt does not hash itself and is not signed: someone replacing both it
+and the artifacts can rewrite the evidence. This detects accidental mixing and
+changes relative to the supplied receipt, not authenticity. Byte-identical files
+from separate runs cannot be distinguished. Existing runs are not retroactively
+bound; retain their original receipts.

@@ -9,6 +9,8 @@ import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+from zcad.run_integrity import bind_artifacts
+
 
 def git(root, *args):
     return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
@@ -185,6 +187,12 @@ def main():
             receipt["status"] = "ERROR"
             code = 2
         receipt["finished_at"] = datetime.now(UTC).isoformat()
+        try:
+            receipt["artifact_integrity"] = bind_artifacts(output, receipt)
+        except Exception as error:
+            receipt["integrity_error"] = str(error)
+            receipt["status"] = "ERROR"
+            code = 2
         receipt["exit_code"] = code
         write_receipt(output, receipt)
     print(f"Local CI: {receipt['status']}; receipt: {output / 'receipt.json'}")
