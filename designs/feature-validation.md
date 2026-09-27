@@ -111,14 +111,25 @@ Vertices are matched exactly. ASCII STL is outside this exporter contract.
 Self-intersections, vertex manifoldness, component nesting and full shape
 equivalence are not established by these checks.
 
-For tolerance coupons, the CLI registers mesh occupancy probes for every hole
-and slot: 16 angular locations, plus slot straight-side samples, at three Z
-levels (-0.4, 0, +0.4 times plate thickness). Opening probes lie at 80% of nominal
-radius; material probes lie 0.1 mm outside the nominal boundary. Opening centers
-are also sampled. Ray parity uses two directions and fails on unresolved or
-inconsistent classifications. This is sampled feature evidence, not the exact
-continuous-volume BRep check: small defects between probes can remain undetected.
-It does not establish exact opening dimensions, minimum walls or printability.
+For tolerance coupons, opening checks now use continuous vertical segments at
+16 angular XY locations, the center, and six additional straight-side locations
+for slots. They lie at 80% of nominal radius and span the entire closed plate
+interval, including both end faces. `stl_coupon_opening_vertical_clearance`
+replaces `stl_coupon_opening_samples`; this is a changed method, not removal of
+an old failure. Every probe records its XY, contact evidence and clearance result.
+
+Any triangle surface contact fails, including edge, vertex and coplanar contact.
+If there is no contact, midpoint ray parity detects a segment entirely inside
+material. A 1e-7 mm coordinate tolerance and 1e-9 barycentric tolerance are used;
+unresolved occupancy fails closed. No shifted rays substitute for the vertical
+contact test. Thin membranes between the former Z levels are now detected at
+the sampled XY. Coverage remains lateral sampling: defects between these lines
+and exact opening dimensions remain unverified.
+
+Surrounding-material checks retain their three heights (-0.4, 0, +0.4 times plate
+thickness), with probes 0.1 mm outside the nominal boundary. They remain discrete
+point evidence, not continuous material coverage. Neither mesh feature method
+establishes full shape equivalence, minimum walls or printability.
 
 Other designs explicitly record feature `NOT_CHECKED`. Direct core callers must
 register `stl_feature_validator` to obtain product probes. A topology PASS alone

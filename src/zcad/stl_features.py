@@ -32,6 +32,54 @@ def stl_feature_checks(*, design_type, parts, parameters):
                 ("opening", False, radius * 0.8),
                 ("material", True, radius + 0.1),
             ):
+                if label == "opening":
+                    xy = []
+                    for j in range(16):
+                        angle = 2 * math.pi * (j + 0.37) / 16
+                        dx, dy = r * math.cos(angle), r * math.sin(angle)
+                        xy.append((x + dx, y + dy + math.copysign(half_straight, dy)))
+                    xy.append((x, y))
+                    if half_straight > 0:
+                        xy.extend(
+                            (x + side * r, y + offset * half_straight)
+                            for side in (-1, 1)
+                            for offset in (-0.5, 0, 0.5)
+                        )
+                    probes = [
+                        {
+                            "xy_mm": list(point),
+                            **parts["main"].vertical_clearance(
+                                *point, -p.plate_thickness / 2, p.plate_thickness / 2
+                            ),
+                        }
+                        for point in xy
+                    ]
+                    checks.append(
+                        {
+                            "code": "stl_coupon_opening_vertical_clearance",
+                            "part_name": "main",
+                            "feature_id": f"{kind}_{i + 1:02d}",
+                            "status": "PASS"
+                            if all(probe["clear"] for probe in probes)
+                            else "FAIL",
+                            "message": (
+                                f"{kind} {i + 1}: full-depth clearance at sampled XY"
+                            ),
+                            "method": "vertical-segment-surface-contact-and-occupancy",
+                            "sample_count": len(probes),
+                            "probes": probes,
+                            "z_interval_mm": [
+                                -p.plate_thickness / 2,
+                                p.plate_thickness / 2,
+                            ],
+                            "radial_offset_mm": r - radius,
+                            "scope": (
+                                "Continuous Z at discrete XY; lateral gaps between "
+                                "probes and exact opening dimensions unverified"
+                            ),
+                        }
+                    )
+                    continue
                 points = []
                 for fraction in (-0.4, 0, 0.4):
                     z = fraction * p.plate_thickness
@@ -40,8 +88,6 @@ def stl_feature_checks(*, design_type, parts, parameters):
                         dx, dy = r * math.cos(angle), r * math.sin(angle)
                         dy += math.copysign(half_straight, dy)
                         points.append((x + dx, y + dy, z))
-                    if label == "opening":
-                        points.append((x, y, z))
                     if half_straight > 0:
                         for side in (-1, 1):
                             for offset in (-0.5, 0, 0.5):
