@@ -489,6 +489,8 @@ def _run_design_build_command(
     arguments: list[str],
 ) -> None:
     """Build and export a registry-driven board-display enclosure."""
+    from zcad.stl_features import stl_feature_checks
+
     args = _build_design_command_parser().parse_args(arguments)
 
     design = load_board_display_design(args.design)
@@ -515,6 +517,7 @@ def _run_design_build_command(
     result = export_parts(
         ExportRequest(
             feature_validator=feature_checks,
+            stl_feature_validator=stl_feature_checks,
             design_name=(design.product.lower().replace("_", "-")),
             design_type="board_display_enclosure",
             parameters={
@@ -663,6 +666,8 @@ def run(
     argv: list[str] | None = None,
 ) -> tuple[str, ...] | None:
     """Run one CAD or registry-driven design command."""
+    from zcad.stl_features import stl_feature_checks
+
     arguments = list(argv) if argv is not None else sys.argv[1:]
 
     if arguments and arguments[0] == "validate-catalog":
@@ -744,6 +749,7 @@ def run(
     result = export_parts(
         ExportRequest(
             feature_validator=feature_checks,
+            stl_feature_validator=stl_feature_checks,
             design_name=design["name"],
             design_type=design["type"],
             parameters=design["parameters"],

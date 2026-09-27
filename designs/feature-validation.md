@@ -97,3 +97,30 @@ crash/power-loss recovery or atomic visibility across the whole file set.
 Concurrent readers can observe replacement in progress; concurrent writers are
 unsupported. Newly created ancestor directories may remain after a failed
 publication setup. No claim of filesystem durability is made.
+# STL round-trip validation
+
+Exports inspect the staged binary STL before publication. The metadata's
+`design_validation.stl_round_trip` records the inspected byte SHA-256 per part,
+triangle count, signed volume, topology results and registered feature probes.
+The inspected file is the file published; no repair or regeneration follows.
+Any mesh or probe failure rejects the complete export set before publication.
+
+Topology requires finite coordinates, nondegenerate unique triangles, exactly
+one opposite directed partner for every edge, and positive total signed volume.
+Vertices are matched exactly. ASCII STL is outside this exporter contract.
+Self-intersections, vertex manifoldness, component nesting and full shape
+equivalence are not established by these checks.
+
+For tolerance coupons, the CLI registers mesh occupancy probes for every hole
+and slot: 16 angular locations, plus slot straight-side samples, at three Z
+levels (-0.4, 0, +0.4 times plate thickness). Opening probes lie at 80% of nominal
+radius; material probes lie 0.1 mm outside the nominal boundary. Opening centers
+are also sampled. Ray parity uses two directions and fails on unresolved or
+inconsistent classifications. This is sampled feature evidence, not the exact
+continuous-volume BRep check: small defects between probes can remain undetected.
+It does not establish exact opening dimensions, minimum walls or printability.
+
+Other designs explicitly record feature `NOT_CHECKED`. Direct core callers must
+register `stl_feature_validator` to obtain product probes. A topology PASS alone
+does not claim that product features were checked. Read-only catalog checks do
+not create STL files and therefore do not include this export-stage evidence.
