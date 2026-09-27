@@ -48,6 +48,7 @@ def gates(python):
         ("format", [python, "-m", "ruff", "format", "--check", "src", "tests"]),
         ("lint", [python, "-m", "ruff", "check", "src", "tests"]),
         ("tests", [python, "-m", "pytest", "tests", "-q"]),
+        ("viewer", [python, "tools/validation-desk/verify.py"]),
         (
             "catalog",
             [
