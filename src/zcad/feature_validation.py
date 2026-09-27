@@ -9,13 +9,14 @@ from zcad_core.validation.export_geometry import inspect_export_geometry
 from zcad.generators.tolerance_coupon import ToleranceCouponParameters
 
 VOLUME_TOLERANCE_MM3 = 1e-6
+SURROUNDING_BAND_MM = 0.2
 
 
 def coupon_opening_checks(parts, parameters):
     """Intersect full nominal opening prisms with every solid in the main part.
 
-    This checks obstruction within the declared plate interval. It does not
-    measure opening oversize, wall thickness, labels, or physical fit.
+    Check obstruction and a 0.2 mm surrounding band through the plate interval.
+    This does not establish global wall thickness, labels, or physical fit.
     """
     p = ToleranceCouponParameters(**parameters)
     p.validate()
@@ -67,6 +68,51 @@ def coupon_opening_checks(parts, parameters):
                     "volume_tolerance_mm3": VOLUME_TOLERANCE_MM3,
                 }
             )
+            outer_plane = cq.Workplane("XY", origin=(x, y, -p.plate_thickness / 2))
+            if kind == "hole":
+                outer_profile = outer_plane.circle(width / 2 + SURROUNDING_BAND_MM)
+            else:
+                outer_profile = outer_plane.slot2D(
+                    p.cell_height * 0.65 + 2 * SURROUNDING_BAND_MM,
+                    width + 2 * SURROUNDING_BAND_MM,
+                    90,
+                )
+            band = outer_profile.extrude(p.plate_thickness).val().cut(probe)
+            if not band.isValid() or band.Volume() <= 0:
+                raise ValueError("Invalid surrounding-material probe")
+            # Difference against each solid measures the uncovered union.
+            # Duplicate/overlapping solids cannot compensate for missing material.
+            missing = band
+            for solid in shape.Solids():
+                if not missing.Solids():
+                    break
+                missing = missing.cut(solid)
+            missing_volume = missing.Volume()
+            if (
+                not missing.isValid()
+                or not math.isfinite(missing_volume)
+                or missing_volume < 0
+            ):
+                raise ValueError("Material difference produced invalid evidence")
+            checks.append(
+                {
+                    "code": "coupon_surrounding_material",
+                    "status": "PASS"
+                    if missing_volume <= VOLUME_TOLERANCE_MM3
+                    else "FAIL",
+                    "message": f"{kind} {index + 1}: surrounding band through plate",
+                    "part_name": "main",
+                    "feature_id": f"{kind}_{index + 1:02d}",
+                    "feature_kind": kind,
+                    "center_mm": [x, y],
+                    "band_width_mm": SURROUNDING_BAND_MM,
+                    "z_interval_mm": [-p.plate_thickness / 2, p.plate_thickness / 2],
+                    "method": "sequential-solid-difference-volume",
+                    "expected_material_mm3": band.Volume(),
+                    "missing_material_mm3": missing_volume,
+                    "volume_tolerance_mm3": VOLUME_TOLERANCE_MM3,
+                }
+            )
     return checks
 
 
@@ -74,12 +120,13 @@ def validate_design(**kwargs):
     """Append applicable product evidence before CLI/catalog policy evaluation."""
     report = validate_geometry(**kwargs)
     if kwargs["design_type"] != "tolerance_coupon":
-        report["checks"].append(
+        report["checks"].extend(
             {
-                "code": "coupon_opening_clearance",
+                "code": code,
                 "status": "NOT_CHECKED",
                 "message": "Only tolerance_coupon has an opening contract",
             }
+            for code in ("coupon_opening_clearance", "coupon_surrounding_material")
         )
         return report
     try:
@@ -87,16 +134,18 @@ def validate_design(**kwargs):
     except Exception as error:
         checks = [
             {
-                "code": "coupon_opening_clearance",
+                "code": code,
                 "status": "FAIL",
                 "message": f"Opening check error: {type(error).__name__}: {error}",
                 "part_name": "main",
             }
+            for code in ("coupon_opening_clearance", "coupon_surrounding_material")
         ]
     report["checks"].extend(checks)
     if any(c["status"] == "FAIL" for c in checks):
         report["evaluated_status"] = "FAIL"
     report["scope"] += (
-        "; nominal coupon opening clearance within declared plate interval"
+        "; nominal coupon opening clearance and surrounding material "
+        "within declared plate interval"
     )
     return report
