@@ -105,7 +105,8 @@ def build_tolerance_coupon(
             diameter=diameter,
         )
 
-        label_y = upper_y - parameters.cell_height / 2 + parameters.label_size
+        # Keep label centers independent of font size and clear of the openings.
+        label_y = upper_y - parameters.cell_height / 2
 
         model = add_embossed_label(
             model,
@@ -132,7 +133,7 @@ def build_tolerance_coupon(
             angle=90,
         )
 
-        label_y = lower_y - parameters.cell_height / 2 + parameters.label_size
+        label_y = lower_y - parameters.cell_height / 2
 
         model = add_embossed_label(
             model,
