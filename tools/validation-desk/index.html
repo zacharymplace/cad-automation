@@ -462,6 +462,39 @@ function measurement(values,i){return Array.isArray(values)&&typeof values[i]===
 function checkNode(c){const a=node('div',undefined,'check');a.append(badge(c.status),node('strong',c.code+(c.part_name?' / '+c.part_name:'')),node('p',c.message??''));const extra=Object.fromEntries(Object.entries(c).filter(([k])=>!['status','code','part_name','message','actual_mm','limits_mm'].includes(k)));if(Object.keys(extra).length){const details=node('details');details.append(node('summary','Check details'),node('pre',JSON.stringify(extra,null,2)));a.append(details);}return a;}
 $('file').onchange=async e=>{const id=++loadId;const f=e.target.files[0];if(!f)return;reset();try{if(f.size>10*1024*1024)throw Error('File exceeds 10 MiB.');const text=await f.text();if(id!==loadId)return;load(JSON.parse(text),'Imported file: '+f.name);}catch(err){if(id===loadId){reset();$('error').textContent='Report rejected: '+err.message;}}finally{e.target.value='';}};
 $('example').onclick=()=>{loadId++;load(structuredClone(historical),'HISTORICAL EVIDENCE · Saved September 26, 2026 · Run time and commit unverified');};$('clear').onclick=()=>{loadId++;reset();};$('query').oninput=render;$('status').onchange=render;
+</script><script>// Matches zcad.run_integrity artifact_integrity schema 1.0.
+async function verifyIntegrity(receipt, files, digest) {
+  const binding=receipt.artifact_integrity;
+  if(binding==null)return {status:'UNBOUND',reasons:['Receipt has no artifact hashes']};
+  try {
+    if(!['PASS','FAIL','ERROR','INTERRUPTED'].includes(receipt.status))throw Error('Receipt is not finalized');
+    if(binding.schema_version!=='1.0'||binding.algorithm!=='sha256')throw Error('Unsupported artifact integrity schema');
+    const names=[];
+    for(const gate of receipt.gates||[])for(const stream of ['stdout','stderr']){
+      const name=gate[stream];
+      if(typeof name!=='string'||!name||['.','..','receipt.json','receipt.tmp'].includes(name)||/[\\/]/.test(name))throw Error('Invalid artifact filename');
+      names.push(name);
+    }
+    if(!names.length||new Set(names).size!==names.length)throw Error('Expected nonempty, unique gate artifact names');
+    names.sort();
+    if(!binding.files||Array.isArray(binding.files)||typeof binding.files!=='object'||JSON.stringify(Object.keys(binding.files).sort())!==JSON.stringify(names))throw Error('Hash inventory does not match gate artifact references');
+    for(const name of names){
+      const e=binding.files[name];
+      if(!e||JSON.stringify(Object.keys(e).sort())!==JSON.stringify(['sha256','size_bytes'])||!Number.isSafeInteger(e.size_bytes)||e.size_bytes<0||typeof e.sha256!=='string'||!/^[0-9a-f]{64}$/.test(e.sha256))throw Error('Malformed hash record: '+name);
+    }
+    const reasons=[];
+    for(const name of names){
+      const f=files.get(name),e=binding.files[name];
+      if(!f){reasons.push('Missing artifact: '+name);continue;}
+      if(f.size!==e.size_bytes){reasons.push('Changed artifact: '+name+' (size mismatch)');continue;}
+      if(f.size>10*1024*1024)throw Error('Verification limit exceeded: '+name+' (10 MiB)');
+      const bytes=await f.arrayBuffer();
+      if(bytes.byteLength!==e.size_bytes||await digest(bytes)!==e.sha256)reasons.push('Changed artifact: '+name+' (SHA-256 mismatch)');
+    }
+    return {status:reasons.length?'FAIL':'PASS',file_count:names.length,reasons};
+  }catch(e){return {status:'ERROR',reasons:[e.message]};}
+}
+if(typeof module!=='undefined')module.exports={verifyIntegrity};
 </script><script>// Receipt schema follows zcad.local_ci v1. No provenance is regenerated.
 function validateReceipt(r) {
   if (!r || r.schema_version !== '1.0' || !['RUNNING','PASS','FAIL','ERROR','INTERRUPTED'].includes(r.status)) throw Error('Unsupported runner receipt.');
@@ -493,6 +526,11 @@ if (typeof document !== 'undefined') {
       const byName=new Map(files.filter(f=>f.webkitRelativePath.slice(0,-f.name.length)===prefix).map(f=>[f.name,f]));
       async function read(name){const f=byName.get(name);if(!f)throw Error(name+' is missing');if(f.size>10*1024*1024)throw Error(name+' exceeds 10 MiB');return f.text();}
       const raw=await read('receipt.json'), r=validateReceipt(JSON.parse(raw));
+      const integrity=await verifyIntegrity(r,byName,async bytes=>{
+        if(!globalThis.crypto?.subtle)throw Error('SHA-256 unavailable in this browser context');
+        const hash=await crypto.subtle.digest('SHA-256',bytes);
+        return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+      });
       let catalog, catalogError;try{catalog=ZcadModel.validate(JSON.parse(await read('catalog.json')));}catch(e){catalogError=e.message;}
       if(id!==loadId)return;
       if(catalog)load(catalog,'Runner catalog · '+rf.webkitRelativePath);
@@ -500,8 +538,14 @@ if (typeof document !== 'undefined') {
       $('origin').textContent='Recorded execution-time evidence. Current repository state and freshness are unknown. Files remain in this tab.';
       panel.append(node('p','Started: '+(r.started_at??'Not recorded')+' · Finished: '+(r.finished_at??'Not recorded')+' · Exit code: '+(r.exit_code??'Not recorded')));
       panel.append(node('p',r.scope??'Scope not recorded'),node('p','Observed Git state changed: '+(r.observed_git_state_changed===undefined?'Not recorded':String(r.observed_git_state_changed))));
-      panel.append(node('p','Receipt and companion files are displayed as supplied. This runner format records no artifact hashes; their binding is not cryptographically verified.'));
-      for(const key of ['error','provenance_error'])if(r[key])panel.append(node('p',key+': '+r[key],'ERROR'));
+      const integrityPanel=node('div',undefined,'notice');
+      integrityPanel.append(node('strong','Artifact integrity: '+integrity.status));
+      for(const reason of integrity.reasons)integrityPanel.append(node('p',reason));
+      if(integrity.status==='PASS')integrityPanel.append(node('p',integrity.file_count+' referenced files match the supplied receipt (SHA-256 and byte size).'));
+      integrityPanel.append(node('p','Integrity is separate from gate success. Receipt authenticity and current repository state are unverified. Extra files are outside the binding. Browser file selection cannot check filesystem symlink metadata.'));
+      panel.prepend(integrityPanel);
+      if(integrity.status!=='PASS')$('origin').textContent+=' Artifact integrity: '+integrity.status+'; displayed catalog and logs are unverified.';
+      for(const key of ['error','provenance_error','integrity_error'])if(r[key])panel.append(node('p',key+': '+r[key],'ERROR'));
       if(r.status==='PASS' && (!r.finished_at || r.exit_code!==0 || r.observed_git_state_changed!==false || !r.repositories_before || !r.repositories_after || !r.gates?.length || r.gates.some(g=>g.status!=='PASS')))panel.append(node('p','Receipt is incomplete or inconsistent with its recorded PASS.','ERROR'));
       panel.append(node('h2','Gate results'));
       const passing=node('details');passing.append(node('summary','Passing gates'));

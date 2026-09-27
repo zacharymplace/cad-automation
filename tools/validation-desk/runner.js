@@ -29,6 +29,11 @@ if (typeof document !== 'undefined') {
       const byName=new Map(files.filter(f=>f.webkitRelativePath.slice(0,-f.name.length)===prefix).map(f=>[f.name,f]));
       async function read(name){const f=byName.get(name);if(!f)throw Error(name+' is missing');if(f.size>10*1024*1024)throw Error(name+' exceeds 10 MiB');return f.text();}
       const raw=await read('receipt.json'), r=validateReceipt(JSON.parse(raw));
+      const integrity=await verifyIntegrity(r,byName,async bytes=>{
+        if(!globalThis.crypto?.subtle)throw Error('SHA-256 unavailable in this browser context');
+        const hash=await crypto.subtle.digest('SHA-256',bytes);
+        return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+      });
       let catalog, catalogError;try{catalog=ZcadModel.validate(JSON.parse(await read('catalog.json')));}catch(e){catalogError=e.message;}
       if(id!==loadId)return;
       if(catalog)load(catalog,'Runner catalog · '+rf.webkitRelativePath);
@@ -36,8 +41,14 @@ if (typeof document !== 'undefined') {
       $('origin').textContent='Recorded execution-time evidence. Current repository state and freshness are unknown. Files remain in this tab.';
       panel.append(node('p','Started: '+(r.started_at??'Not recorded')+' · Finished: '+(r.finished_at??'Not recorded')+' · Exit code: '+(r.exit_code??'Not recorded')));
       panel.append(node('p',r.scope??'Scope not recorded'),node('p','Observed Git state changed: '+(r.observed_git_state_changed===undefined?'Not recorded':String(r.observed_git_state_changed))));
-      panel.append(node('p','Receipt and companion files are displayed as supplied. This runner format records no artifact hashes; their binding is not cryptographically verified.'));
-      for(const key of ['error','provenance_error'])if(r[key])panel.append(node('p',key+': '+r[key],'ERROR'));
+      const integrityPanel=node('div',undefined,'notice');
+      integrityPanel.append(node('strong','Artifact integrity: '+integrity.status));
+      for(const reason of integrity.reasons)integrityPanel.append(node('p',reason));
+      if(integrity.status==='PASS')integrityPanel.append(node('p',integrity.file_count+' referenced files match the supplied receipt (SHA-256 and byte size).'));
+      integrityPanel.append(node('p','Integrity is separate from gate success. Receipt authenticity and current repository state are unverified. Extra files are outside the binding. Browser file selection cannot check filesystem symlink metadata.'));
+      panel.prepend(integrityPanel);
+      if(integrity.status!=='PASS')$('origin').textContent+=' Artifact integrity: '+integrity.status+'; displayed catalog and logs are unverified.';
+      for(const key of ['error','provenance_error','integrity_error'])if(r[key])panel.append(node('p',key+': '+r[key],'ERROR'));
       if(r.status==='PASS' && (!r.finished_at || r.exit_code!==0 || r.observed_git_state_changed!==false || !r.repositories_before || !r.repositories_after || !r.gates?.length || r.gates.some(g=>g.status!=='PASS')))panel.append(node('p','Receipt is incomplete or inconsistent with its recorded PASS.','ERROR'));
       panel.append(node('h2','Gate results'));
       const passing=node('details');passing.append(node('summary','Passing gates'));
