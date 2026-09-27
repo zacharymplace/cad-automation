@@ -658,6 +658,15 @@ def run(
     """Run one CAD or registry-driven design command."""
     arguments = list(argv) if argv is not None else sys.argv[1:]
 
+    if arguments and arguments[0] == "validate":
+        from zcad.validation_cli import run_validation
+
+        run_validation(
+            arguments[1:], read_design=read_design, generate_parts=generate_parts,
+            load_printer_profile=load_printer_profile,
+        )
+        return
+
     if arguments and arguments[0] == "garden-assembly":
         from zcad.generators.pixel_garden_assembly import run_garden_assembly
 
