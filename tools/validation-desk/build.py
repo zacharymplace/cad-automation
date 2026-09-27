@@ -9,6 +9,7 @@ args = parser.parse_args()
 
 root = Path(__file__).resolve().parent
 html = (root / "index.template.html").read_text()
+html = html.replace("/* COMPARE */", (root / "compare.js").read_text())
 html = html.replace("/* MODEL */", (root / "model.js").read_text())
 html = html.replace("/* RUNNER */", (root / "runner.js").read_text())
 html = html.replace("/* INTEGRITY */", (root / "integrity.js").read_text())
