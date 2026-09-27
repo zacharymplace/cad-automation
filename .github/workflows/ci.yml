@@ -1,76 +1,12 @@
-name: CI
+name: Local CI instructions
 
+# Validation runs locally; GitHub is source storage.
 on:
-  push:
-    branches: ["**"]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  instructions:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out cad-automation
-        uses: actions/checkout@v4
-        with:
-          path: cad-automation
-
-      - name: Check out zcad-core
-        uses: actions/checkout@v4
-        with:
-          repository: zacharymplace/zcad-core
-          token: ${{ secrets.ZCAD_CORE_TOKEN }}
-          ref: 3ce1d41a2f7b8ad80d3a759d45eb1093a7ab7ed8
-          path: zcad-core
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install core and product
-        id: install
-        working-directory: cad-automation
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e "../zcad-core"
-          python -m pip install -e ".[dev]"
-
-      - name: Verify package boundary
-        working-directory: cad-automation
-        run: |
-          python -c "import zcad, zcad_core; print(zcad.__file__); print(zcad_core.__file__)"
-
-      - name: Ruff format
-        working-directory: cad-automation
-        run: |
-          ruff format --check src tests
-
-      - name: Ruff lint
-        working-directory: cad-automation
-        run: |
-          ruff check src tests
-
-      - name: Pytest
-        working-directory: cad-automation
-        run: |
-          pytest -q
-
-      - name: Validate catalog
-        if: ${{ always() && steps.install.outcome == 'success' }}
-        working-directory: cad-automation
-        run: |
-          mkdir -p validation-reports
-          python -m zcad.cli validate-catalog \
-            designs/validation-catalog.example.json \
-            --policy designs/validation-policy.example.json \
-            --printer-profile profiles/printers/prusa-mk4.json \
-            --json > validation-reports/catalog.json
-
-      - name: Upload catalog report
-        if: ${{ always() && steps.install.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: catalog-validation
-          path: cad-automation/validation-reports/catalog.json
-          if-no-files-found: error
-          retention-days: 14
+      - name: Use the local runner
+        run: echo 'Run .venv/bin/python -m zcad.local_ci --output-parent ~/Downloads/zcad-ci-reports from cad-automation.'
