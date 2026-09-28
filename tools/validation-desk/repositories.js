@@ -15,5 +15,14 @@
     for(const issue of value.issues)if(!issue||!text(issue.path)||!text(issue.reason))fail();
     return value;
   }
-  root.ZcadRepositories={validateInventory};
+  function associate(observation,receipt){
+    const phases=['repositories_before','repositories_after'].map(phase=>{
+      const records=Object.values(receipt?.[phase]??{}).filter(r=>r&&typeof r.root==='string'&&r.root.startsWith('/')&&r.root===observation.path);
+      if(records.length!==1)return {phase,status:records.length?'Ambiguous':'No exact path match',records};
+      const recorded=records[0],valid=x=>typeof x==='string'&&/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(x);
+      return {phase,status:'Exact path match',records,comparison:observation.status!=='OBSERVED'||!valid(observation.head)||!valid(recorded.commit)?'SHA unavailable':observation.head===recorded.commit?'Same SHA':'Different SHA'};
+    });
+    return {matched:phases.some(p=>p.records.length>0),phases};
+  }
+  root.ZcadRepositories={validateInventory,associate};
 })(typeof module==='object'?module.exports:globalThis);

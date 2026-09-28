@@ -1,3 +1,4 @@
+let selectedRepository=null;
 const sampleRuns=[
 {id:'sample-06',finish:'2026-09-27T03:30:00Z',status:'ERROR',gates:'5/5 PASS; repository changed',integrity:'Not checked',completed:true,sha:'sample-sha-f',dirty:true,note:'Sample: all gates passed, but observed repository state changed during execution.'},
 {id:'sample-05',finish:'2026-09-27T03:20:00Z',status:'FAIL',gates:'catalog FAIL',integrity:'Not checked',completed:true,sha:'sample-sha-e',dirty:false,note:'Sample: catalog reports a failing dimension check.'},
@@ -40,7 +41,7 @@ function render(){const visible=filteredRuns();$('count').textContent=visible.le
 for(const [cell,label]of [[id,'Run / recorded finish'],[outcome,'Outcome / gates'],[integrity,'Artifact integrity'],[actions,'Actions']]){cell.setAttribute('role','cell');const heading=n('span',label);heading.className='mobile-label';heading.setAttribute('aria-hidden','true');cell.prepend(heading);}
 tr.append(id,outcome,integrity,actions);$('rows').append(tr);}if(!visible.length){const tr=n('tr'),td=n('td','No matching runs. Clear the search or change the filter.');td.colSpan=4;tr.append(td);$('rows').append(tr);}updateVisibility();}
 function inspect(r){if(r.bundle){inspectBundle(r);return;}selected=r.id;render();const d=$('detail');d.hidden=false;d.replaceChildren(n('h2',r.id),pill(r.status),n('p',reviewReason(r)),n('p',r.note||r.loadError||'No additional details'),n('p','Recorded completion: '+(r.finish||'Not recorded')),n('p','Artifact integrity: '+r.integrity));if(r.sha){const details=n('details');details.append(n('summary','Recorded repository snapshot'),n('pre',JSON.stringify({commit:r.sha,dirty:r.dirty,source:'SAMPLE execution-time observation'},null,2)));d.append(details);}d.append(n('p','Real implementation: verify selected artifact bytes before presenting a hash result. Receipt authenticity and current repository state remain separate.'));const close=n('button','Close inspection');close.onclick=()=>{d.hidden=true;selected=null;render();const buttons=Array.from($('rows').querySelectorAll('button'));(buttons.find(b=>b.dataset.runId===r.id)||$('search')).focus();};d.prepend(close);d.scrollIntoView({block:'nearest',behavior:motionBehavior()});d.focus({preventScroll:true});}
-function updateVisibility(){for(let i=0;i<2;i++){const el=$('visibility-'+i);if(el)el.textContent=pair[i]&&!matchingIds.has(pair[i].id)?'Hidden by current filters · selection retained':pair[i]&&!displayedIds.has(pair[i].id)?'On another history page · selection retained':'';}}
+function updateVisibility(){renderRelatedRuns();for(let i=0;i<2;i++){const el=$('visibility-'+i);if(el)el.textContent=pair[i]&&!matchingIds.has(pair[i].id)?'Hidden by current filters · selection retained':pair[i]&&!displayedIds.has(pair[i].id)?'On another history page · selection retained':'';}}
 function revealRun(r){
   if(!matchingIds.has(r.id)){$('search').value='';$('filter').value='all';}
   const index=filteredRuns().findIndex(row=>row.id===r.id);
@@ -229,6 +230,7 @@ function renderInventory(){
   const state=labeledCell('Observed state',r.status==='ERROR'?'Observation error':r.dirty?'Changes observed':'Clean observed');
   const branch=labeledCell('Branch',r.status==='ERROR'?'Unavailable':r.branch??'Detached HEAD');
   const details=labeledCell('Details','');details.append(evidence('Observation',r));
+  const related=n('button','Related runs');related.setAttribute('aria-label','Related runs for '+r.path);related.onclick=()=>{selectedRepository=r;renderRelatedRuns();$('repository-runs').scrollIntoView({block:'nearest',behavior:motionBehavior()});};details.append(related);
   row.append(name,state,branch,details);body.append(row);
  }
  if(!rows.length){const row=n('tr'),cell=n('td','No matching repositories. Clear the search or change the filter.');cell.colSpan=4;row.append(cell);body.append(row);}
@@ -241,6 +243,7 @@ $('inventory-clear-filters').onclick=()=>{$('inventory-search').value='';$('inve
 $('clear-inventory').onclick=()=>{
  inventoryVersion++;$('inventory').value='';$('inventory-results').replaceChildren();
  inventorySnapshot=null;inventoryPage=0;$('inventory-controls').hidden=true;$('inventory-table').replaceChildren();
+ selectedRepository=null;renderRelatedRuns();
  $('inventory-status').textContent='No repository snapshot loaded.';
 };
 $('inventory').onchange=async()=>{
@@ -258,7 +261,33 @@ $('inventory').onchange=async()=>{
   if(snapshot.issues.length)out.append(evidence(snapshot.issues.length+' scan issues',snapshot.issues));
   out.append(evidence('Original inventory JSON',raw));
   inventorySnapshot=snapshot;inventoryPage=0;$('inventory-search').value='';$('inventory-filter').value='all';$('inventory-controls').hidden=false;renderInventory();
+ selectedRepository=null;renderRelatedRuns();
   $('inventory-status').textContent=snapshot.repositories.length+' repository records · '+snapshot.repositories.filter(r=>r.status==='ERROR').length+' observation errors · '+snapshot.issues.length+' scan issues. Imported snapshot; live state and authenticity unverified.';
  }catch(e){if(version!==inventoryVersion)return;$('inventory-status').textContent='Import rejected: '+e.message+'. Previous snapshot retained.';}
  if(version===inventoryVersion)$('inventory').value='';
 };
+function renderRelatedRuns(){
+ const out=$('repository-runs');if(!out)return;out.replaceChildren();out.hidden=!selectedRepository;
+ if(!selectedRepository)return;
+ const repo=selectedRepository;
+ const close=n('button','Close related runs');close.onclick=()=>{selectedRepository=null;renderRelatedRuns();};
+ out.append(close,n('h3','Related imported runs · '+repo.path),n('p','Repository observed '+repo.observed_at+' · HEAD '+(repo.head??'Unavailable')+' · Dirty '+(typeof repo.dirty==='boolean'?String(repo.dirty):'Unknown')),
+ n('p','Association uses exact recorded root paths. Host identity and checkout continuity are unverified. Same SHA does not establish identical working trees or current validation.'));
+ if(!realMode){out.append(n('p','Import run reports to find related evidence. Sample runs are excluded.'));return;}
+ let matched=0,unknown=0;
+ for(const run of runs){
+  const link=ZcadRepositories.associate(repo,run.bundle?.receipt);
+  if(!link.matched){unknown++;continue;}matched++;
+  const card=n('details');card.append(n('summary',run.id+' · recorded '+run.status+' · integrity '+run.integrity));
+  card.append(n('p','Run started '+(run.bundle.receipt.started_at??'Not recorded')+' · finished '+run.finish));
+  for(const phase of link.phases){
+   card.append(n('p',phase.phase+' · '+phase.status+(phase.comparison?' · '+phase.comparison:'')));
+   if(phase.records.length)card.append(evidence('Recorded SHA and dirty state',phase.records));
+  }
+  card.append(evidence('Independent artifact integrity',run.bundle.integrity));
+  const inspectButton=n('button','Inspect run');inspectButton.onclick=()=>inspect(run);card.append(inspectButton);
+  for(const [i,label]of [[0,'Use as A'],[1,'Use as B']]){const button=n('button',label);button.onclick=()=>choose(i,run);card.append(button);}
+  out.append(card);
+ }
+ out.append(n('p',matched+' runs contain this exact path · '+unknown+' other imported entries have no established association. Missing paths and load errors are not inferred matches.'));
+}
