@@ -51,6 +51,7 @@ def test_core_gate_cwd_failure_and_integrity(tmp_path, monkeypatch, core_code):
         "tests",
         "viewer",
         "catalog",
+        "export-catalog",
     ]
     for gate in receipt["gates"]:
         expected = core if gate["name"] == "core-tests" else app
@@ -59,7 +60,7 @@ def test_core_gate_cwd_failure_and_integrity(tmp_path, monkeypatch, core_code):
             assert (folder / gate["stdout"]).read_text().strip() == str(expected)
     assert receipt["gates"][2]["returncode"] == core_code
     assert receipt["gates"][-1]["status"] == "PASS"
-    assert verify(folder)["file_count"] == 12
+    assert verify(folder)["file_count"] == 14
     assert verify(folder)["status"] == "PASS"
     (folder / "core-tests.stdout.log").write_text("changed")
     assert verify(folder)["status"] == "FAIL"

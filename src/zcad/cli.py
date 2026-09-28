@@ -681,6 +681,21 @@ def run(
         )
         return
 
+    if arguments and arguments[0] == "validate-export-catalog":
+        from zcad.export_catalog import run_export_catalog
+
+        run_export_catalog(
+            arguments[1:],
+            read_design=read_design,
+            generate_parts=generate_parts,
+            load_printer_profile=load_printer_profile,
+            export_parts=export_parts,
+            feature_validator=feature_checks,
+            stl_feature_validator=stl_feature_checks,
+            repository_root=Path.cwd(),
+        )
+        return
+
     if arguments and arguments[0] == "validate":
         from zcad.validation_cli import run_validation
 

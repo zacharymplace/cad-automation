@@ -65,6 +65,19 @@ def gates(python):
                 "--json",
             ],
         ),
+        (
+            "export-catalog",
+            [
+                python,
+                "-m",
+                "zcad.cli",
+                "validate-export-catalog",
+                "designs/export-validation-catalog.example.json",
+                "--printer-profile",
+                "profiles/printers/prusa-mk4.json",
+                "--json",
+            ],
+        ),
     ]
 
 
