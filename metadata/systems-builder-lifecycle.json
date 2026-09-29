@@ -7,60 +7,50 @@
   "source": {
     "repository": "zacharymplace/cad-automation",
     "path": ".",
-    "commit": "ed5f910"
+    "commit": "7ec85f6"
   },
   "evidence": [
     {
       "kind": "validation",
-      "reference": ".venv/bin/ruff check .",
+      "reference": "designs/local-ci.md",
+      "result": "current"
+    },
+    {
+      "kind": "capability",
+      "reference": "src/zcad/export_catalog.py",
       "result": "pass"
     },
     {
-      "kind": "test",
-      "reference": "./scripts/ci-local.sh",
+      "kind": "capability",
+      "reference": "src/zcad/run_integrity.py",
       "result": "pass"
     },
     {
-      "kind": "demonstration",
-      "reference": ".venv/bin/zcad designs/oxo-soap-dispenser-drip-tray.json",
+      "kind": "operator-surface",
+      "reference": "tools/validation-desk/history.html",
       "result": "pass"
     },
     {
       "kind": "observation",
-      "reference": "exports/default-enclosure-body.metadata.json",
+      "reference": "designs/export-validation-catalog.example.json",
       "result": "informational"
     },
     {
-      "kind": "observation",
-      "reference": "exports/enclosure-fit-test-body.step",
-      "result": "informational"
-    },
-    {
-      "kind": "decision",
-      "reference": "docs/architecture.md",
-      "result": "informational"
-    },
-    {
-      "kind": "demonstration",
+      "kind": "physical-gate",
       "reference": "evidence/bounded-engineering-package-001/package.json",
-      "result": "pass"
-    },
-    {
-      "kind": "observation",
-      "reference": "evidence/bounded-engineering-package-001/report.md",
-      "result": "pass"
+      "result": "open"
     }
   ],
-  "last_verified_at": "2026-08-30T23:45:08Z",
+  "last_verified_at": "2026-09-29T05:01:53Z",
   "next_action": {
-    "description": "Slice and complete one controlled physical test print of the Pico 2 enclosure fit assembly, then record fit, clearance, slicer profile, and revision evidence.",
+    "description": "Preserve the expanded local validation, receipt-integrity, export-catalog, and validation-desk capabilities; complete the still-open controlled physical test print of the Pico 2 enclosure fit assembly and record fit, clearance, slicer profile, and revision evidence before claiming physical validation.",
     "command": "python3 -m json.tool evidence/bounded-engineering-package-001/package.json"
   },
   "blockers": [
-    "The next validation gate requires a real controlled physical test print of the Pico 2 enclosure fit assembly.",
-    "Fit, clearance, slicer profile, and revision evidence must be recorded from the physical print.",
-    "Repository preparation, generated geometry, and software validation cannot substitute for physical execution evidence.",
-    "The drip-tray basin and grid are software-validated only; drainage behavior, counter-edge fit, dispenser fit, and printability remain physically unverified."
+    "The physical validation gate still requires a controlled Pico 2 enclosure fit test print.",
+    "Fit, clearance, slicer profile, and revision evidence must come from the physical print; expanded software validation does not substitute for that evidence.",
+    "Local CI receipts provide artifact-integrity evidence but are not source attestations or product-readiness evidence.",
+    "The drip-tray basin and grid remain physically unverified for drainage behavior, counter-edge fit, dispenser fit, and printability."
   ],
   "capabilities": [
     "parametric-cad-generation",
@@ -71,6 +61,16 @@
     "fit-calibration",
     "board-display-enclosures",
     "fastening-strategy-selection",
-    "sink-edge-drip-trays"
+    "sink-edge-drip-trays",
+    "local-ci-receipts",
+    "receipt-artifact-integrity",
+    "validation-desk",
+    "run-history-comparison",
+    "repository-observation-view",
+    "catalog-validation",
+    "export-catalog-validation",
+    "step-roundtrip-validation",
+    "stl-mesh-validation",
+    "transactional-export-publication"
   ]
 }
