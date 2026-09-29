@@ -1,9 +1,51 @@
 <!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'"><title>ZCAD · Validation desk</title>
 <style>
-:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#101719;color:#e4edeb}*{box-sizing:border-box}body{margin:0}header{padding:22px 5%;border-bottom:1px solid #334044;display:flex;justify-content:space-between;align-items:center}header strong{letter-spacing:.16em}small,.muted{color:#a7b8b7}main{max-width:1280px;margin:auto;padding:40px 5%}h1{font-size:36px;letter-spacing:-.04em;margin:8px 0}h2{font-size:21px}p{line-height:1.6}button,.file,select,input{font:inherit;border:1px solid #455759;border-radius:7px;background:#1c292c;color:inherit;padding:10px 14px}button,.file{cursor:pointer}button:hover,.file:hover{background:#2d4244}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #73ded0;outline-offset:3px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.file input{position:absolute;width:1px;height:1px;opacity:0}.file:focus-within{outline:3px solid #73ded0}.notice{border-left:3px solid #ddbd72;background:#29291f;padding:14px 18px;margin:20px 0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}.stat,.panel{background:#172225;border:1px solid #334044;border-radius:10px;padding:20px}.stat b{display:block;font-size:28px;margin-top:7px}.layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2fr);gap:18px}.row{width:100%;text-align:left;margin-top:10px;display:block;overflow-wrap:anywhere}.row[aria-pressed=true]{border-color:#73ded0;background:#223b3d}.badge{display:inline-block;font-size:12px;padding:4px 8px;border:1px solid #607174;border-radius:5px;margin:3px 6px 3px 0;color:#cbd6d5}.PASS{color:#80e2bc;border-color:#397c64}.FAIL,.ERROR{color:#ffaca4;border-color:#b96158}.WARN,.WARNING,.NOT_CHECKED{color:#e9ce8d;border-color:#907b48}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:#101719;padding:14px;border-radius:6px;max-height:450px;overflow:auto}.check{border-top:1px solid #344246;padding:13px 0}.check p{margin:5px 0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input{min-width:0;width:100%}summary{cursor:pointer;padding:10px 0}#error{color:#ffaca4}footer{margin-top:24px;color:#a7b8b7;font-size:13px}@media(max-width:760px){main{padding:25px 5%}.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header{font-size:12px}}
-.layout{align-items:start}.panel{min-width:0}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}caption{text-align:left;color:#a7b8b7;padding:8px 0}th,td{text-align:left;padding:9px;border-bottom:1px solid #344246;overflow-wrap:anywhere}th{color:#a7b8b7}details.evidence{border-top:1px solid #344246;margin-top:16px}h3{margin:22px 0 10px}.check strong{overflow-wrap:anywhere}
-.comparison-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}.comparison-cards>div{min-width:0;overflow-wrap:anywhere}@media(max-width:760px){.comparison-cards{grid-template-columns:1fr}}
+/* HOUSE */
+*{box-sizing:border-box}body{margin:0;font-size:15px;line-height:1.5}
+header{padding:22px 5%;border-bottom:var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--font-mono)}
+header strong{letter-spacing:.16em}
+small,.muted{color:var(--ink-2)}
+main{max-width:1280px;margin:auto;padding:40px 5%}
+h1{font-size:36px;margin:8px 0}h2{font-size:21px}h3{margin:22px 0 10px;font-size:16px}
+p{line-height:1.6}a{color:var(--ink);text-decoration-thickness:2px;text-decoration-color:var(--spot)}
+button,.file,select,input{font-family:var(--font-condensed);font-size:15px;border:var(--border);border-radius:0;background:var(--paper);color:var(--ink);padding:10px 14px;min-height:44px}
+select,input{font-family:var(--font-mono);font-size:13px;text-transform:none;letter-spacing:0}
+button,.file{cursor:pointer}
+.file{display:inline-flex;align-items:center;text-transform:uppercase;letter-spacing:.1em}
+button:hover,.file:hover{background:var(--paper-3)}
+button:disabled{border-style:dashed;color:var(--ink-muted);cursor:default}
+:focus-visible,.file:focus-within{outline:3px solid var(--spot);outline-offset:3px}
+.file input{position:absolute;width:1px;height:1px;opacity:0;min-height:0;padding:0}
+.actions,.filters{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.filters input{min-width:0;width:100%}
+.notice{border:var(--border);border-left:8px double var(--rule-strong);background:var(--paper-2);padding:14px 18px;margin:20px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.stat,.panel,.card{background:var(--paper);border:var(--border);border-radius:0;padding:20px;min-width:0}
+.stats b{display:block;font-family:var(--font-display);font-size:28px;margin-top:7px}
+.stats button:hover{background:var(--paper-3)}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:var(--paper-2);border:1px dotted var(--rule-strong);padding:14px;max-height:450px;overflow:auto}
+summary{cursor:pointer;padding:10px 0;font-family:var(--font-condensed);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px;border-bottom:1px solid var(--rule-strong);overflow-wrap:anywhere}
+th{color:var(--ink-2);font-family:var(--font-condensed);text-transform:uppercase;letter-spacing:.08em}
+footer{margin-top:24px;color:var(--ink-2);font-size:13px;font-family:var(--font-mono)}
+.PASS,.FAIL,.ERROR,.WARN,.WARNING,.NOT_CHECKED,.RUNNING{font-weight:700}
+.stat b{font-size:28px}
+.layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2fr);gap:18px;align-items:start}
+.row{width:100%;text-align:left;margin-top:10px;display:block;overflow-wrap:anywhere;text-transform:none;letter-spacing:0;font-family:var(--font-body)}
+.row[aria-pressed=true]{background:var(--paper-2);border-left:8px double var(--rule-strong);padding-left:8px}
+.badge{display:inline-block;font-family:var(--font-mono);font-size:12px;padding:3px 8px;border:1.5px solid var(--rule-strong);border-radius:0;margin:3px 6px 3px 0;color:var(--ink)}
+.badge.PASS{border-style:solid}
+.badge.FAIL,.badge.ERROR{border:3px double var(--spot)}
+.badge.WARN,.badge.WARNING{border-style:dashed}
+.badge.NOT_CHECKED{border-style:dotted}
+.check{border-top:1px solid var(--rule-strong);padding:13px 0}.check p{margin:5px 0}.check strong{overflow-wrap:anywhere}
+#error{color:var(--ink);font-weight:700}#error:not(:empty){border-left:8px double var(--spot);padding-left:10px}
+.table-wrap{overflow-x:auto}table{margin:12px 0}caption{text-align:left;color:var(--ink-2);padding:8px 0}
+details.evidence{border-top:1px solid var(--rule-strong);margin-top:16px}
+.comparison-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}.comparison-cards>div{min-width:0;overflow-wrap:anywhere}
+@media(max-width:760px){main{padding:25px 5%}.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}h1{font-size:29px}header{font-size:12px}.comparison-cards{grid-template-columns:1fr}}
 </style><p><a href="history.html">Open run history</a></p>
 <header><strong>ZCAD / INTERNAL</strong><small>READ-ONLY · PROTOTYPE</small></header>
 <main><small>ENGINEERING / VALIDATION</small><h1>Validation desk</h1><p class="muted">Inspect the evidence behind each design. Geometry validation is not product readiness.</p>

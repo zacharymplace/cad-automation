@@ -15,10 +15,17 @@ for name in ("index", "history"):
         "HISTORY": "history.js",
         "REPOSITORIES": "repositories.js",
         "FIXTURE": "fixtures/historical-report.json",
+        "HOUSE": "house-style.css",
     }.items():
         token = "/* " + marker + " */"
         if token in html:
-            html = html.replace(token, (root / filename).read_text())
+            text = (root / filename).read_text()
+            if marker == "HOUSE":
+                # Pages ship with a no-network CSP: drop the web-font @import.
+                text = "\n".join(
+                    line for line in text.splitlines() if not line.startswith("@import")
+                )
+            html = html.replace(token, text)
     target = root / f"{name}.html"
     expected = html.encode("utf-8")
     if args.check:

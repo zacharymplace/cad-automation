@@ -1,26 +1,55 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'"><title>ZCAD · Run history</title><style>
-:root{font:15px system-ui;color:#e5eeeb;background:#101719;color-scheme:dark}*{box-sizing:border-box}body{margin:0}header{padding:22px 5%;border-bottom:1px solid #344443;display:flex;justify-content:space-between}main{max-width:1280px;margin:auto;padding:32px 5%}h1{font-size:36px;margin:10px 0}h2{font-size:21px}p{line-height:1.5}.muted,small{color:#a9bdb7}.notice{padding:14px 18px;background:#302d20;border-left:3px solid #c7ad65}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}.card{background:#182426;border:1px solid #364848;border-radius:9px;padding:18px;min-width:0}.stats b{display:block;font-size:30px;margin-top:6px}button,input,select{font:inherit;background:#213335;color:inherit;border:1px solid #4b6564;border-radius:6px;padding:9px 12px}button{cursor:pointer}button:hover{background:#324b4b}button:disabled{opacity:.45;cursor:default}:focus-visible{outline:3px solid #81ddca;outline-offset:3px}.filters,.actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px;align-items:start}.scroll{overflow:visible}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:14px 10px;border-bottom:1px solid #364848;vertical-align:top}th{font-size:12px;color:#aac0ba}td small{display:block;margin-top:5px}.pill{font-size:12px;border:1px solid #677b77;border-radius:5px;padding:3px 7px;display:inline-block}.PASS{color:#8ce1ba}.FAIL,.ERROR{color:#ffa89e}.RUNNING{color:#ead294}summary{cursor:pointer;padding:12px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:#101719;padding:12px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.selected{background:#223a39}footer{margin-top:30px;color:#a9bdb7;font-size:13px}#detail{scroll-margin-top:20px}@media(max-width:900px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}@media(max-width:550px){.pair{grid-template-columns:1fr}h1{font-size:28px}}
-.layout{display:block}#detail{margin-top:18px;border-color:#74bdae}#detail[hidden]{display:none}.pair>div{border:1px solid #425b56;border-radius:8px;padding:16px}.pair h3{margin-top:0}.filters input{flex:1;min-width:180px}td:last-child{min-width:180px}.selected{box-shadow:inset 3px 0 #81ddca}button[aria-pressed=true]{border-color:#81ddca;background:#30524a}#comparison:not(:empty){margin-top:20px;padding:18px;background:#101719;border-radius:8px}th{white-space:nowrap}h3{font-size:16px}@media(max-width:650px){header{gap:15px}.stats b{font-size:24px}td,th{padding:10px 7px}}
-#selection-tray{position:sticky;bottom:12px;margin:0 auto 12px;max-width:700px;background:#25413b;border:1px solid #72b7a6;border-radius:10px;padding:12px 18px;display:flex;gap:18px;justify-content:space-between;align-items:center;box-shadow:0 6px 25px #0008}#selection-tray[hidden]{display:none}.stats button:hover{border-color:#81ddca}body{padding-bottom:18px}@media(max-width:650px){#selection-tray{margin:0 12px 12px;font-size:13px}}
-td:first-child{max-width:280px;overflow-wrap:anywhere}td small{line-height:1.5}tbody tr:hover{background:#20302f}.scroll{max-height:none}thead th{position:sticky;top:0;background:#182426;z-index:1}
-.pagination{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}.pair p,#selection-tray span{overflow-wrap:anywhere}#selection-tray span{min-width:0}#selection-tray button{flex-shrink:0}
-
-button,input,select{min-height:44px}.pair button{margin:0 8px 8px 0}
-.mobile-label{display:none}
-@media(max-width:700px){
- main{padding:22px 16px}.card{padding:14px}header{padding:18px 16px;flex-wrap:wrap}
- .filters>*{width:100%;min-width:0}.filters input{flex-basis:100%}
- .scroll{max-height:none;overflow:visible}
- table,tbody,tr,td{display:block;width:100%}
- thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%)}
- tbody tr{border:1px solid #425b56;border-radius:8px;padding:10px;margin:12px 0}
- td,td:first-child,td:last-child{max-width:none;min-width:0;border:0;padding:8px 4px}
- .mobile-label{display:block;font-size:11px;letter-spacing:.06em;color:#aac0ba;margin-bottom:6px}
- .pair{grid-template-columns:1fr}
- #selection-tray{position:static;flex-wrap:wrap;margin:16px}
- #selection-tray button{width:100%}
-}
-.repo-card{margin:12px 0}.repo-card p,.repo-candidate p{overflow-wrap:anywhere}.repo-candidate{padding:16px 0;border-bottom:1px solid #364848}
+/* HOUSE */
+*{box-sizing:border-box}body{margin:0;font-size:15px;line-height:1.5}
+header{padding:22px 5%;border-bottom:var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--font-mono)}
+header strong{letter-spacing:.16em}
+small,.muted{color:var(--ink-2)}
+main{max-width:1280px;margin:auto;padding:40px 5%}
+h1{font-size:36px;margin:8px 0}h2{font-size:21px}h3{margin:22px 0 10px;font-size:16px}
+p{line-height:1.6}a{color:var(--ink);text-decoration-thickness:2px;text-decoration-color:var(--spot)}
+button,.file,select,input{font-family:var(--font-condensed);font-size:15px;border:var(--border);border-radius:0;background:var(--paper);color:var(--ink);padding:10px 14px;min-height:44px}
+select,input{font-family:var(--font-mono);font-size:13px;text-transform:none;letter-spacing:0}
+button,.file{cursor:pointer}
+.file{display:inline-flex;align-items:center;text-transform:uppercase;letter-spacing:.1em}
+button:hover,.file:hover{background:var(--paper-3)}
+button:disabled{border-style:dashed;color:var(--ink-muted);cursor:default}
+:focus-visible,.file:focus-within{outline:3px solid var(--spot);outline-offset:3px}
+.file input{position:absolute;width:1px;height:1px;opacity:0;min-height:0;padding:0}
+.actions,.filters{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.filters input{min-width:0;width:100%}
+.notice{border:var(--border);border-left:8px double var(--rule-strong);background:var(--paper-2);padding:14px 18px;margin:20px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.stat,.panel,.card{background:var(--paper);border:var(--border);border-radius:0;padding:20px;min-width:0}
+.stats b{display:block;font-family:var(--font-display);font-size:28px;margin-top:7px}
+.stats button:hover{background:var(--paper-3)}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:var(--paper-2);border:1px dotted var(--rule-strong);padding:14px;max-height:450px;overflow:auto}
+summary{cursor:pointer;padding:10px 0;font-family:var(--font-condensed);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px;border-bottom:1px solid var(--rule-strong);overflow-wrap:anywhere}
+th{color:var(--ink-2);font-family:var(--font-condensed);text-transform:uppercase;letter-spacing:.08em}
+footer{margin-top:24px;color:var(--ink-2);font-size:13px;font-family:var(--font-mono)}
+.PASS,.FAIL,.ERROR,.WARN,.WARNING,.NOT_CHECKED,.RUNNING{font-weight:700}
+main{padding:32px 5%}
+.layout{display:block}#detail{margin-top:18px;border-style:double;border-width:4px}#detail[hidden]{display:none}
+.stats b{font-size:30px}
+.scroll{overflow-x:auto}table{text-align:left}th,td{padding:14px 10px;vertical-align:top}th{font-size:12px;white-space:nowrap}
+td small{display:block;margin-top:5px;line-height:1.5}td:first-child{max-width:280px;overflow-wrap:anywhere}td:last-child{min-width:180px}
+thead th{position:sticky;top:0;background:var(--paper-2);z-index:1}
+tbody tr:hover{background:var(--paper-2)}
+tr.selected{background:var(--paper-2)}tr.selected td:first-child{border-left:8px double var(--rule-strong)}
+.pill{font-family:var(--font-mono);font-size:12px;border:1.5px solid var(--rule-strong);border-radius:0;padding:3px 7px;display:inline-block}
+.pill.PASS{border-style:solid}.pill.FAIL,.pill.ERROR{border:3px double var(--spot)}.pill.RUNNING{border-style:dashed}
+button[aria-pressed=true]{background:var(--paper-2);border-style:double;border-width:4px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pair>div{border:1.5px dashed var(--rule-strong);padding:16px;min-width:0}.pair h3{margin-top:0}.pair button{margin:0 8px 8px 0}.pair p,#selection-tray span{overflow-wrap:anywhere}
+#comparison:not(:empty){margin-top:20px;padding:18px;background:var(--paper-2);border:1px dotted var(--rule-strong)}
+#selection-tray{position:sticky;bottom:12px;margin:0 auto 12px;max-width:700px;background:var(--paper);border:var(--border);border-top:4px double var(--rule-strong);padding:12px 18px;display:flex;gap:18px;justify-content:space-between;align-items:center}
+#selection-tray[hidden]{display:none}#selection-tray span{min-width:0}#selection-tray button{flex-shrink:0}
+.filters input{flex:1;min-width:180px;width:auto}
+.pagination{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+body{padding-bottom:18px}#detail{scroll-margin-top:20px}
+@media(max-width:900px){.layout{display:block}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){header{gap:15px}.stats b{font-size:24px}td,th{padding:10px 7px}#selection-tray{margin:0 12px 12px;font-size:13px}}
+@media(max-width:550px){.pair{grid-template-columns:1fr}h1{font-size:28px}}
 </style><header><strong>ZCAD / CONTROL PLANE</strong><small>INTERACTION PROTOTYPE</small></header><main><p><a href="index.html">Open validation desk</a></p><small>LOCAL EVIDENCE / RUN HISTORY</small><h1>What needs attention?</h1><p class="muted">Inspect a run or choose two completed runs to compare.</p><p class="notice" id="mode-notice">Sample mode. Choose a reports folder to load real completed runs locally. Import a separate repository snapshot below. No repository writes or command execution.</p><label>Open reports folder <input id="reports" type="file" webkitdirectory multiple></label><div class="actions"><button id="cancel-import" disabled>Cancel import</button><button id="clear-import" disabled>Clear imported evidence</button></div><p id="import-status" role="status"></p><div id="stats" class="stats"></div><div class="layout"><section class="card"><h2>Run history</h2><p class="muted">Select a reports folder above. Each receipt folder becomes one history entry; importing replaces the current history.</p><div class="filters"><input id="search" aria-label="Search runs, gates, and designs" placeholder="Search run, gate, or design"><select id="filter" aria-label="Filter runs"><option value="all">All runs</option><option value="attention">Needs review</option><option value="completed">Completed</option><option value="PASS">Recorded PASS</option><option value="unchecked">Integrity not checked</option><option value="integrity_review">All integrity review states</option><option value="integrity_problem">Integrity failure or error</option><option value="unbound">Unbound receipts</option><option value="load_error">Load errors</option><option value="catalog_unavailable">Catalog unavailable</option></select><select id="sort" aria-label="Sort runs"><option value="newest">Newest completed first</option><option value="review">Needs review first</option></select><select id="scale" aria-label="Sample history size"><option value="6">6 sample runs</option><option value="100">100 sample runs</option></select><button id="clear-filters">Clear filters</button><button id="reset">Reset demo</button></div><p class="muted">Needs review includes recorded failures, checkpoints, load errors, and integrity problems. Unchecked hashes are tracked separately.</p><p id="count" role="status" class="muted"></p><div class="scroll"><table role="table" aria-label="Sample run history"><thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">RUN / RECORDED FINISH</th><th scope="col" role="columnheader">OUTCOME / GATES</th><th scope="col" role="columnheader">ARTIFACT INTEGRITY</th><th scope="col" role="columnheader">ACTIONS</th></tr></thead><tbody id="rows" role="rowgroup"></tbody></table></div><nav class="pagination" aria-label="History pages"><button id="previous">Previous</button><span id="page-status" role="status"></span><button id="next">Next</button></nav></section><aside class="card" id="detail" hidden tabindex="-1" aria-live="polite"><h2>Inspect a run</h2><p class="muted">Select Inspect to see its recorded evidence.</p></aside></div><section class="card" style="margin-top:20px"><h2>Compare runs</h2><div class="pair"><div id="a"></div><div id="b"></div></div><div class="actions"><button id="compare" disabled>Show sample comparison</button><button id="clear">Clear selection</button></div><p id="selection-status" role="status" class="muted"></p><div id="comparison" aria-live="polite"></div></section><section class="card" style="margin-top:20px" aria-labelledby="repo-heading"><h2 id="repo-heading">Repository observations</h2><p>Import the JSON produced by discover.py. These are recorded local observations, not live state or run provenance.</p><label>Import repository snapshot <input id="inventory" type="file" accept=".json,application/json"></label><button id="clear-inventory">Clear repository snapshot</button><p id="inventory-status" role="status">No repository snapshot loaded.</p><div id="inventory-results"></div><div id="inventory-controls" hidden><div class="filters"><input id="inventory-search" aria-label="Search repositories" placeholder="Search name, path, branch or SHA"><select id="inventory-filter" aria-label="Repository state"><option value="all">All states</option><option value="changed">Changes observed</option><option value="clean">Clean observed</option><option value="error">Observation errors</option><option value="detached">Detached HEAD</option></select><button id="inventory-clear-filters">Clear filters</button></div><div id="inventory-table"></div><nav class="pagination" aria-label="Repository pages"><button id="inventory-prev">Previous</button><span id="inventory-page" role="status"></span><button id="inventory-next">Next</button></nav></div><section id="repository-runs" class="card" hidden aria-live="polite"></section><details><summary>Simulated discovery workflow</summary>
 <p>Choose a sample scope, review candidates, then add individual repositories to this overview.</p>
 <div class="filters"><select id="repo-scope" aria-label="Sample discovery scope"><option value="workspace">Sample workspace · /sample/dev</option><option value="empty">Sample empty folder</option><option value="denied">Sample inaccessible folder</option></select><button id="discover">Preview discovery</button><button id="clear-repos">Clear repository demo</button></div>
