@@ -29,6 +29,7 @@ These command paths come from the supplied successful terminal transcript. The c
 - The observed catalog format does not record commit, timestamp, input hashes, profile identity, or exported artifact links. The viewer marks those fields unavailable and never infers freshness from file modification times. Original JSON preserves additional fields but they are not authenticated.
 - Historical PASS means the recorded pre-export checks passed. Physical fit, manufacturing, artifact integrity, and current repository state remain unverified.
 - No run button, repository scanning, server, persistence, external requests, or executable artifact links. Imported strings render as text.
+- Typefaces (Archivo Black, Barlow Condensed, Space Mono; SIL Open Font License, licences in `fonts/`) are embedded in each page as `data:` URIs by `build.py`, so the pages stay single files and the policy only adds `font-src data:`.
 - File limit: 10 MiB. Browser performance for very large catalogs is unqualified.
 
 ## Develop
