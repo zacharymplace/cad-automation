@@ -8,6 +8,8 @@ args = parser.parse_args()
 root = Path(__file__).resolve().parent
 
 FONT_FACES = (
+    ("Archivo", 400, "archivo-400.woff2"),
+    ("Archivo", 600, "archivo-600.woff2"),
     ("Archivo Black", 400, "archivo-black-latin-400-normal.woff2"),
     ("Barlow Condensed", 500, "barlow-condensed-latin-500-normal.woff2"),
     ("Barlow Condensed", 700, "barlow-condensed-latin-700-normal.woff2"),
@@ -45,9 +47,12 @@ for name in ("index", "history"):
         if token in html:
             text = font_css() if marker == "FONTS" else (root / filename).read_text()
             if marker == "HOUSE":
-                # Pages ship with a no-network CSP: drop the web-font @import.
+                # Pages ship with a no-network CSP: the faces are embedded above as data: URIs, so drop the
+                # tokens' @import and relative @font-face rules (a duplicate face that fails to load would win).
                 text = "\n".join(
-                    line for line in text.splitlines() if not line.startswith("@import")
+                    line
+                    for line in text.splitlines()
+                    if not line.startswith(("@import", "@font-face"))
                 )
             html = html.replace(token, text)
     target = root / f"{name}.html"
