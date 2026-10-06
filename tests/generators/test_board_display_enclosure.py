@@ -4,7 +4,8 @@ from dataclasses import replace
 
 import cadquery as cq
 import pytest
-from zcad_core.assemblies import InterferenceFinding
+from zcad_core.assemblies import InterferenceFinding, board_component_identifier
+from zcad_core.hardware import get_raspberry_pi_pico2
 
 from zcad.designs import (
     parse_board_display_design,
@@ -276,6 +277,10 @@ def test_enclosure_build_result_preserves_resolved_artifacts() -> None:
     assert build.assembly.identifiers == (
         "board",
         "usb_connector",
+        *(
+            board_component_identifier("board", part.identifier)
+            for part in get_raspberry_pi_pico2().components
+        ),
         "display",
     )
     assert build.specification.cable_edge == "negative_y"

@@ -1,12 +1,17 @@
 """Refined two-part Raspberry Pi Pico 2 enclosure fit assembly."""
 
-from dataclasses import dataclass
+import math
+from dataclasses import asdict, dataclass, replace
+from functools import cached_property
 
 import cadquery as cq
 from zcad_core.assemblies import (
+    DeviceAssembly,
     EnclosureBoundary,
     InterferenceReport,
+    Placement,
     analyze_boundary_clearance,
+    lowest_display_height_mm,
 )
 from zcad_core.features import (
     ConnectorCutoutParameters,
@@ -17,6 +22,10 @@ from zcad_core.features import (
     cut_connector_opening,
     cut_display_window,
 )
+from zcad_core.features.display_retainer import (
+    DisplayRetainerParameters,
+    add_display_retainer,
+)
 from zcad_core.features.labels import (
     add_embossed_label,
 )
@@ -24,17 +33,94 @@ from zcad_core.hardware import (
     get_raspberry_pi_pico2,
     get_reference_oled_128x64,
 )
+from zcad_core.hardware.electronics import DisplaySpec
 
-from zcad.assemblies import (
-    Pico2OledAssemblyParameters,
-    analyze_pico2_oled_assembly,
-    build_pico2_oled_assembly,
+from zcad.assemblies import Pico2OledAssemblyParameters
+from zcad.assemblies.board_display import (
+    BoardDisplayProduct,
+    analyze_board_display_product,
+    build_board_display_product,
 )
+from zcad.assemblies.pico2_oled import PICO2_OLED_PRODUCT
+from zcad.designs import parse_display_spec
+
+
+@dataclass(frozen=True)
+class UsbPlugEnvelope:
+    """Measured or declared rectangular envelope of a plug's molded housing."""
+
+    identifier: str
+    width_mm: float
+    height_mm: float
+    housing_length_mm: float
+    center_height_offset_mm: float
+    clearance_mm: float
+    nose_width_mm: float
+    nose_height_mm: float
+    nose_length_mm: float
+    nose_center_height_offset_mm: float
+    evidence_status: str
+    evidence_source: str
+
+    def __post_init__(self) -> None:
+        for name in ("identifier", "evidence_source"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"usb_plug {name} must be a nonempty string")
+        if self.evidence_status not in {"measured", "vendor_drawing", "test_envelope"}:
+            raise ValueError(
+                "usb_plug evidence_status must be measured, vendor_drawing, "
+                "or test_envelope"
+            )
+        for name in (
+            "width_mm",
+            "height_mm",
+            "housing_length_mm",
+            "nose_width_mm",
+            "nose_height_mm",
+            "nose_length_mm",
+        ):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValueError(
+                    f"usb_plug {name} must be a finite number greater than zero"
+                )
+        for name in (
+            "center_height_offset_mm",
+            "clearance_mm",
+            "nose_center_height_offset_mm",
+        ):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ValueError(f"usb_plug {name} must be a finite number")
+        if self.clearance_mm < 0:
+            raise ValueError("usb_plug clearance_mm must not be negative")
 
 
 @dataclass(frozen=True)
 class Pico2EnclosureFitParameters:
     """Parameters for a Pico 2 enclosure and fitted lid."""
+
+    display: DisplaySpec | dict[str, object] | None = None
+    usb_plug: UsbPlugEnvelope | dict[str, object] | None = None
+
+    usb_plug: UsbPlugEnvelope | dict[str, object] | None = None
+
+    display_retention: str = "none"
+    retention_clearance_mm: float = 0.3
+    retention_wall_mm: float = 1.2
+    retention_clip_reach_mm: float = 1.0
+    retention_clip_lip_height_mm: float = 1.0
+    retention_clip_gap_mm: float = 0.1
 
     wall_mm: float = 2.0
     floor_mm: float = 2.0
@@ -72,9 +158,70 @@ class Pico2EnclosureFitParameters:
     label_size_mm: float = 4.0
     label_height_mm: float = 0.5
 
+    def __post_init__(self) -> None:
+        """Freeze validated custom hardware, including JSON input."""
+        if self.usb_plug is not None and not isinstance(self.usb_plug, UsbPlugEnvelope):
+            if not isinstance(self.usb_plug, dict):
+                raise ValueError("usb_plug must be an object")
+            try:
+                object.__setattr__(self, "usb_plug", UsbPlugEnvelope(**self.usb_plug))
+            except TypeError as error:
+                raise ValueError(f"invalid usb_plug fields: {error}") from None
+        if self.usb_plug is not None and not isinstance(self.usb_plug, UsbPlugEnvelope):
+            if not isinstance(self.usb_plug, dict):
+                raise ValueError("usb_plug must be an object")
+            try:
+                object.__setattr__(self, "usb_plug", UsbPlugEnvelope(**self.usb_plug))
+            except TypeError as error:
+                raise ValueError(f"invalid usb_plug fields: {error}") from None
+        if self.display is not None:
+            document = (
+                asdict(self.display)
+                if isinstance(self.display, DisplaySpec)
+                else self.display
+            )
+            object.__setattr__(self, "display", parse_display_spec(document))
+
+    @property
+    def display_spec(self) -> DisplaySpec:
+        """Return selected hardware or the backwards-compatible reference."""
+        return (
+            self.display
+            if isinstance(self.display, DisplaySpec)
+            else get_reference_oled_128x64()
+        )
+
+    @cached_property
+    def product(self) -> BoardDisplayProduct:
+        """Retain the Pico board and its catalogued components."""
+        return replace(PICO2_OLED_PRODUCT, display=self.display_spec)
+
     def validate(self) -> None:
         """Validate enclosure geometry."""
+        if self.display_retention not in {"none", "clips"}:
+            raise ValueError("display_retention must be 'none' or 'clips'")
+        if self.display_retention == "clips" and self.display_spec.is_layered:
+            raise ValueError(
+                "clip retention requires a solid-envelope display; "
+                "layered modules need PCB-specific support"
+            )
+        if self.usb_plug is not None:
+            connector = get_raspberry_pi_pico2().usb_connector
+            plug = self.usb_plug
+            center_z = (
+                self.device_assembly.get("usb_connector").placement.z_mm
+                + connector.height_mm / 2
+                + plug.center_height_offset_mm
+            )
+            if center_z - plug.height_mm / 2 - plug.clearance_mm < self.floor_mm:
+                raise ValueError("usb_plug envelope cuts into the enclosure floor")
+            if center_z + plug.height_mm / 2 + plug.clearance_mm >= self.body_height_mm:
+                raise ValueError("usb_plug envelope reaches above the enclosure wall")
+
         positive_values = {
+            "retention_wall_mm": self.retention_wall_mm,
+            "retention_clip_reach_mm": self.retention_clip_reach_mm,
+            "retention_clip_lip_height_mm": self.retention_clip_lip_height_mm,
             "wall_mm": self.wall_mm,
             "floor_mm": self.floor_mm,
             "internal_height_mm": self.internal_height_mm,
@@ -92,10 +239,18 @@ class Pico2EnclosureFitParameters:
         }
 
         for name, value in positive_values.items():
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ValueError(f"{name} must be a finite number")
             if value <= 0:
                 raise ValueError(f"{name} must be greater than zero")
 
         nonnegative_values = {
+            "retention_clearance_mm": self.retention_clearance_mm,
+            "retention_clip_gap_mm": self.retention_clip_gap_mm,
             "mounting_hole_clearance_mm": (self.mounting_hole_clearance_mm),
             "lid_clearance_mm": self.lid_clearance_mm,
             "corner_radius_mm": self.corner_radius_mm,
@@ -109,8 +264,42 @@ class Pico2EnclosureFitParameters:
         }
 
         for name, value in nonnegative_values.items():
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ValueError(f"{name} must be a finite number")
             if value < 0:
                 raise ValueError(f"{name} must not be negative")
+
+        if self.usb_plug is not None:
+            connector = get_raspberry_pi_pico2().usb_connector
+            component = self.device_assembly.get("usb_connector")
+            plug_bottom = (
+                component.placement.z_mm
+                + connector.height_mm / 2
+                + self.usb_plug.nose_center_height_offset_mm
+                - self.usb_plug.nose_height_mm / 2
+                - self.usb_plug.clearance_mm
+            )
+            port_face_y = component.transformed_geometry().val().BoundingBox().ymin
+            required_insertion = port_face_y + self.outer_depth_mm / 2
+            if self.usb_plug.nose_length_mm < required_insertion:
+                raise ValueError("usb_plug nose is too short to reach the receptacle")
+            if plug_bottom < self.floor_mm:
+                raise ValueError("usb_plug envelope cuts into the enclosure floor")
+            if (
+                component.placement.z_mm
+                + connector.height_mm / 2
+                + self.usb_plug.nose_center_height_offset_mm
+                + self.usb_plug.nose_height_mm / 2
+                + self.usb_plug.clearance_mm
+                >= self.body_height_mm
+            ):
+                raise ValueError("usb_plug envelope reaches above the enclosure wall")
+        if self.display_retention == "clips":
+            self.retention_parameters.validate()
 
         if self.corner_radius_mm >= (
             min(
@@ -124,7 +313,7 @@ class Pico2EnclosureFitParameters:
         if self.exterior_edge_fillet_mm >= (self.wall_mm):
             raise ValueError("exterior_edge_fillet_mm must be smaller than wall_mm")
 
-        display = get_reference_oled_128x64()
+        display = self.display_spec
 
         window_width_mm = display.active_width_mm + (
             2 * self.display_window_clearance_mm
@@ -138,20 +327,21 @@ class Pico2EnclosureFitParameters:
 
         display_component = self.device_assembly.get("display")
 
-        if abs(display_component.placement.x_mm) + (bezel_width_mm / 2) > (
-            self.outer_width_mm / 2
-        ):
+        if abs(display_component.placement.x_mm + display.active_center_x_mm) + (
+            bezel_width_mm / 2
+        ) > (self.outer_width_mm / 2):
             raise ValueError("display bezel does not fit within lid width")
 
-        if abs(display_component.placement.y_mm) + (bezel_height_mm / 2) > (
-            self.outer_depth_mm / 2
-        ):
+        if abs(display_component.placement.y_mm + display.active_center_y_mm) + (
+            bezel_height_mm / 2
+        ) > (self.outer_depth_mm / 2):
             raise ValueError("display bezel does not fit within lid depth")
 
         if not self.label_text.strip():
             raise ValueError("label_text must not be empty")
 
-        report = analyze_pico2_oled_assembly(
+        report = analyze_board_display_product(
+            self.product,
             self.device_assembly,
             minimum_board_display_clearance_mm=(self.board_display_clearance_mm),
         )
@@ -186,19 +376,46 @@ class Pico2EnclosureFitParameters:
                 f"{finding.required_clearance_mm:.3f} mm required"
             )
 
-    @property
+    @cached_property
     def assembly_parameters(
         self,
     ) -> Pico2OledAssemblyParameters:
         """Return authoritative policy-compliant placements."""
         board = get_raspberry_pi_pico2()
-        display = get_reference_oled_128x64()
+        display = self.display_spec
 
         board_z_mm = self.floor_mm + self.standoff_height_mm
-        board_top_z_mm = board_z_mm + board.board_thickness_mm
-
-        nominal_display_z_mm = self.body_height_mm - display.module_depth_mm
-        minimum_display_z_mm = board_top_z_mm + self.board_display_clearance_mm
+        nominal_display_z_mm = (
+            self.floor_mm + self.internal_height_mm - display.module_depth_mm
+        )
+        # Bound the complete retainer footprint below the module while solving
+        # component clearance. This conservative box includes the clip lips.
+        drop_mm = 0.0
+        solver_display = display
+        if self.display_retention == "clips":
+            drop_mm = self.retention_clip_gap_mm + self.retention_clip_lip_height_mm
+            outside_mm = self.retention_clearance_mm + self.retention_wall_mm
+            solver_display = replace(
+                display,
+                module_width_mm=display.module_width_mm + 2 * outside_mm,
+                module_height_mm=display.module_height_mm + 2 * outside_mm,
+                module_depth_mm=display.module_depth_mm + drop_mm,
+            )
+        display_z_mm = (
+            lowest_display_height_mm(
+                board=board,
+                display=solver_display,
+                board_placement=Placement(z_mm=board_z_mm),
+                display_placement=Placement(
+                    x_mm=self.display_center_x_mm,
+                    y_mm=self.display_center_y_mm,
+                ),
+                board_display_clearance_mm=self.board_display_clearance_mm,
+                connector_access_clearance_mm=self.usb_access_clearance_mm,
+                minimum_mm=nominal_display_z_mm - drop_mm,
+            )
+            + drop_mm
+        )
 
         return Pico2OledAssemblyParameters(
             board_x_mm=0.0,
@@ -206,18 +423,53 @@ class Pico2EnclosureFitParameters:
             board_z_mm=board_z_mm,
             display_x_mm=self.display_center_x_mm,
             display_y_mm=self.display_center_y_mm,
-            display_z_mm=max(
-                nominal_display_z_mm,
-                minimum_display_z_mm,
-            ),
+            display_z_mm=display_z_mm,
             board_display_clearance_mm=(self.board_display_clearance_mm),
             usb_access_clearance_mm=(self.usb_access_clearance_mm),
         )
 
-    @property
-    def device_assembly(self):
+    @cached_property
+    def device_assembly(self) -> DeviceAssembly:
         """Return the placed Pico 2 and OLED assembly."""
-        return build_pico2_oled_assembly(self.assembly_parameters)
+        return build_board_display_product(
+            self.product, parameters=self.assembly_parameters
+        )
+
+    @cached_property
+    def retention_parameters(self) -> DisplayRetainerParameters:
+        """Core retainer in seated assembly coordinates."""
+        component = self.device_assembly.get("display")
+        return DisplayRetainerParameters(
+            center_x_mm=component.placement.x_mm,
+            center_y_mm=component.placement.y_mm,
+            module_width_mm=self.display_spec.module_width_mm,
+            module_depth_mm=self.display_spec.module_height_mm,
+            module_thickness_mm=self.display_spec.module_depth_mm,
+            module_top_z_mm=component.placement.z_mm
+            + self.display_spec.module_depth_mm,
+            lid_underside_z_mm=self.body_height_mm,
+            clearance_mm=self.retention_clearance_mm,
+            wall_mm=self.retention_wall_mm,
+            clip_reach_mm=self.retention_clip_reach_mm,
+            clip_lip_height_mm=self.retention_clip_lip_height_mm,
+            clip_gap_mm=self.retention_clip_gap_mm,
+        )
+
+    @property
+    def display_side_allowance_mm(self) -> float:
+        existing = (
+            self.display_module_clearance_mm
+            + self.lid_clearance_mm
+            + self.lid_lip_wall_mm
+        )
+        if self.display_retention == "clips":
+            return max(
+                existing,
+                self.retention_clearance_mm
+                + self.retention_wall_mm
+                + self.display_module_clearance_mm,
+            )
+        return existing
 
     def _required_component_span_mm(
         self,
@@ -252,11 +504,7 @@ class Pico2EnclosureFitParameters:
         display_required_width_mm = self._required_component_span_mm(
             identifier="display",
             axis="x",
-            clearance_mm=(
-                self.display_module_clearance_mm
-                + self.lid_clearance_mm
-                + self.lid_lip_wall_mm
-            ),
+            clearance_mm=self.display_side_allowance_mm,
         )
 
         return max(
@@ -276,11 +524,7 @@ class Pico2EnclosureFitParameters:
         display_required_depth_mm = self._required_component_span_mm(
             identifier="display",
             axis="y",
-            clearance_mm=(
-                self.display_module_clearance_mm
-                + self.lid_clearance_mm
-                + self.lid_lip_wall_mm
-            ),
+            clearance_mm=self.display_side_allowance_mm,
         )
 
         connector_required_depth_mm = self._required_component_span_mm(
@@ -307,8 +551,12 @@ class Pico2EnclosureFitParameters:
 
     @property
     def body_height_mm(self) -> float:
-        """Return enclosure body height."""
-        return self.floor_mm + self.internal_height_mm
+        """Keep the requested cavity as a minimum and contain the raised display."""
+        display = self.device_assembly.get("display")
+        return max(
+            self.floor_mm + self.internal_height_mm,
+            display.placement.z_mm + float(display.metadata["height_mm"]),
+        )
 
     @property
     def lid_height_mm(self) -> float:
@@ -318,7 +566,16 @@ class Pico2EnclosureFitParameters:
     @property
     def lid_overall_height_mm(self) -> float:
         """Return total lid height including the raised display bezel."""
-        return self.lid_height_mm + self.display_bezel_height_mm
+        lowest_mm = 0.0
+        if self.display_retention == "clips":
+            lowest_mm = min(
+                0.0,
+                self.lid_lip_height_mm
+                - self.display_spec.module_depth_mm
+                - self.retention_clip_gap_mm
+                - self.retention_clip_lip_height_mm,
+            )
+        return self.lid_height_mm + self.display_bezel_height_mm - lowest_mm
 
 
 def _fillet_vertical_edges(
@@ -362,13 +619,38 @@ def _connector_cutout_parameters(
     """Derive the USB opening through the reusable core API."""
     board = get_raspberry_pi_pico2()
 
-    return ConnectorCutoutParameters.from_component(
-        component=parameters.device_assembly.get("usb_connector"),
+    connector_component = parameters.device_assembly.get("usb_connector")
+    width_clearance = parameters.usb_width_clearance_mm
+    height_clearance = parameters.usb_height_clearance_mm
+    bottom_z = connector_component.placement.z_mm
+    if parameters.usb_plug is not None:
+        plug = parameters.usb_plug
+        if board.usb_connector.board_edge != "negative_y":
+            raise ValueError(
+                "USB plug insertion currently supports the Pico negative-Y port"
+            )
+        width_clearance = max(
+            width_clearance,
+            plug.nose_width_mm + 2 * plug.clearance_mm - board.usb_connector.width_mm,
+        )
+        opening_height = max(
+            board.usb_connector.height_mm + height_clearance,
+            plug.nose_height_mm + 2 * plug.clearance_mm,
+        )
+        height_clearance = opening_height - board.usb_connector.height_mm
+        bottom_z = (
+            connector_component.placement.z_mm
+            + (board.usb_connector.height_mm - opening_height) / 2
+            + plug.nose_center_height_offset_mm
+        )
+    cutout = ConnectorCutoutParameters.from_component(
+        component=connector_component,
         connector=board.usb_connector,
-        width_clearance_mm=(parameters.usb_width_clearance_mm),
-        height_clearance_mm=(parameters.usb_height_clearance_mm),
-        cutter_depth_mm=(parameters.wall_mm + 2.0),
+        width_clearance_mm=width_clearance,
+        height_clearance_mm=height_clearance,
+        cutter_depth_mm=parameters.wall_mm + 2.0,
     )
+    return replace(cutout, bottom_z_mm=bottom_z)
 
 
 def _build_body(
@@ -397,7 +679,7 @@ def _build_body(
         .box(
             parameters.inner_width_mm,
             parameters.inner_depth_mm,
-            parameters.internal_height_mm + 0.5,
+            parameters.body_height_mm - parameters.floor_mm + 0.5,
             centered=(True, True, False),
         )
     )
@@ -481,7 +763,7 @@ def _build_lid(
     if parameters.exterior_edge_fillet_mm > 0:
         lid = lid.edges(">Z").fillet(parameters.exterior_edge_fillet_mm)
 
-    display = get_reference_oled_128x64()
+    display = parameters.display_spec
     display_component = parameters.device_assembly.get("display")
 
     window = DisplayWindowParameters.from_display(
@@ -510,6 +792,18 @@ def _build_lid(
         parameters=bezel,
     )
 
+    if parameters.display_retention == "clips":
+        retainer = parameters.retention_parameters
+        seated_z_mm = parameters.body_height_mm - parameters.lid_lip_height_mm
+        lid = add_display_retainer(
+            lid,
+            parameters=replace(
+                retainer,
+                module_top_z_mm=retainer.module_top_z_mm - seated_z_mm,
+                lid_underside_z_mm=retainer.lid_underside_z_mm - seated_z_mm,
+            ),
+        )
+
     label_base_z_mm = parameters.lid_lip_height_mm + parameters.lid_thickness_mm
 
     return add_embossed_label(
@@ -529,7 +823,18 @@ def build_pico2_enclosure_fit(
     """Build the refined Pico 2 body and lid."""
     parameters.validate()
 
-    return {
-        "body": _build_body(parameters),
-        "lid": _build_lid(parameters),
-    }
+    parts = {"body": _build_body(parameters), "lid": _build_lid(parameters)}
+    if parameters.display_retention == "clips":
+        seated = parts["lid"].translate(
+            (0, 0, parameters.body_height_mm - parameters.lid_lip_height_mm)
+        )
+        for component in parameters.device_assembly:
+            overlap = seated.intersect(component.transformed_geometry()).val().Volume()
+            if overlap > 1e-6:
+                raise ValueError(
+                    f"OLED retainer intersects {component.identifier}: "
+                    f"{overlap:.6f} mm3"
+                )
+        if seated.intersect(parts["body"]).val().Volume() > 1e-6:
+            raise ValueError("OLED retainer intersects enclosure body")
+    return parts

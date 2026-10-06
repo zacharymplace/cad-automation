@@ -160,18 +160,15 @@ def test_enclosure_exposes_authoritative_assembly() -> None:
     assert display.placement.x_mm == pytest.approx(2.0)
     assert display.placement.y_mm == pytest.approx(7.0)
 
-    board_top_z_mm = board.placement.z_mm + float(board.metadata["height_mm"])
+    from zcad.assemblies import analyze_pico2_oled_assembly
 
-    nominal_display_z_mm = parameters.body_height_mm - float(
-        display.metadata["height_mm"]
+    assert not analyze_pico2_oled_assembly(
+        assembly,
+        minimum_board_display_clearance_mm=parameters.board_display_clearance_mm,
+    ).has_findings
+    assert display.transformed_geometry().val().BoundingBox().zmax <= (
+        parameters.body_height_mm
     )
-
-    expected_display_z_mm = max(
-        nominal_display_z_mm,
-        board_top_z_mm + parameters.board_display_clearance_mm,
-    )
-
-    assert display.placement.z_mm == pytest.approx(expected_display_z_mm)
 
 
 def test_enclosure_width_comes_from_assembly() -> None:
@@ -334,3 +331,171 @@ def test_negative_usb_access_clearance_is_rejected() -> None:
         match="usb_access_clearance_mm",
     ):
         build_pico2_enclosure_fit(parameters)
+
+
+def test_catalogued_parts_raise_display_and_enclosure() -> None:
+    parameters = Pico2EnclosureFitParameters()
+    display = parameters.device_assembly.get("display")
+    chip = parameters.device_assembly.get("board_top-01")
+    gap = display.transformed_geometry().val().BoundingBox().zmin - (
+        chip.transformed_geometry().val().BoundingBox().zmax
+    )
+    assert gap >= parameters.board_display_clearance_mm
+    assert (
+        parameters.body_height_mm > parameters.floor_mm + parameters.internal_height_mm
+    )
+    parts = build_pico2_enclosure_fit(parameters)
+    # The raised cavity must not leave solid material obstructing the chip.
+    chip_shape = chip.transformed_geometry()
+    assert parts["body"].intersect(chip_shape).val().Volume() == pytest.approx(0.0)
+
+
+def test_complete_assembly_clears_body_and_seated_lid() -> None:
+    parameters = Pico2EnclosureFitParameters()
+    parts = build_pico2_enclosure_fit(parameters)
+    seated_lid = parts["lid"].translate(
+        (0.0, 0.0, parameters.body_height_mm - parameters.lid_lip_height_mm)
+    )
+    for component in parameters.device_assembly:
+        geometry = component.transformed_geometry()
+        for enclosure_part in (parts["body"], seated_lid):
+            overlap = enclosure_part.intersect(geometry).val().Volume()
+            assert overlap <= 1e-6, component.identifier
+    assert parts["body"].intersect(seated_lid).val().Volume() <= 1e-6
+
+
+def custom_display_data():
+    return {
+        "identifier": "SYNTHETIC_PICO_CALIBRATION",
+        "module_width_mm": 36.0,
+        "module_height_mm": 32.0,
+        "module_depth_mm": 7.0,
+        "active_width_mm": 24.0,
+        "active_height_mm": 12.0,
+        "active_center_x_mm": 3.0,
+        "active_center_y_mm": 2.0,
+        "geometry_source": "synthetic test fixture; not a purchased OLED",
+    }
+
+
+def test_custom_display_sizes_body_and_preserves_hardware_clearance():
+    parameters = Pico2EnclosureFitParameters(display=custom_display_data())
+    default = Pico2EnclosureFitParameters()
+    assert parameters.outer_width_mm > default.outer_width_mm
+    assert parameters.body_height_mm > default.body_height_mm
+    assert (
+        parameters.device_assembly.get("display").metadata["hardware_identifier"]
+        == "SYNTHETIC_PICO_CALIBRATION"
+    )
+    parts = build_pico2_enclosure_fit(parameters)
+    seated_lid = parts["lid"].translate(
+        (0, 0, parameters.body_height_mm - parameters.lid_lip_height_mm)
+    )
+    for component in parameters.device_assembly:
+        for part in (parts["body"], seated_lid):
+            assert (
+                part.intersect(component.transformed_geometry()).val().Volume() <= 1e-6
+            ), component.identifier
+    assert parts["body"].intersect(seated_lid).val().Volume() <= 1e-6
+    # Full active opening is clear at its offset; adjacent plate remains solid.
+    x = parameters.display_center_x_mm + 3
+    y = parameters.display_center_y_mm + 2
+    z = parameters.lid_lip_height_mm
+    opening = (
+        cq.Workplane("XY")
+        .box(23, 11, parameters.lid_thickness_mm, centered=(True, True, False))
+        .translate((x, y, z))
+    )
+    assert parts["lid"].intersect(opening).val().Volume() <= 1e-6
+    outside = (
+        cq.Workplane("XY")
+        .box(0.2, 0.2, parameters.lid_thickness_mm, centered=(True, True, False))
+        .translate((x + 13, y, z))
+    )
+    assert parts["lid"].intersect(outside).val().Volume() > 0
+
+
+def test_custom_display_input_is_frozen_and_records_source():
+    data = custom_display_data()
+    parameters = Pico2EnclosureFitParameters(display=data)
+    data["module_width_mm"] = 100
+    assert parameters.display_spec.module_width_mm == 36
+    assert (
+        parameters.display_spec.geometry_source
+        == "synthetic test fixture; not a purchased OLED"
+    )
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("module_depth_mm", float("nan")),
+        ("geometry_source", ""),
+        ("module_width_mm", -1),
+    ],
+)
+def test_custom_display_rejects_bad_input(field, value):
+    data = custom_display_data()
+    data[field] = value
+    with pytest.raises(ValueError):
+        Pico2EnclosureFitParameters(display=data)
+
+
+def test_retained_display_has_valid_lid_and_clear_board_components():
+    parameters = Pico2EnclosureFitParameters(display_retention="clips")
+    parts = build_pico2_enclosure_fit(parameters)
+    seated = parts["lid"].translate(
+        (0, 0, parameters.body_height_mm - parameters.lid_lip_height_mm)
+    )
+    assert len(parts["lid"].val().Solids()) == 1
+    assert parts["lid"].val().BoundingBox().zlen == pytest.approx(
+        parameters.lid_overall_height_mm
+    )
+    for component in parameters.device_assembly:
+        assert seated.intersect(component.transformed_geometry()).val().Volume() <= 1e-6
+    assert seated.intersect(parts["body"]).val().Volume() <= 1e-6
+    retainer = parameters.retention_parameters
+    # Material exists under both module edges; middle header edges stay open.
+    for side in (-1, 1):
+        point = cq.Vector(
+            side * (retainer.module_width_mm / 2 - 0.4),
+            retainer.center_y_mm,
+            retainer.module_bottom_z_mm - retainer.clip_gap_mm - 0.5,
+        )
+        assert seated.val().isInside(point)
+        header = cq.Vector(
+            0,
+            retainer.center_y_mm + side * (retainer.module_depth_mm / 2 + 0.6),
+            retainer.module_top_z_mm - 1,
+        )
+        assert not seated.val().isInside(header)
+
+
+@pytest.mark.parametrize(
+    "options,message",
+    [
+        ({"display_retention": "unknown"}, "display_retention"),
+        (
+            {"display_retention": "clips", "retention_clip_reach_mm": 0.2},
+            "clip_reach_mm",
+        ),
+        (
+            {"display_retention": "clips", "retention_clip_gap_mm": -0.1},
+            "retention_clip_gap_mm",
+        ),
+    ],
+)
+def test_invalid_retention_is_rejected(options, message):
+    with pytest.raises(ValueError, match=message):
+        build_pico2_enclosure_fit(Pico2EnclosureFitParameters(**options))
+
+
+def test_layered_display_requires_pcb_specific_support():
+    data = custom_display_data()
+    data.update(
+        pcb_thickness_mm=1, panel_width_mm=30, panel_height_mm=20, panel_thickness_mm=1
+    )
+    with pytest.raises(ValueError, match="layered modules"):
+        build_pico2_enclosure_fit(
+            Pico2EnclosureFitParameters(display=data, display_retention="clips")
+        )

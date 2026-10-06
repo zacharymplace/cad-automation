@@ -22,7 +22,6 @@ from zcad_core.validation.profile_rules import (
 )
 
 from zcad.assemblies import (
-    get_board_display_product,
     list_board_display_products,
 )
 from zcad.assemblies.board_display import (
@@ -33,6 +32,7 @@ from zcad.bundle_manifest import verify_bundle
 from zcad.designs import (
     build_board_display_design,
     load_board_display_design,
+    resolve_board_display_design_product,
 )
 from zcad.feature_validation import feature_checks
 from zcad.generators.board_display_enclosure import (
@@ -379,7 +379,7 @@ def _run_design_analyze_command(
         command="analyze",
     )
     design = load_board_display_design(path)
-    product = get_board_display_product(design.product)
+    product = resolve_board_display_design_product(design)
     assembly = build_board_display_design(design)
 
     report = analyze_board_display_product(
@@ -557,7 +557,7 @@ def _run_design_inspect_command(
         command="inspect",
     )
     design = load_board_display_design(path)
-    product = get_board_display_product(design.product)
+    product = resolve_board_display_design_product(design)
     assembly = build_board_display_design(design)
 
     print(f"Design: {path}")
@@ -565,6 +565,15 @@ def _run_design_inspect_command(
     print(f"Product: {design.product}")
     print(f"Board: {product.board.identifier}")
     print(f"Display: {product.display.identifier}")
+    print(
+        f"Display module: {product.display.module_width_mm} × "
+        f"{product.display.module_height_mm} × "
+        f"{product.display.module_depth_mm} mm"
+    )
+    print(f"Display geometry evidence: {product.display.geometry_evidence_status}")
+    print(
+        f"Display geometry source: {product.display.geometry_source or 'unspecified'}"
+    )
     print("Parameters:")
 
     for field in fields(design.parameters):
@@ -694,6 +703,24 @@ def run(
             stl_feature_validator=stl_feature_checks,
             repository_root=Path.cwd(),
         )
+        return
+
+    if arguments and arguments[0] == "accept-verify":
+        from zcad.enclosure_acceptance import run_acceptance_verify
+
+        run_acceptance_verify(arguments[1:])
+        return
+
+    if arguments and arguments[0] == "accept-robustness":
+        from zcad.enclosure_acceptance import run_acceptance_robustness
+
+        run_acceptance_robustness(arguments[1:])
+        return
+
+    if arguments and arguments[0] == "accept":
+        from zcad.enclosure_acceptance import run_acceptance
+
+        run_acceptance(arguments[1:])
         return
 
     if arguments and arguments[0] == "validate":

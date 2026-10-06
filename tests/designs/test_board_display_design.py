@@ -213,3 +213,70 @@ def test_build_revalidates_schema_version() -> None:
         match="schema_version",
     ):
         build_board_display_design(design)
+
+
+def _custom_display_document():
+    return {
+        "schema_version": "1",
+        "product": "PICO2_OLED",
+        "display": {
+            "identifier": "SYNTHETIC_TEST_MODULE",
+            "module_width_mm": 30,
+            "module_height_mm": 25,
+            "module_depth_mm": 5,
+            "active_width_mm": 22,
+            "active_height_mm": 11,
+            "geometry_source": "synthetic test fixture; not physical measurements",
+        },
+    }
+
+
+def test_custom_display_reaches_assembly_and_enclosure():
+    from zcad.designs import resolve_board_display_design_product
+    from zcad.generators.board_display_enclosure import (
+        BoardDisplayEnclosureParameters,
+        build_board_display_enclosure_result,
+    )
+
+    design = parse_board_display_design(_custom_display_document())
+    product = resolve_board_display_design_product(design)
+    assert product.display.module_width_mm == 30
+    assembly = build_board_display_design(design)
+    assert (
+        assembly.get("display").metadata["hardware_identifier"]
+        == "SYNTHETIC_TEST_MODULE"
+    )
+    result = build_board_display_enclosure_result(
+        design, BoardDisplayEnclosureParameters()
+    )
+    assert result.assembly.get(
+        "display"
+    ).geometry.val().BoundingBox().xlen == pytest.approx(30)
+
+
+@pytest.mark.parametrize(
+    "field,value,message",
+    [
+        ("module_width_mm", float("nan"), "finite number"),
+        ("module_depth_mm", float("inf"), "finite number"),
+        ("module_width_mm", True, "finite number"),
+        ("active_center_x_mm", None, "finite number"),
+        ("active_center_x_mm", 100, "active area"),
+        ("geometry_source", "", "nonempty string"),
+        ("mount_style", "unknown", "mount_style"),
+        ("unexpected", 1, "unknown display"),
+        ("module_depth_mm", -1, "greater than zero"),
+    ],
+)
+def test_custom_display_rejects_invalid_data(field, value, message):
+    document = _custom_display_document()
+    document["display"][field] = value
+    with pytest.raises(ValueError, match=message):
+        parse_board_display_design(document)
+
+
+def test_custom_display_requires_complete_dimensions():
+    document = _custom_display_document()
+    del document["display"]["module_depth_mm"]
+    with pytest.raises(ValueError, match="missing display"):
+        parse_board_display_design(document)

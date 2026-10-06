@@ -74,6 +74,48 @@ def test_file_policy_cli_additions_and_integration(tmp_path, capsys):
     ] == load_policy(path)
 
 
+def test_maximum_enclosure_envelope_policy_requires_passing_check(tmp_path):
+    path = tmp_path / "envelope-policy.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.2",
+                "required_checks": [],
+                "fail_on_warnings": False,
+                "maximum_enclosure_envelope_mm": {
+                    "width": 40,
+                    "depth": 60,
+                    "height": 15,
+                },
+            }
+        )
+    )
+    policy = load_policy(path)
+    envelope_check = {
+        "code": "maximum_enclosure_envelope",
+        "status": "PASS",
+    }
+    report = {
+        "evaluated_status": "PASS",
+        "warning_count": 0,
+        "checks": [envelope_check],
+    }
+    assert evaluate_policy(report, policy)["status"] == "PASS"
+    report["checks"] = []
+    missing = evaluate_policy(report, policy)
+    assert missing["status"] == "FAIL"
+    assert "Required check is absent: maximum_enclosure_envelope" in missing["reasons"]
+    report["checks"] = [
+        {**envelope_check, "status": "FAIL", "exceeded_dimensions": ["width"]}
+    ]
+    exceeded = evaluate_policy(report, policy)
+    assert exceeded["status"] == "FAIL"
+    assert any(
+        "Maximum enclosure envelope exceeded" in reason
+        for reason in exceeded["reasons"]
+    )
+
+
 @pytest.mark.parametrize(
     "value",
     [
@@ -93,6 +135,16 @@ def test_file_policy_cli_additions_and_integration(tmp_path, capsys):
             "required_checks": [],
             "fail_on_warnings": False,
             "typo": True,
+        },
+        {
+            "schema_version": "1.2",
+            "required_checks": [],
+            "fail_on_warnings": False,
+            "maximum_enclosure_envelope_mm": {
+                "width": 40,
+                "depth": 60,
+                "height": 0,
+            },
         },
     ],
 )

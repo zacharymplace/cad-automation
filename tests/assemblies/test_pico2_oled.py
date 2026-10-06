@@ -1,6 +1,10 @@
 """Tests for the reusable Pico 2 and OLED assembly."""
 
+from itertools import combinations
+
 import pytest
+from zcad_core.assemblies import board_component_identifier, component_pair
+from zcad_core.hardware import get_raspberry_pi_pico2
 
 from zcad.assemblies import (
     Pico2OledAssemblyParameters,
@@ -14,6 +18,10 @@ def test_assembly_contains_board_connector_and_display() -> None:
     assert assembly.identifiers == (
         "board",
         "usb_connector",
+        *(
+            board_component_identifier("board", part.identifier)
+            for part in get_raspberry_pi_pico2().components
+        ),
         "display",
     )
 
@@ -81,7 +89,7 @@ def test_assembly_compound_is_valid() -> None:
     compound = assembly.compound().val()
 
     assert compound.isValid()
-    assert len(compound.Solids()) == 3
+    assert len(compound.Solids()) == 3 + len(get_raspberry_pi_pico2().components)
 
 
 def test_default_assembly_passes_clearance_policy() -> None:
@@ -115,13 +123,11 @@ def test_board_display_collision_is_reported() -> None:
         minimum_board_display_clearance_mm=0.5,
     )
 
-    assert len(report.collisions) == 1
-    assert not report.clearance_violations
-
-    assert report.collisions[0].pair == {
-        "board",
-        "display",
+    assert {finding.pair for finding in report.collisions} == {
+        frozenset({"board", "display"}),
+        frozenset({"board_top-01", "display"}),
     }
+    assert not report.clearance_violations
 
 
 def test_insufficient_board_display_clearance_is_reported() -> None:
@@ -131,7 +137,7 @@ def test_insufficient_board_display_clearance_is_reported() -> None:
 
     assembly = build_pico2_oled_assembly(
         Pico2OledAssemblyParameters(
-            display_z_mm=4.25,
+            display_z_mm=5.335,
         )
     )
 
@@ -145,6 +151,7 @@ def test_insufficient_board_display_clearance_is_reported() -> None:
 
     finding = report.clearance_violations[0]
 
+    assert finding.pair == {"board_top-01", "display"}
     assert finding.measured_clearance_mm == pytest.approx(0.25)
     assert finding.required_clearance_mm == pytest.approx(0.5)
 
@@ -156,7 +163,7 @@ def test_exact_board_display_clearance_passes() -> None:
 
     assembly = build_pico2_oled_assembly(
         Pico2OledAssemblyParameters(
-            display_z_mm=4.5,
+            display_z_mm=5.585,
         )
     )
 
@@ -238,18 +245,22 @@ def test_generic_core_analyzer_consumes_board_envelope() -> None:
     assembly = build_pico2_oled_assembly(
         Pico2OledAssemblyParameters(
             display_z_mm=4.25,
+            display_x_mm=20.0,
             board_display_clearance_mm=0.5,
         )
     )
 
-    from zcad_core.assemblies import component_pair
-
     report = assembly.analyze_interference(
-        allowed_contact_pairs=(
-            component_pair(
-                "board",
-                "usb_connector",
-            ),
+        allowed_contact_pairs=tuple(
+            component_pair(first, second)
+            for first, second in combinations(
+                tuple(
+                    identifier
+                    for identifier in assembly.identifiers
+                    if identifier != "display"
+                ),
+                2,
+            )
         )
     )
 
@@ -282,7 +293,7 @@ def test_policy_wrapper_does_not_mutate_assembly() -> None:
 
     assembly = build_pico2_oled_assembly(
         Pico2OledAssemblyParameters(
-            display_z_mm=4.5,
+            display_z_mm=6.0,
             board_display_clearance_mm=0.5,
         )
     )
@@ -295,7 +306,9 @@ def test_policy_wrapper_does_not_mutate_assembly() -> None:
         minimum_board_display_clearance_mm=2.0,
     )
 
+    assert not report.collisions
     assert len(report.clearance_violations) == 1
+    assert report.clearance_violations[0].pair == {"board_top-01", "display"}
     assert report.clearance_violations[0].required_clearance_mm == pytest.approx(2.0)
 
     assert assembly.get("board") is board
@@ -328,7 +341,6 @@ def test_policy_allows_board_connector_attachment() -> None:
 
 
 def test_generic_analysis_requires_attachment_exception() -> None:
-    from zcad_core.assemblies import component_pair
 
     assembly = build_pico2_oled_assembly()
 
@@ -341,7 +353,9 @@ def test_generic_analysis_requires_attachment_exception() -> None:
         )
     )
 
-    assert not report.has_findings
+    assert report.collisions
+    assert all("display" not in finding.pair for finding in report.collisions)
+    assert all("display" not in finding.pair for finding in report.clearance_violations)
 
 
 def test_usb_connector_carries_outward_access_envelope() -> None:
@@ -380,3 +394,20 @@ def test_pico_product_definition_selects_expected_hardware() -> None:
         PICO2_OLED_PRODUCT.default_parameters,
         Pico2OledAssemblyParameters,
     )
+
+
+def test_clearance_policy_rejects_missing_catalogued_component() -> None:
+    from zcad_core.assemblies import DeviceAssembly
+
+    from zcad.assemblies import analyze_pico2_oled_assembly
+
+    complete = build_pico2_oled_assembly()
+    incomplete = DeviceAssembly(
+        tuple(
+            component
+            for component in complete
+            if component.identifier != "board_top-01"
+        )
+    )
+    with pytest.raises(ValueError, match="exactly"):
+        analyze_pico2_oled_assembly(incomplete)

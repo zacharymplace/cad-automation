@@ -1,14 +1,17 @@
 """JSON design input for registered board-display products."""
 
 import json
+import math
 from dataclasses import dataclass, fields, replace
 from pathlib import Path
 from typing import Any
 
 from zcad_core.assemblies import DeviceAssembly
+from zcad_core.hardware.electronics import DisplaySpec
 
 from zcad.assemblies.board_display import (
     BoardDisplayAssemblyParameters,
+    BoardDisplayProduct,
     build_board_display_product,
 )
 from zcad.assemblies.product_registry import (
@@ -21,6 +24,7 @@ _TOP_LEVEL_FIELDS = frozenset(
         "schema_version",
         "product",
         "parameters",
+        "display",
     }
 )
 _PARAMETER_FIELDS = frozenset(
@@ -35,6 +39,7 @@ class BoardDisplayDesign:
     schema_version: str
     product: str
     parameters: BoardDisplayAssemblyParameters
+    display: DisplaySpec | None = None
 
 
 def _require_object(
@@ -90,6 +95,81 @@ def _parse_parameter_values(
     return parsed
 
 
+def parse_display_spec(document: object) -> DisplaySpec:
+    """Accept explicit mechanical data with its source, never implicit provenance."""
+    values = _require_object(document, context="display")
+    allowed = frozenset(field.name for field in fields(DisplaySpec))
+    _reject_unknown_fields(values, allowed=allowed, context="display")
+    text_fields = {
+        "identifier",
+        "mount_style",
+        "geometry_evidence_status",
+        "geometry_source",
+    }
+    required = {
+        "identifier",
+        "module_width_mm",
+        "module_height_mm",
+        "module_depth_mm",
+        "active_width_mm",
+        "active_height_mm",
+        "geometry_source",
+    }
+    missing = sorted(required - values.keys())
+    if missing:
+        raise ValueError(f"missing display field(s): {', '.join(missing)}")
+    nullable = {
+        "mounting_hole_diameter_mm",
+        "mounting_hole_spacing_x_mm",
+        "mounting_hole_spacing_y_mm",
+        "pcb_thickness_mm",
+        "panel_width_mm",
+        "panel_height_mm",
+        "panel_thickness_mm",
+    }
+    for name, value in values.items():
+        if name in text_fields:
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"display {name} must be a nonempty string")
+        elif value is not None:
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ValueError(f"display {name} must be a finite number")
+        elif name not in nullable:
+            raise ValueError(f"display {name} must be a finite number")
+    display = DisplaySpec(**values)
+    if display.mount_style not in {"adhesive", "bezel", "screws", "snap"}:
+        raise ValueError("invalid display mount_style")
+    display.validate()
+    if (
+        abs(display.active_center_x_mm) + display.active_width_mm / 2
+        > display.module_width_mm / 2
+        or abs(display.active_center_y_mm) + display.active_height_mm / 2
+        > display.module_height_mm / 2
+    ):
+        raise ValueError("display active area must lie within the module outline")
+    return display
+
+
+def resolve_board_display_design_product(
+    design: BoardDisplayDesign,
+) -> BoardDisplayProduct:
+    """Resolve hardware consistently for building, inspection, and analysis."""
+    product = get_board_display_product(design.product)
+    if design.display is not None:
+        display = parse_display_spec(
+            {
+                field.name: getattr(design.display, field.name)
+                for field in fields(DisplaySpec)
+            }
+        )
+        product = replace(product, display=display)
+    return product
+
+
 def parse_board_display_design(
     document: object,
 ) -> BoardDisplayDesign:
@@ -137,6 +217,7 @@ def parse_board_display_design(
         schema_version=_SCHEMA_VERSION,
         product=product.identifier,
         parameters=parameters,
+        display=parse_display_spec(root["display"]) if "display" in root else None,
     )
 
 
@@ -161,7 +242,7 @@ def build_board_display_design(
     if design.schema_version != _SCHEMA_VERSION:
         raise ValueError(f"schema_version must be {_SCHEMA_VERSION!r}")
 
-    product = get_board_display_product(design.product)
+    product = resolve_board_display_design_product(design)
 
     return build_board_display_product(
         product,

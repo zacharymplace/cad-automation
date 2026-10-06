@@ -62,5 +62,6 @@ def analyze_pico2_oled_assembly(
 
         raise ValueError(
             "Pico 2 OLED assembly must contain exactly "
-            "board, usb_connector, and display components"
+            "board, usb_connector, and display components, "
+            "plus the board's catalogued components"
         ) from error

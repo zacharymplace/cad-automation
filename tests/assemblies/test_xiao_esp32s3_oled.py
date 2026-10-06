@@ -1,6 +1,8 @@
 """Tests for the XIAO ESP32-S3 and OLED assembly."""
 
 import pytest
+from zcad_core.assemblies import board_component_identifier
+from zcad_core.hardware import get_seeed_xiao_esp32s3
 
 from zcad.assemblies import (
     XiaoEsp32S3OledAssemblyParameters,
@@ -15,6 +17,10 @@ def test_xiao_assembly_uses_selected_hardware() -> None:
     assert assembly.identifiers == (
         "board",
         "usb_connector",
+        *(
+            board_component_identifier("board", part.identifier)
+            for part in get_seeed_xiao_esp32s3().components
+        ),
         "display",
     )
 

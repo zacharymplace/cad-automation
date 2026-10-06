@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.2",
+  "maximum_enclosure_envelope_mm": {
+    "width": 45,
+    "depth": 60,
+    "height": 25
+  },
+  "required_checks": [
+    "valid_single_solid",
+    "display_vertical_gap",
+    "hardware_collision_and_clearance",
+    "usb_boundary_clearance",
+    "hardware_enclosure_collision",
+    "lid_seating_collision",
+    "mounting_bore_alignment",
+    "display_window_opening",
+    "usb_connector_sized_straight_path",
+    "export_artifact_integrity",
+    "source_stability",
+    "usb_plug_housing_fit",
+    "usb_plug_nose_mates_with_receptacle",
+    "usb_plug_insertion_path",
+    "oled_retention"
+  ],
+  "fail_on_warnings": false
+}

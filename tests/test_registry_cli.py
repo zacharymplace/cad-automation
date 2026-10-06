@@ -322,3 +322,30 @@ def test_verify_fit_rejects_unknown_product(
     assert result.returncode == 1
     assert "unknown board-display product identifier" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_design_inspect_reports_custom_display_and_source(tmp_path):
+    path = tmp_path / "custom.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1",
+                "product": "PICO2_OLED",
+                "display": {
+                    "identifier": "SYNTHETIC_MODULE",
+                    "module_width_mm": 30,
+                    "module_height_mm": 25,
+                    "module_depth_mm": 5,
+                    "active_width_mm": 22,
+                    "active_height_mm": 11,
+                    "geometry_source": "synthetic fixture",
+                },
+            }
+        )
+    )
+    result = run_cli("design", "inspect", str(path))
+    assert result.returncode == 0, result.stderr
+    assert "Display: SYNTHETIC_MODULE" in result.stdout
+    assert "Display module: 30 × 25 × 5 mm" in result.stdout
+    assert "Display geometry source: synthetic fixture" in result.stdout
+    assert "Display geometry evidence: reference" in result.stdout

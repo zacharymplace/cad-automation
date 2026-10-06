@@ -1,6 +1,7 @@
 """Explicit acceptance rules layered over validation evidence."""
 
 import json
+import math
 
 
 def load_policy(path=None, *, required_checks=(), fail_on_warnings=False):
@@ -14,18 +15,38 @@ def load_policy(path=None, *, required_checks=(), fail_on_warnings=False):
         expected = set(policy)
         if version == "1.1":
             expected.add("build_volume_orientation")
+        if version == "1.2":
+            expected.add("maximum_enclosure_envelope_mm")
+            if "build_volume_orientation" in value:
+                expected.add("build_volume_orientation")
         if set(value) != expected:
-            raise ValueError(
-                "Policy must contain schema_version, required_checks, "
-                "and fail_on_warnings only"
-            )
-        if version not in ("1.0", "1.1"):
+            raise ValueError("Policy fields do not match its schema_version")
+        if version not in ("1.0", "1.1", "1.2"):
             raise ValueError("Unsupported policy schema_version")
-        if version == "1.1" and value["build_volume_orientation"] not in (
-            "generated",
-            "xy_90",
-        ):
+        if "build_volume_orientation" in value and value[
+            "build_volume_orientation"
+        ] not in ("generated", "xy_90"):
             raise ValueError("Unsupported build_volume_orientation")
+        if version == "1.2":
+            envelope = value["maximum_enclosure_envelope_mm"]
+            if not isinstance(envelope, dict) or set(envelope) != {
+                "width",
+                "depth",
+                "height",
+            }:
+                raise ValueError(
+                    "maximum_enclosure_envelope_mm must define width, depth, and height"
+                )
+            if any(
+                isinstance(dimension, bool)
+                or not isinstance(dimension, (int, float))
+                or not math.isfinite(dimension)
+                or dimension <= 0
+                for dimension in envelope.values()
+            ):
+                raise ValueError(
+                    "maximum enclosure envelope dimensions must be finite and positive"
+                )
         if type(value["fail_on_warnings"]) is not bool:
             raise ValueError("fail_on_warnings must be a boolean")
         if not isinstance(value["required_checks"], list):
@@ -55,6 +76,21 @@ def evaluate_policy(report, policy):
             reasons.append("Build-volume evidence orientation differs from policy")
     if report["evaluated_status"] != "PASS":
         reasons.append("Evaluated validation checks did not pass")
+    envelope = policy.get("maximum_enclosure_envelope_mm")
+    if envelope is not None:
+        matches = [
+            check
+            for check in report["checks"]
+            if check["code"] == "maximum_enclosure_envelope"
+        ]
+        if not matches:
+            reasons.append("Required check is absent: maximum_enclosure_envelope")
+        for check in matches:
+            if check["status"] != "PASS":
+                reasons.append(
+                    "Maximum enclosure envelope exceeded: "
+                    f"{check.get('exceeded_dimensions', [])}"
+                )
     for code in policy["required_checks"]:
         matches = [c for c in report["checks"] if c["code"] == code]
         if not matches:

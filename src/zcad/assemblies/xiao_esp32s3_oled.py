@@ -62,5 +62,6 @@ def analyze_xiao_esp32s3_oled_assembly(
 
         raise ValueError(
             "XIAO ESP32-S3 OLED assembly must contain exactly "
-            "board, usb_connector, and display components"
+            "board, usb_connector, and display components, "
+            "plus the board's catalogued components"
         ) from error

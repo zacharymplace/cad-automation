@@ -9,6 +9,7 @@ from zcad_core.assemblies import (
     RectangularBoardSpec,
     RectangularDisplaySpec,
     analyze_board_display_assembly,
+    board_component_identifier,
     build_board_display_assembly,
 )
 
@@ -133,6 +134,21 @@ def analyze_board_display_product(
 ) -> InterferenceReport:
     """Analyze an assembly using its product definition."""
     product.validate()
+
+    expected = {
+        "board",
+        product.connector_identifier,
+        "display",
+        *(
+            board_component_identifier("board", part.identifier)
+            for part in getattr(product.board, "components", ())
+        ),
+    }
+    if set(assembly.identifiers) != expected:
+        raise ValueError(
+            "board-display assembly must contain exactly its board, connector, "
+            "display, and the board's catalogued components"
+        )
 
     return analyze_board_display_product_assembly(
         assembly,
