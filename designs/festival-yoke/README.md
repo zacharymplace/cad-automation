@@ -38,6 +38,9 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - The dock sits back-left, behind the shoulder: that is the cost of balancing the front-heavy cup and phone, and it is harder to reach than a side mount. Move it with `DOCK_ANGLE` and rerun `balance.py` to see the cost.
 - All masses are estimates: payload masses and fill factors are constants at the top of `balance.py`. Weigh your real parts.
 
+## Printing
+`PRINT_PLAN.md` (made by `print_plan.py`) is the staged plan: material check, then a small fit pack (two yoke quarters, one cover quarter, a clip coupon), then the bare collar, then each module under load, then electronics on a bench. It lists slicer starting points and per-part orientation, support area and time. The yoke quarters need supports under the whole slope; the plan starts them in rigid PETG as a proxy before TPU.
+
 ## Not done yet
 - More modules (phone, fan arm, ear-defender mount); translucent LED diffuser cover; module pocket is position-specific (right side, rail at 0.82), other spots need regenerating.
 - Dock and fan are concept-level: defender size varies a lot, and the fan has no power source (USB lead to a bank in a pocket for now).

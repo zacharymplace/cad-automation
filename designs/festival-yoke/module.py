@@ -164,6 +164,11 @@ def fan_module(angle: float = FAN_ANGLE) -> cq.Workplane:
     return mount(clip_local().union(bracket).union(frame), angle)
 
 
+def clip_coupon(angle: float = CUP_ANGLE) -> cq.Workplane:
+    """Just the clip (no arm, no cradle): a quick fit test for the rail pocket and screw holes."""
+    return mount(clip_local(), angle)
+
+
 def torso(grow: float = 0.0) -> cq.Workplane:
     """Mannequin torso below the collar (same numbers as view.py), for clash checks."""
     return cq.Workplane("XY").workplane(offset=-300).ellipse(build.AO + 10 + grow, build.BO - 5 + grow).extrude(300 - build.DROP - 3.5)
@@ -187,6 +192,7 @@ def main():
         made[name] = fn()
         cq.exporters.export(made[name], str(build.OUT / f"{name}.stl"))
         report(name, made[name])
+    cq.exporters.export(clip_coupon(), str(build.OUT / "module_clip_coupon.stl"))
     names = list(made)
     worst = 0.0
     for i, a in enumerate(names):
