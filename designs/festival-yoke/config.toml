@@ -1,0 +1,37 @@
+# All dimensions in mm. Measure the wearer, edit, rerun build.py.
+# Design rule: nothing rises above the wearer's shoulders, so nobody's view is blocked.
+[wearer]
+head_circumference = 570      # around brow, widest point (used for the mannequin and opening check)
+neck_opening_a = 95           # half-width of yoke opening (side to side); must clear head when put on
+neck_opening_b = 85           # half-depth of yoke opening (front to back)
+shoulder_half_width = 190     # yoke outer half-width, lands on the trapezius
+shoulder_half_depth = 130
+shoulder_drop = 40            # how far the outer edge falls below the neck edge (shoulder slope)
+
+[yoke]
+thickness = 2.0               # skin thickness, print in TPU
+front_gap = 70                # open front so it flexes on over the head
+slot_width = 16
+
+[rail]                        # T-rail for clip-on modules (cup, phone, fan arm), runs round the sides and back
+position = 0.82               # 0 = neck edge, 1 = outer edge
+stem_width = 3
+stem_height = 5
+cap_width = 6
+cap_height = 2
+
+[glow]                        # outer lip that holds an LED strip between it and the rail
+lip_height = 5
+lip_width = 1.6
+
+[joint]                       # dovetail tabs hold the four quarters together
+positions_side = [0.35, 0.65] # along the side seams, 0 = neck edge, 1 = outer edge (keep clear of the rail at 0.82)
+positions_back = [0.5]        # the back seam is short, so one tab
+root_width = 6
+tip_width = 10
+length = 12
+clearance = 0.25              # gap between tab and pocket; tune to your printer
+
+[print]
+bed = [220, 220, 250]
+density_g_cc = 1.25           # PETG/TPU ballpark

@@ -1,0 +1,61 @@
+<!doctype html><meta charset="utf-8"><title>festival-yoke v1</title>
+<style>
+html,body{margin:0;height:100%;background:#14141a;color:#e8e8ee;font:13px ui-monospace,Menlo,monospace;overflow:hidden}
+#ui{position:fixed;top:12px;left:12px;background:#1f1f29cc;padding:10px 14px;border-radius:6px;line-height:1.9}
+#ui b{display:block;margin-bottom:4px;letter-spacing:.08em}
+label{display:block;cursor:pointer}
+#hint{position:fixed;bottom:12px;left:12px;opacity:.6}
+</style>
+<div id="ui"><b>FESTIVAL YOKE v1</b>
+<label><input type="checkbox" id="man" checked> mannequin (avg adult)</label>
+<label><input type="checkbox" id="skin" checked> yoke skin (TPU)</label>
+<label><input type="checkbox" id="rail" checked> module rail</label>
+<label><input type="checkbox" id="lip" checked> LED lip</label>
+<label><input type="checkbox" id="module" checked> cup module</label>
+<label><input type="checkbox" id="explode"> show print split</label>
+<label><input type="checkbox" id="spin" checked> turntable</label></div>
+<div id="hint">drag to orbit · scroll to zoom · right-drag to pan</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/*DATA*/
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x14141a);
+const cam=new THREE.PerspectiveCamera(35,innerWidth/innerHeight,1,5000);
+cam.up.set(0,0,1);cam.position.set(560,-640,260);
+const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);r.setPixelRatio(devicePixelRatio);document.body.appendChild(r.domElement);
+const ctl=new THREE.OrbitControls(cam,r.domElement);ctl.target.set(0,0,90);ctl.update();
+scene.add(new THREE.HemisphereLight(0xffffff,0x303040,.9));
+const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(300,-400,600);scene.add(dl);
+const grid=new THREE.GridHelper(800,16,0x333344,0x25252f);grid.rotation.x=Math.PI/2;grid.position.z=-260;scene.add(grid);
+
+const groups={skin:new THREE.Group(),rail:new THREE.Group(),lip:new THREE.Group(),module:new THREE.Group(),man:new THREE.Group()};
+Object.values(groups).forEach(g=>scene.add(g));
+const base={skin:[0xff7a59,0xffa07a],rail:[0x4fd1c5,0x81e6d9],lip:[0xf6e05e,0xfaf089],module:[0xb794f4,0xd6bcfa]};
+let k=0;
+MESHES.forEach(m=>{
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(m.v,3));g.setIndex(m.i);g.computeVertexNormals();
+  const split=document.getElementById('explode');
+  const mesh=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:base[m.group][0],roughness:.55,metalness:.05,side:THREE.DoubleSide}));
+  mesh.userData={alt:base[m.group][1],main:base[m.group][0],k:k++};
+  groups[m.group].add(mesh);
+});
+// mannequin: head ellipsoid, neck, shoulder slope under the yoke, torso
+const mat=new THREE.MeshStandardMaterial({color:0x9aa0b4,roughness:.9,transparent:true,opacity:.55});
+const h=new THREE.Mesh(new THREE.SphereGeometry(1,40,28),mat);h.scale.set(...MAN.head.r);h.position.set(...MAN.head.c);groups.man.add(h);
+const n=new THREE.Mesh(new THREE.CylinderGeometry(MAN.neck_r,MAN.neck_r*1.1,140,32),mat);n.rotation.x=Math.PI/2;n.position.z=20;groups.man.add(n);
+const S=MAN.shoulder, off=3.5;
+const sh=new THREE.Mesh(new THREE.CylinderGeometry(.5,1,S.drop,48,1,true),mat);sh.rotation.x=Math.PI/2;sh.scale.set(S.a,1,S.b);sh.position.z=-S.drop/2-off;groups.man.add(sh);
+const cap=new THREE.Mesh(new THREE.CircleGeometry(.5,48),mat);cap.scale.set(S.a,S.b,1);cap.position.z=-off;groups.man.add(cap);
+const torso=new THREE.Mesh(new THREE.CylinderGeometry(1,.85,220,48),mat);torso.rotation.x=Math.PI/2;torso.scale.set(S.a-5,1,S.b);torso.position.z=-S.drop-off-110;groups.man.add(torso);
+
+for(const id of ['man','skin','rail','lip','module'])document.getElementById(id).onchange=e=>groups[id].visible=e.target.checked;
+document.getElementById('explode').onchange=e=>{
+  Object.entries(groups).forEach(([gk,g])=>{if(gk!=='man')g.children.forEach(m=>m.material.color.setHex(e.target.checked&&m.userData.k%2?m.userData.alt:m.userData.main));});
+};
+(function loop(){requestAnimationFrame(loop);
+  if(document.getElementById('spin').checked){const a=.004,x=cam.position.x-ctl.target.x,y=cam.position.y-ctl.target.y;
+    cam.position.x=ctl.target.x+x*Math.cos(a)-y*Math.sin(a);cam.position.y=ctl.target.y+x*Math.sin(a)+y*Math.cos(a);}
+  ctl.update();r.render(scene,cam);})();
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight)});
+</script>
