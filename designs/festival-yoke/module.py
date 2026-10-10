@@ -9,10 +9,11 @@ import build
 
 R = build.R
 CLEAR = 0.3          # gap round the rail inside the pocket
-LENGTH = 26          # along the rail
+LENGTH = 56          # clip length along the rail; longer clip = less prying under a full cup
 CUP_ID, WALL, RING_H = 80, 2.4, 40
 ANGLE = 55           # where on the rail (deg, 0 = right side, 90 = front)
 HANG = 110           # how far the cup floor hangs below the clip
+SCREW_Y = 18         # M3 retention screws sit this far either side of centre
 OPEN = 52            # width of the side opening in the cup ring
 
 
@@ -34,9 +35,10 @@ def cup_module() -> cq.Workplane:
     z_arm = cap_top + CLEAR + 2.2
 
     # local frame: x = outward normal, y = along the rail, origin on the rail line
-    base = cq.Workplane("XY").box(10, LENGTH, 7.5, centered=(True, True, False)).translate((0, 0, zb))
-    top = cq.Workplane("XY").box(22, LENGTH, 8, centered=(True, True, False)).translate((0, 0, z_arm))
-    arm = cq.Workplane("XY").box(30, LENGTH - 6, 8, centered=(False, True, False)).translate((0, 0, z_arm))
+    # outer wall is thick (x to +9) so M3 self-tapping screws can bite the rail stem
+    base = cq.Workplane("XY").box(14, LENGTH, 7.5, centered=(False, True, False)).translate((-5, 0, zb))
+    top = cq.Workplane("XY").box(22, 40, 8, centered=(True, True, False)).translate((0, 0, z_arm))
+    arm = cq.Workplane("XY").box(30, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
     xr = 28 + CUP_ID / 2 + WALL
     floor_z = z_arm + 8 - HANG
     post = cq.Workplane("XY").box(10, 14, z_arm + 8 - floor_z + 3, centered=(False, True, False)).translate((19, 0, floor_z - 3))
@@ -51,6 +53,9 @@ def cup_module() -> cq.Workplane:
     stem = build.ring(u, R["stem_width"] / 2 + CLEAR, R["stem_width"] / 2 + CLEAR, zb - 1, stem_top - zb + 1 - 0.3)
     cap = build.ring(u, R["cap_width"] / 2 + CLEAR, R["cap_width"] / 2 + CLEAR, stem_top - 0.3, R["cap_height"] + 2 * CLEAR)
     m = m.cut(stem).cut(cap)
+    for y in (-SCREW_Y, SCREW_Y):  # M3 pilot holes from the outer face into the stem channel
+        pilot = cq.Workplane("YZ").workplane(offset=-2).center(y, stem_top - 2).circle(1.3).extrude(14)
+        m = m.cut(pilot.rotate((0, 0, 0), (0, 0, 1), heading).translate((px, py, 0)))
     # the skin is steeper toward the front, so trim anything within 1 mm above it
     return m.cut(build.skin().translate((0, 0, 1.0)))
 
