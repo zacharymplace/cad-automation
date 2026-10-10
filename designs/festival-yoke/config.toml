@@ -1,12 +1,43 @@
 # All dimensions in mm. Measure the wearer, edit, rerun build.py.
 # Design rule: nothing rises above the wearer's shoulders, so nobody's view is blocked.
-[wearer]
-head_circumference = 570      # around brow, widest point (used for the mannequin and opening check)
-neck_opening_a = 95           # half-width of yoke opening (side to side); must clear head when put on
-neck_opening_b = 85           # half-depth of yoke opening (front to back)
-shoulder_half_width = 190     # yoke outer half-width, lands on the trapezius
-shoulder_half_depth = 130
-shoulder_drop = 40            # how far the outer edge falls below the neck edge (shoulder slope)
+# Sizing: pick a preset (S/M/L/XL) or "custom". All lengths in mm, see MEASURING.md.
+# Override per run with: FESTIVAL_YOKE_SIZE=L uv run --no-project --with cadquery build.py
+size = "M"
+
+[sizes.S]
+head_circumference = 540
+neck_circumference = 320
+shoulder_width = 350        # across the back, shoulder tip to shoulder tip
+shoulder_depth = 230        # front to back over the top of the shoulder
+shoulder_drop = 38          # neck-base to shoulder-tip height difference
+
+[sizes.M]
+head_circumference = 570
+neck_circumference = 350
+shoulder_width = 380
+shoulder_depth = 260
+shoulder_drop = 40
+
+[sizes.L]
+head_circumference = 590
+neck_circumference = 380
+shoulder_width = 410
+shoulder_depth = 280
+shoulder_drop = 42
+
+[sizes.XL]
+head_circumference = 610
+neck_circumference = 410
+shoulder_width = 440
+shoulder_depth = 300
+shoulder_drop = 45
+
+[custom]                    # used when size = "custom": your own measurements
+head_circumference = 570
+neck_circumference = 350
+shoulder_width = 380
+shoulder_depth = 260
+shoulder_drop = 40
 
 [yoke]
 thickness = 2.0               # skin thickness, print in TPU

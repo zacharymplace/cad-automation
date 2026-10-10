@@ -4,10 +4,13 @@ Parametric, printable shoulder yoke for festivals. Design rule: nothing rises ab
 
 ```
 uv run --no-project --with cadquery build.py     # out/*.stl + weight/bed report
-uv run --no-project --with cadquery view.py      # out/viewer.html (serve: python3 -m http.server -d out)
+uv run --no-project --with cadquery view.py      # out/viewer.html (serve: python3 -m http.server -d out, then open /M/viewer.html)
 ```
 
-Edit `config.toml` (measure the wearer), rerun.
+Pick a size in `config.toml` (`size = "M"`, or `custom`), or override per run with `FESTIVAL_YOKE_SIZE=L`. Measure the wearer first: see [MEASURING.md](MEASURING.md). Outputs go in `out/<size>/`; `build_all.py` builds S/M/L/XL and prints one comparison table.
+
+## Sizes
+S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`). All sizes pass the joint and cup-module clash checks. XL needs a ~235 mm bed; the others fit 220 mm. The fit report flags a loose or tight neck opening and a collar too narrow for the rail. It is geometry only, not tested on a body.
 
 ## v1
 - Sloped 2 mm TPU skin on the trapezius, open front to flex over the head, lightening slots. 4 quarters.

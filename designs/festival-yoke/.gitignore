@@ -1,2 +1,2 @@
-out/*.stl
+out/**/*.stl
 __pycache__/

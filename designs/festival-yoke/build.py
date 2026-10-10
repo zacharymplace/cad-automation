@@ -6,10 +6,13 @@ from pathlib import Path
 
 import cadquery as cq
 
+import sizing
+
 ROOT = Path(__file__).parent
-OUT = ROOT / "out"
 cfg = tomllib.loads((ROOT / "config.toml").read_text())
-W, Y, R, G, P, J = cfg["wearer"], cfg["yoke"], cfg["rail"], cfg["glow"], cfg["print"], cfg["joint"]
+SIZE, W = sizing.resolve(cfg)
+OUT = ROOT / "out" / SIZE
+Y, R, G, P, J = cfg["yoke"], cfg["rail"], cfg["glow"], cfg["print"], cfg["joint"]
 
 AI, BI = W["neck_opening_a"], W["neck_opening_b"]
 AO, BO = W["shoulder_half_width"], W["shoulder_half_depth"]
@@ -29,15 +32,16 @@ def ring(u: float, inner: float, outer: float, z0: float, h: float) -> cq.Workpl
     return big.cut(small)
 
 
+def cone(dz: float) -> cq.Workplane:
+    """Solid frustum under the collar surface, shifted down by dz."""
+    return (
+        cq.Workplane("XY").workplane(offset=dz).ellipse(AI, BI)
+        .workplane(offset=-DROP).ellipse(AO, BO).loft()
+    )
+
+
 def skin() -> cq.Workplane:
     t = Y["thickness"]
-
-    def cone(dz):
-        return (
-            cq.Workplane("XY").workplane(offset=dz).ellipse(AI, BI)
-            .workplane(offset=-DROP).ellipse(AO, BO).loft()
-        )
-
     s = cone(0).cut(cone(-t))
     k = (AO - AI) * t / DROP + 1
     s = s.cut(cq.Workplane("XY").workplane(offset=-DROP - 5).ellipse(AI + k, BI + k).extrude(DROP + 10))
@@ -123,10 +127,13 @@ def parts() -> dict[str, cq.Workplane]:
 
 
 def main():
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     y = yoke()
     q = parts()
     bed, total = P["bed"], 0.0
+    print(f"size {SIZE}")
+    for line in sizing.fit_report(W, Y["front_gap"]):
+        print("  " + line)
     print(f"{'part':<10}{'bbox mm (x y z)':<24}{'solid g':>9}  fits bed")
     for name, shp in q.items():
         bb = shp.val().BoundingBox()
@@ -142,7 +149,9 @@ def main():
     overlap = sum(q[a].intersect(q[b]).val().Volume() for a, b in (("fr", "br"), ("fl", "bl"), ("br", "bl")) if q[a].intersect(q[b]).vals())
     missing = y.val().Volume() - sum(s.val().Volume() for s in q.values())
     loose = [n for n, s in q.items() if len(s.solids().vals()) != 1]
-    print(f"\nTotal solid-plastic upper bound: {total:.0f} g (skin is thin, real print is lighter)")
+    need = max(max(s.val().BoundingBox().xlen, s.val().BoundingBox().ylen) for s in q.values())
+    print(f"\nSmallest square bed that fits every part: {need:.0f} mm (configured {min(bed[:2])} mm)")
+    print(f"Total solid-plastic upper bound: {total:.0f} g (skin is thin, real print is lighter)")
     print(f"Joint check: part-to-part overlap {overlap:.2f} mm3 (want 0), clearance gaps {missing:.0f} mm3, loose crumbs: {loose or "none"}")
     print(f"Highest point: {y.val().BoundingBox().zmax:.1f} mm vs neck edge. Nothing above the shoulders.")
 

@@ -56,8 +56,8 @@ def cup_module() -> cq.Workplane:
     for y in (-SCREW_Y, SCREW_Y):  # M3 pilot holes from the outer face into the stem channel
         pilot = cq.Workplane("YZ").workplane(offset=-2).center(y, stem_top - 2).circle(1.3).extrude(14)
         m = m.cut(pilot.rotate((0, 0, 0), (0, 0, 1), heading).translate((px, py, 0)))
-    # the skin is steeper toward the front, so trim anything within 1 mm above it
-    return m.cut(build.skin().translate((0, 0, 1.0)))
+    # the skin is steeper toward the front, so trim everything within 0.3 mm of the collar surface
+    return m.cut(build.cone(0).translate((0, 0, 0.3)))
 
 
 def torso() -> cq.Workplane:

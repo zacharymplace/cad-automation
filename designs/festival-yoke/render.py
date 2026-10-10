@@ -11,6 +11,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 import build
 import module
+import sizing
 
 COLORS = {"skin": "#ff7a59", "rail": "#2bb5a6", "lip": "#f2c230", "module": "#b794f4"}
 LIGHT = np.array([0.4, -0.5, 0.8]); LIGHT /= np.linalg.norm(LIGHT)
@@ -30,14 +31,16 @@ def shade(tris, color, alpha=1.0):
 
 
 def mannequin(ax):
+    hp, hq = sizing.head_axes(build.W["head_circumference"])
+    neck_r = build.W["neck_circumference"] / (2 * np.pi)
     u, v = np.mgrid[0:2 * np.pi:40j, 0:np.pi:24j]
-    ax.plot_surface(77 * np.cos(u) * np.sin(v), 6 + 98 * np.sin(u) * np.sin(v), 190 + 115 * np.cos(v), color="#9aa0b4", alpha=0.35, linewidth=0)
+    ax.plot_surface(hp * np.cos(u) * np.sin(v), 6 + hq * np.sin(u) * np.sin(v), 190 + 115 * hq / 98 * np.cos(v), color="#9aa0b4", alpha=0.35, linewidth=0)
     z = np.linspace(-60, 90, 2); th = np.linspace(0, 2 * np.pi, 40)
     T, Z = np.meshgrid(th, z)
-    ax.plot_surface(55 * np.cos(T), 55 * np.sin(T), Z, color="#9aa0b4", alpha=0.35, linewidth=0)
+    ax.plot_surface(neck_r * np.cos(T), neck_r * np.sin(T), Z, color="#9aa0b4", alpha=0.35, linewidth=0)
     th = np.linspace(0, 2 * np.pi, 60); z = np.linspace(-45, -200, 2)
     T, Z = np.meshgrid(th, z)
-    ax.plot_surface(185 * np.cos(T), 120 * np.sin(T), Z, color="#9aa0b4", alpha=0.3, linewidth=0)
+    ax.plot_surface((build.AO - 5) * np.cos(T), (build.BO - 10) * np.sin(T), Z, color="#9aa0b4", alpha=0.3, linewidth=0)
 
 
 fig = plt.figure(figsize=(16, 6.2), facecolor="#14141a")
@@ -53,8 +56,8 @@ for i, (title, el, az) in enumerate(views):
     ax.set_xlim(-200, 200); ax.set_ylim(-200, 200); ax.set_zlim(-60, 340)
     ax.set_box_aspect((1, 1, 1)); ax.view_init(el, az); ax.set_axis_off()
     ax.set_title(title, color="#e8e8ee", fontsize=11, family="monospace")
-fig.suptitle("festival-yoke v1  |  orange skin (TPU)  teal module rail  yellow LED lip  purple cup module  |  nothing above the shoulders", color="#e8e8ee", fontsize=11, family="monospace")
-fig.savefig(Path(__file__).parent / "out/preview.png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")
+fig.suptitle("festival-yoke v1 size " + build.SIZE + "  |  orange skin (TPU)  teal module rail  yellow LED lip  purple cup module  |  nothing above the shoulders", color="#e8e8ee", fontsize=11, family="monospace")
+fig.savefig(build.OUT / "preview.png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")
 
 # print split, pulled apart so the dovetail joints show
 fig = plt.figure(figsize=(14, 6.2), facecolor="#14141a")
@@ -68,5 +71,5 @@ for i, (title, el, az) in enumerate([("top, pulled apart", 90, -90), ("3/4, pull
     ax.set_xlim(-220, 220); ax.set_ylim(-220, 220); ax.set_zlim(-120, 120)
     ax.set_box_aspect((1, 1, 0.5)); ax.view_init(el, az); ax.set_axis_off()
     ax.set_title(title, color="#e8e8ee", fontsize=11, family="monospace")
-fig.suptitle("festival-yoke v1  |  four print parts, dovetail tabs and pockets (0.25 mm clearance)", color="#e8e8ee", fontsize=11, family="monospace")
-fig.savefig(Path(__file__).parent / "out/parts.png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")
+fig.suptitle("festival-yoke v1 size " + build.SIZE + "  |  four print parts, dovetail tabs and pockets (0.25 mm clearance)", color="#e8e8ee", fontsize=11, family="monospace")
+fig.savefig(build.OUT / "parts.png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")

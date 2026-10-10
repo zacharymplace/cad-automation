@@ -7,8 +7,10 @@ import cadquery as cq
 
 import build
 import module
+import sizing
 
-OUT = Path(__file__).parent / "out"
+OUT = build.OUT
+OUT.mkdir(parents=True, exist_ok=True)
 W = build.W
 
 meshes = []
@@ -30,9 +32,10 @@ verts, tris = module.cup_module().val().tessellate(0.5)
 meshes.append({"name": "cup_module", "group": "module",
                "v": [round(c, 2) for p in verts for c in (p.x, p.y, p.z)], "i": [i for t in tris for i in t]})
 
+HP, HQ = sizing.head_axes(W["head_circumference"])
 mannequin = {  # average adult, mm, neck base (C7) at z=0, front is +y
-    "head": {"c": [0, 6, 190], "r": [77, 98, 115]},
-    "neck_r": 55,
+    "head": {"c": [0, 6, 190], "r": [HP, HQ, 115 * HQ / 98]},
+    "neck_r": W["neck_circumference"] / 6.283,
     "shoulder": {"a": W["shoulder_half_width"] + 15, "b": W["shoulder_half_depth"] - 5, "drop": W["shoulder_drop"]},
 }
 cfg = {"neck_a": W["neck_opening_a"], "neck_b": W["neck_opening_b"], "head_circ": W["head_circumference"]}
