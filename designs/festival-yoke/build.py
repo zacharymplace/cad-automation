@@ -103,6 +103,19 @@ def lip(groove: bool = True) -> cq.Workplane:
     return body.cut(ring(LIP_U, 0.5 - w / 2, w / 2 + 0.1, snap_z(), SNAP_HEIGHT))  # groove the diffuser bead snaps into
 
 
+def led_channel() -> float:
+    """Narrowest width between the rail cap and the lip, mm."""
+    a0, b0, _ = surface(R["position"])
+    al, bl, _ = surface(LIP_U)
+    w = G["lip_width"]
+    return min((al - w / 2) - (a0 + R["cap_width"] / 2), (bl - w / 2) - (b0 + R["cap_width"] / 2))
+
+
+def strip_width() -> float:
+    """Widest whole-mm LED strip (max 8) that lies in the channel with 0.5 mm to spare."""
+    return min(8.0, math.floor(led_channel() - 0.5))
+
+
 def pads() -> cq.Workplane:
     """Skin-conforming seats under the collar for stick-on foam."""
     t = Y["thickness"]
@@ -252,10 +265,9 @@ def main():
     print(f"\nSmallest square bed that fits every part: {need:.0f} mm (configured {min(bed[:2])} mm)")
     print(f"Total solid-plastic upper bound: {total:.0f} g (skin is thin, real print is lighter)")
     print(f"Joint check: part-to-part overlap {overlap:.2f} mm3 (want 0), clearance gaps {missing:.0f} mm3, loose crumbs: {loose or "none"}")
-    a0, b0, _ = surface(R["position"])
-    al, bl, _ = surface(LIP_U)
-    channel = min((al - G["lip_width"] / 2) - (a0 + R["cap_width"] / 2), (bl - G["lip_width"] / 2) - (b0 + R["cap_width"] / 2))
-    print(f"LED channel between rail and lip: {channel:.1f} mm wide at its narrowest (fits an 8 mm strip: {'yes' if channel >= 8 else 'NO'})")
+    channel = led_channel()
+    print(f"LED channel between rail and lip: {channel:.1f} mm wide at its narrowest, takes a strip up to {strip_width():.0f} mm wide"
+          + ("" if strip_width() >= 8 else "  <- narrower than the usual 8 mm strip: buy a thinner one"))
     plain = lip(groove=False).cut(gap()).intersect(dif)
     flex = sum(s.Volume() for s in plain.solids().vals()) if plain.vals() else 0.0
     print(f"Snap: bead overlaps a groove-less lip by {flex:.0f} mm3 (that is what flexes on install); {SNAP_DEPTH} mm deep groove locks it; install by pressing down")

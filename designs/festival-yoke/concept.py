@@ -8,10 +8,11 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 import build
 import module
+import power
 from viz import COLORS, mannequin, shade, tris_of
 
 comps = build.components()
-extras = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "diffuser": build.diffuser()}
+extras = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "pod": power.pod_module(), "lid": power.pod_lid(), "strip": power.strip(), "diffuser": power.fitted_diffuser()}
 
 
 PENDING = {}
@@ -43,10 +44,11 @@ ax = fig.add_subplot(2, 2, 1, projection="3d", facecolor="#14141a")
 mannequin(ax)
 for k in ("skin", "rail", "lip"):
     add(ax, comps[k], COLORS[k])
-for k in ("cup", "phone", "dock", "fan"):
+for k in ("cup", "phone", "dock", "fan", "pod", "lid"):
     add(ax, extras[k], COLORS["module"])
-add(ax, extras["diffuser"], COLORS["diffuser"], 0.55)
-frame(ax, (0, 0, 80), 230, 22, 78, "everything on: cup, phone, ear dock (right), fan (left), LED cover")
+add(ax, extras["strip"], COLORS["strip"])
+add(ax, extras["diffuser"], COLORS["diffuser"], 0.5)
+frame(ax, (0, 0, 80), 230, 22, 78, "everything on: modules, LED strip + cover, pod at the back")
 
 ax = fig.add_subplot(2, 2, 2, projection="3d", facecolor="#14141a")
 for k in ("rail", "lip", "skin", "pad"):  # far side first: painter's algorithm, viewed from below
@@ -92,3 +94,25 @@ flush()
 fig.suptitle(f"festival-yoke modules, size {build.SIZE}", color="#e8e8ee", fontsize=13, family="monospace")
 fig.savefig(build.OUT / "concept_modules.png", dpi=105, facecolor=fig.get_facecolor(), bbox_inches="tight")
 print("wrote", build.OUT / "concept_modules.png")
+
+
+# third sheet: the power pod and the LED strip from behind
+fig = plt.figure(figsize=(15, 6.5), facecolor="#14141a")
+px, py, zs, h = module.pose(power.POD_ANGLE)
+for i, (title, el, az, span, show_cover) in enumerate([
+    ("power pod at the back, balances the cup and phone", 24, -105, 130, True),
+    ("LED strip in the channel (cover removed), fed from the pod in two halves", 55, -100, 215, False),
+]):
+    ax = fig.add_subplot(1, 2, i + 1, projection="3d", facecolor="#14141a")
+    mannequin(ax)
+    for k in ("skin", "rail", "lip"):
+        add(ax, comps[k], COLORS[k])
+    add(ax, extras["strip"], COLORS["strip"])
+    add(ax, extras["pod"], COLORS["module"]); add(ax, extras["lid"], "#d6bcfa")
+    if show_cover:
+        add(ax, extras["diffuser"], COLORS["diffuser"], 0.5)
+    frame(ax, (px * 0.3, py * 0.5, -20) if i else (px, py, zs + 10), span, el, az, title)
+flush()
+fig.suptitle(f"festival-yoke power, size {build.SIZE}", color="#e8e8ee", fontsize=13, family="monospace")
+fig.savefig(build.OUT / "concept_power.png", dpi=105, facecolor=fig.get_facecolor(), bbox_inches="tight")
+print("wrote", build.OUT / "concept_power.png")

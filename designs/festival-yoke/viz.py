@@ -12,7 +12,7 @@ import build
 import module
 import sizing
 
-COLORS = {"skin": "#ff7a59", "rail": "#2bb5a6", "lip": "#f2c230", "pad": "#4c8dff", "module": "#b794f4", "diffuser": "#fff2a8"}
+COLORS = {"skin": "#ff7a59", "rail": "#2bb5a6", "lip": "#f2c230", "pad": "#4c8dff", "module": "#b794f4", "diffuser": "#fff2a8", "strip": "#7ef0ff"}
 LIGHT = np.array([0.4, -0.5, 0.8]); LIGHT /= np.linalg.norm(LIGHT)
 
 

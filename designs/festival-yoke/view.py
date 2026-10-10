@@ -7,6 +7,7 @@ import cadquery as cq
 
 import build
 import module
+import power
 import sizing
 
 OUT = build.OUT
@@ -28,9 +29,9 @@ for q, shp in build.parts().items():
             "i": [i for t in tris for i in t],
         })
 
-for name, shp in (("cup_module", module.cup_module()), ("phone_module", module.phone_module()), ("dock_module", module.dock_module()), ("fan_module", module.fan_module()), ("diffuser", build.diffuser())):
+for name, shp in (("cup_module", module.cup_module()), ("phone_module", module.phone_module()), ("dock_module", module.dock_module()), ("fan_module", module.fan_module()), ("pod_module", power.pod_module()), ("pod_lid", power.pod_lid()), ("strip", power.strip()), ("diffuser", power.fitted_diffuser())):
     verts, tris = shp.val().tessellate(1.5, 0.5)
-    meshes.append({"name": name, "group": "diffuser" if name == "diffuser" else "module",
+    meshes.append({"name": name, "group": name if name in ("diffuser", "strip") else "module",
                    "v": [round(c, 2) for p in verts for c in (p.x, p.y, p.z)], "i": [i for t in tris for i in t]})
 
 HP, HQ = sizing.head_axes(W["head_circumference"])

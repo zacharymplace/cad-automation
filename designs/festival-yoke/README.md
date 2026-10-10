@@ -4,7 +4,7 @@ Parametric, printable shoulder yoke for festivals. Design rule: nothing rises ab
 
 ```
 uv run --no-project --with cadquery build.py     # out/*.stl + weight/bed report
-uv run --no-project --with cadquery view.py      # out/viewer.html (serve: python3 -m http.server -d out, then open /M/viewer.html); `concept.py` makes the four-panel concept sheet `out/M/concept.png`
+uv run --no-project --with cadquery view.py      # out/viewer.html (serve: python3 -m http.server -d out, then open /M/viewer.html); `concept.py` makes the concept sheets `out/M/concept*.png`
 ```
 
 Pick a size in `config.toml` (`size = "M"`, or `custom`), or override per run with `FESTIVAL_YOKE_SIZE=L`. Measure the wearer first: see [MEASURING.md](MEASURING.md). Outputs go in `out/<size>/`; `build_all.py` builds S/M/L/XL and prints one comparison table.
@@ -22,6 +22,13 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - Dovetail tabs and pockets (0.25 mm clearance) join the four quarters: two per side seam, one on the back. `build.py` checks for overlap and loose crumbs.
 
 - `module.py`: four clip-on modules on the same 56 mm clip with two M3 retention screws, built at fixed rail angles: cup cradle front-right (77 g), phone cradle front-left (84 g), ear-defender dock on the right side (65 g), fan on the left side (55 g). The dock is a bowl that parks one ear cup on the shoulder, with strap slots and a tether eyelet; set `DOCK_CUP` to your defenders. The fan frame holds an 80 mm 5 V fan aimed up and inward at the face; its top is 89 mm above the neck edge, about jaw height. All are checked clear of the yoke, the mannequin torso and each other.
+
+## Power and light (`power.py`)
+- **Power pod** at the back of the collar (32 g empty, balances the cup and phone at the front): holds a 60 x 40 x 10 mm protected pouch cell (about 4000 mAh) and a 32 x 22 x 6 mm USB-C charge/boost board. Lid on four M2 self-tapping screws, vented. USB-C, switch and charge-LED openings in one end wall; two lead slots in the floor drop onto the LED channel, one per strip half.
+- **LED strip:** two halves from the pod round to the front gap, 850 mm in all on size M, 8 mm wide (5 mm on size S, whose channel is only 6.4 mm). `power.py` prints the estimated draw and runtime: about 1.3 h at full white and 3.6 h dimmed on M. Those assume a 10 W/m strip and a 1.5 W fan: check your parts.
+- **Fitted diffuser:** the cover is cut away where each module's clip sits (the plain cover collided with all of them: found and fixed here). Print `diffuser_fitted_*.stl`, not `diffuser_*.stl`.
+- `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
+- Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
 ## Not done yet
 - More modules (phone, fan arm, ear-defender mount); translucent LED diffuser cover; module pocket is position-specific (right side, rail at 0.82), other spots need regenerating.
