@@ -9,7 +9,7 @@ import cadquery as cq
 import build
 import module
 
-POD_ANGLE = 270
+POD_ANGLE = 300
 BATT = (60, 40, 10)      # pouch cell length (along the rail), width, thickness; ~4000 mAh 3.7 V, protected. Measure yours.
 BOARD = (32, 22, 6)      # USB-C charge + 5 V boost board with protection
 WALL = 2.4

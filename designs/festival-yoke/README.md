@@ -30,6 +30,14 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Weight and balance (`balance.py`)
+- Printed parts come to about 320 g on size M (thin skin printed near solid, modules at ~20% infill); what you carry on it is about 955 g with a full cup, a phone, one ear defender, the cell and board, the fan and the strip. The collar is the minor part of the load, so the biggest levers are the payload and the layout.
+- The first layout (cup 55, phone 125, dock 0, fan 180, pod 270 deg) put the loaded centre of mass 90 mm off-centre (1.13 N*m of tipping torque). `balance.py` searches the module angles and the current layout (cup 40, phone 140, dock 225, fan 345, pod 300) brings it to 19 mm full and 30 mm with a light load (0.24 N*m), with the clips still 38+ deg apart. The cup post now also stands out far enough to clear the lip and the body at every size.
+- Shoulder pressure on the foam seats is about 4.5 kPa when full, under typical backpack-strap pressure.
+- Cutting the cup from 360 g to 250 g pulls the full-load offset to about 14 mm. Skipping the ear defender removes 250 g of payload and its 32 g dock.
+- The dock sits back-left, behind the shoulder: that is the cost of balancing the front-heavy cup and phone, and it is harder to reach than a side mount. Move it with `DOCK_ANGLE` and rerun `balance.py` to see the cost.
+- All masses are estimates: payload masses and fill factors are constants at the top of `balance.py`. Weigh your real parts.
+
 ## Not done yet
 - More modules (phone, fan arm, ear-defender mount); translucent LED diffuser cover; module pocket is position-specific (right side, rail at 0.82), other spots need regenerating.
 - Dock and fan are concept-level: defender size varies a lot, and the fan has no power source (USB lead to a bank in a pocket for now).

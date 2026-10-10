@@ -13,24 +13,24 @@ SCREW_Y = 18         # M3 retention screws sit this far either side of centre
 
 # cup cradle
 CUP_ID, WALL, RING_H = 80, 2.4, 40
-CUP_ANGLE = 55       # deg on the rail, 0 = right side, 90 = front
+CUP_ANGLE = 40       # deg on the rail, 0 = right side, 90 = front (see balance.py for why these angles)
 CUP_HANG = 110       # how far the cup floor hangs below the clip
 CUP_OPEN = 52        # width of the side opening in the cup ring
 
 # phone cradle (snap-in from the wearer side, open back window for the camera)
-PHONE_ANGLE = 125
+PHONE_ANGLE = 140
 PHONE_W, PHONE_H, PHONE_T = 84, 165, 14     # phone in its case
 PHONE_TILT = 8       # deg, top leans outward so the screen faces up toward the eyes
 PHONE_GAP = 38       # distance from the rail line to the cradle's lowest inner edge
 
 
 # ear-defender dock: a bowl that parks one ear cup on the shoulder, with strap slots and a tether eyelet
-DOCK_ANGLE = 0
+DOCK_ANGLE = 225        # back-left, behind the shoulder: keeps the front-heavy cup and phone balanced
 DOCK_CUP = (100, 85)    # ear cup outline, long x short, mm (parametric: measure your defenders)
 DOCK_DEPTH = 28
 
 # fan: square frame for a 5 V fan, aimed up and inward at the face from shoulder level
-FAN_ANGLE = 180
+FAN_ANGLE = 345         # right side, slightly back: aims across the cheek and ear
 FAN_SIZE, FAN_T, FAN_WALL = 80, 25, 2.7     # fan outline and thickness
 FAN_ELEV = 40                               # deg above horizontal, aimed toward the wearer's face
 FAN_X = 32                                  # fan centre, outward from the rail line (puts its lowest edge over the clip)
@@ -41,6 +41,24 @@ def pose(angle: float):
     a, b, zs = build.surface(R["position"])
     t = math.radians(angle)
     return a * math.cos(t), b * math.sin(t), zs, math.degrees(math.atan2(a * math.sin(t), b * math.cos(t)))
+
+
+def edge_gap(angle: float) -> float:
+    """Distance from the rail, along the outward normal, to the outside of the lip and the diffuser hook."""
+    px, py, _, h = pose(angle)
+    al, bl, _ = build.surface(build.LIP_U)
+    reach = build.G["lip_width"] / 2 + 1.5 + 1.0          # hook thickness plus a little
+    ae, be = al + reach, bl + reach
+    c, s = math.cos(math.radians(h)), math.sin(math.radians(h))
+    A = (c / ae) ** 2 + (s / be) ** 2
+    B = 2 * (px * c / ae ** 2 + py * s / be ** 2)
+    C = (px / ae) ** 2 + (py / be) ** 2 - 1
+    return (-B + math.sqrt(B * B - 4 * A * C)) / (2 * A)
+
+
+def cup_shift(angle: float) -> float:
+    """How far the cup post and ring stand out: outside the lip and hook, and at least 8 mm further than the bare minimum."""
+    return max(8.0, edge_gap(angle) + 4 - 27)
 
 
 def z_levels():
@@ -75,10 +93,11 @@ def mount(local: cq.Workplane, angle: float) -> cq.Workplane:
 
 def cup_module(angle: float = CUP_ANGLE) -> cq.Workplane:
     _, _, _, _, z_arm = z_levels()
-    arm = cq.Workplane("XY").box(38, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
-    xr = 36 + CUP_ID / 2 + WALL
+    shift = cup_shift(angle)
+    arm = cq.Workplane("XY").box(38 + shift, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
+    xr = 36 + shift + CUP_ID / 2 + WALL
     floor_z = z_arm + 8 - CUP_HANG
-    post = cq.Workplane("XY").box(10, 14, z_arm + 8 - floor_z + 3, centered=(False, True, False)).translate((27, 0, floor_z - 3))
+    post = cq.Workplane("XY").box(10, 14, z_arm + 8 - floor_z + 3, centered=(False, True, False)).translate((27 + shift, 0, floor_z - 3))
     ring = cq.Workplane("XY").workplane(offset=floor_z - 3).center(xr, 0).circle(CUP_ID / 2 + WALL).extrude(RING_H)
     ring = ring.cut(cq.Workplane("XY").workplane(offset=floor_z).center(xr, 0).circle(CUP_ID / 2).extrude(RING_H))
     ring = ring.cut(cq.Workplane("XY").workplane(offset=floor_z - 4).center(xr, 0).circle(CUP_ID / 2 - 14).extrude(6))  # open floor
