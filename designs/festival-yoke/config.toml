@@ -46,13 +46,14 @@ slot_width = 16
 round = 0.6                   # edge rounding radius on the skin (it sits next to other people's faces)
 
 [rail]                        # T-rail for clip-on modules (cup, phone, fan arm), runs round the sides and back
-position = 0.70               # 0 = neck edge, 1 = outer edge; leaves >= 9 mm LED channel even at the front
+position = 0.65               # 0 = neck edge, 1 = outer edge
 stem_width = 3
 stem_height = 5
 cap_width = 6
 cap_height = 2
 
 [glow]                        # outer lip that holds an LED strip between it and the rail
+position = 0.95               # stands on the skin (not on its feather edge) so it is properly anchored
 lip_height = 5
 lip_width = 1.6
 
@@ -70,7 +71,7 @@ hook = 4.5                    # height of the outer hook that grips the lip
 
 [joint]                       # dovetail tabs hold the four quarters together
 positions_side = [0.3, 0.5]   # along the side seams, 0 = neck edge, 1 = outer edge (keep clear of the rail)
-positions_back = [0.45]        # the back seam is short, so one tab
+positions_back = [0.4]        # the back seam is short, so one tab
 root_width = 6
 tip_width = 10
 length = 12

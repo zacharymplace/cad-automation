@@ -18,7 +18,7 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - Outer lip forming an LED-strip channel between lip and rail.
 - Edge rounding (0.6 mm, auto-reduced if the CAD kernel struggles) on the neck and shoulder edges.
 - Four skin-conforming foam seats on the underside (blue in the concept sheet), between the slots and clear of the seams.
-- LED diffuser cover: thin curved cover over the LED channel (8.8 mm wide at its narrowest, fits an 8 mm strip), outer hook grips the lip. 4 quarters, ~35 g. Friction fit, not a snap: untested.
+- LED diffuser cover: thin curved cover over the LED channel (9.6 mm wide at its narrowest, fits an 8 mm strip), ~40 g in 4 quarters. A hook on its outer edge grips the lip and a two-step bead snaps into a 0.5 mm groove in the lip (press down to fit). The lip now stands on the skin, not on its feather edge. Snap force and TPU/PETG flex are untested: `snap_section.py` draws the cross-section.
 - Dovetail tabs and pockets (0.25 mm clearance) join the four quarters: two per side seam, one on the back. `build.py` checks for overlap and loose crumbs.
 
 - `module.py`: two clip-on modules on the same 56 mm clip with two M3 retention screws. Cup cradle at front-right (ring at upper-chest height, side opening so the cup slides out toward the hand, 77 g). Phone cradle at front-left (snaps in from the wearer side, open back window, 8 deg tilt so the screen tilts up, 84 g). Both checked clear of the yoke and the mannequin torso.

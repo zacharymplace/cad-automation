@@ -60,12 +60,12 @@ def _skin(r: float) -> cq.Workplane:
     if r:
         s = s.edges().fillet(r)  # round the neck and shoulder edges before anything else is cut into it
     # lightening slots, skipping the front gap (60-120 deg)
-    length = (AO - AI) * 0.38
+    length = (AO - AI) * 0.30
     for deg in range(15, 360, 30):  # offset so no slot sits on a seam
         if 60 <= deg <= 120:
             continue
         th = math.radians(deg)
-        a, b, _ = surface(0.45)
+        a, b, _ = surface(0.42)
         slot = (
             cq.Workplane("XY").workplane(offset=-DROP - 5).center(math.cos(th) * a, math.sin(th) * b)
             .slot2D(length, Y["slot_width"], deg).extrude(DROP + 10)
@@ -82,12 +82,25 @@ def rail() -> cq.Workplane:
     return stem.union(cap)
 
 
-LIP_SETBACK = 0.6
+SNAP_DEPTH, SNAP_HEIGHT, SNAP_DROP = 0.5, 1.4, 1.2   # groove in the lip's outer face: depth, height, distance below the lip top
+LIP_U = G["position"]
 
 
-def lip() -> cq.Workplane:
+def lip_top() -> float:
+    return surface(LIP_U)[2] + G["lip_height"]
+
+
+def snap_z() -> float:
+    """Bottom of the snap groove."""
+    return lip_top() - SNAP_DROP - SNAP_HEIGHT
+
+
+def lip(groove: bool = True) -> cq.Workplane:
     w = G["lip_width"]
-    return ring(1.0, w + LIP_SETBACK, -LIP_SETBACK, -DROP - 1, G["lip_height"] + 1)  # set back from the rim so it never shares a surface with the rounded edge
+    body = ring(LIP_U, w / 2, w / 2, surface(LIP_U)[2] - 1.5, G["lip_height"] + 1.5)  # sunk 1.5 mm into the skin, standing on it
+    if not groove:
+        return body
+    return body.cut(ring(LIP_U, 0.5 - w / 2, w / 2 + 0.1, snap_z(), SNAP_HEIGHT))  # groove the diffuser bead snaps into
 
 
 def pads() -> cq.Workplane:
@@ -111,14 +124,16 @@ def pads() -> cq.Workplane:
 
 
 def diffuser() -> cq.Workplane:
-    """Thin cover over the LED channel between rail and lip. Outer hook grips the lip."""
+    """Thin cover over the LED channel between rail and lip. A hook on the outer edge grips the lip and a bead on it
+    snaps into the groove in the lip."""
     t, gp = D["thickness"], D["gap"]
     a0, b0, zs = surface(R["position"])
+    al, bl, _ = surface(LIP_U)
+    w = G["lip_width"]
     rail_top = zs + R["stem_height"] + R["cap_height"]
-    lip_top = -DROP + G["lip_height"]
-    zA, zB = rail_top + gp + t, lip_top + gp + t
+    zA, zB = rail_top + gp + t, lip_top() + gp + t
     aA, bA = a0 + R["cap_width"] / 2, b0 + R["cap_width"] / 2
-    aB, bB = AO + 1.4, BO + 1.4
+    aB, bB = al + w / 2 + 1.5, bl + w / 2 + 1.5
     dz = zA - zB
     ka, kb = (aB - aA) * t / dz + 0.5, (bB - bA) * t / dz + 0.5
 
@@ -130,10 +145,15 @@ def diffuser() -> cq.Workplane:
 
     band = frustum(0).cut(frustum(-t))
     band = band.cut(cq.Workplane("XY").workplane(offset=zB - 5).ellipse(aA, bA).extrude(dz + 10))
-    hook = ring(1.0, LIP_SETBACK - 0.1, 1.4, zB - t - D["hook"], D["hook"] + t)
+    face = w / 2 + 0.1                                     # hook's inner face stands 0.1 mm off the lip's outer face
+    hook = ring(LIP_U, -face, w / 2 + 1.5, zB - t - D["hook"], D["hook"] + t)
     # small flange on the inner edge locates the cover against the rail cap
     flange = ring(R["position"], -(R["cap_width"] / 2 + 0.2), R["cap_width"] / 2 + 1.4, zA - t - 2.5, 2.5 + t)
-    return band.union(hook).union(flange).cut(gap())
+    # two-step bead on the hook's inner face: narrow lead-in below, full step above with a flat top that locks in the groove
+    z0 = snap_z() + 0.1
+    lead = ring(LIP_U, -face + 0.25, face + 0.2, z0, 0.5)
+    step = ring(LIP_U, -face + 0.45, face + 0.2, z0 + 0.5, 0.7)
+    return band.union(hook).union(flange).union(lead).union(step).cut(gap())
 
 
 def gap() -> cq.Workplane:
@@ -233,8 +253,12 @@ def main():
     print(f"Total solid-plastic upper bound: {total:.0f} g (skin is thin, real print is lighter)")
     print(f"Joint check: part-to-part overlap {overlap:.2f} mm3 (want 0), clearance gaps {missing:.0f} mm3, loose crumbs: {loose or "none"}")
     a0, b0, _ = surface(R["position"])
-    channel = min((AO - G["lip_width"]) - (a0 + R["cap_width"] / 2), (BO - G["lip_width"]) - (b0 + R["cap_width"] / 2))
+    al, bl, _ = surface(LIP_U)
+    channel = min((al - G["lip_width"] / 2) - (a0 + R["cap_width"] / 2), (bl - G["lip_width"] / 2) - (b0 + R["cap_width"] / 2))
     print(f"LED channel between rail and lip: {channel:.1f} mm wide at its narrowest (fits an 8 mm strip: {'yes' if channel >= 8 else 'NO'})")
+    plain = lip(groove=False).cut(gap()).intersect(dif)
+    flex = sum(s.Volume() for s in plain.solids().vals()) if plain.vals() else 0.0
+    print(f"Snap: bead overlaps a groove-less lip by {flex:.0f} mm3 (that is what flexes on install); {SNAP_DEPTH} mm deep groove locks it; install by pressing down")
     print(f"Diffuser: {dtotal:.0f} g of the total, overlap with yoke {touch_mm3:.2f} mm3 (want 0)")
     print(f"Highest point: {y.val().BoundingBox().zmax:.1f} mm vs neck edge. Nothing above the shoulders.")
 
