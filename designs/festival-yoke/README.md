@@ -38,6 +38,23 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - The dock sits back-left, behind the shoulder: that is the cost of balancing the front-heavy cup and phone, and it is harder to reach than a side mount. Move it with `DOCK_ANGLE` and rerun `balance.py` to see the cost.
 - All masses are estimates: payload masses and fill factors are constants at the top of `balance.py`. Weigh your real parts.
 
+## Kits and extra modules
+Pick a kit with `kit = "full"` in `config.toml` or `FESTIVAL_YOKE_KIT=glow`. Module angles for each kit are tuned for balance by `balance.py --tune` and stored in `kits.toml` (per size).
+
+| Kit | Modules | Printed g (M) | Loaded g | COM offset | Margin inside the foam seats |
+|---|---|---|---|---|---|
+| core | none: yoke, seats, rail, lip | 131 | 131 | 6 mm | 48 mm |
+| glow | pod (strip + cover come with it) | 184 | 289 | 49 mm | 5 mm |
+| carry | cup, phone, ID pouch, pod | 285 | 970 | 66 mm | 0 mm |
+| comfort | dock, fan, pod | 242 | 637 | 66 mm | 8 mm |
+| full | all seven | 349 | 1354 | 24 mm | 33 mm |
+
+"Margin" is how far the loaded centre of mass is inside the rectangle spanned by the four foam seats (+-123 mm across, +-54 mm front to back); at or below zero the collar pitches or rolls and one side lifts off. The carry kit sits right on that edge with a full cup, so use a smaller cup or lighten the front there. Masses are estimates (see `balance.py`).
+
+New small modules in `module.py`: ID card pouch (card window faces out, tether eyelet), hydration-tube C-clip (snap-in, narrower slit than the tube), blank mounting plate (M5 hole and four M3 holes, for your own attachments), and a rail cover that caps an empty stretch of rail. The last two are not in any kit: add their names to a kit's `modules` list. Everything that hangs below the collar now stands off the lip and the body by a computed distance, so side placements clear the torso.
+
+`concept_kit.py` draws each kit; `out/M/kits.png` is the montage.
+
 ## Printing
 `PRINT_PLAN.md` (made by `print_plan.py`) is the staged plan: material check, then a small fit pack (two yoke quarters, one cover quarter, a clip coupon), then the bare collar, then each module under load, then electronics on a bench. It lists slicer starting points and per-part orientation, support area and time. The yoke quarters need supports under the whole slope; the plan starts them in rigid PETG as a proxy before TPU.
 

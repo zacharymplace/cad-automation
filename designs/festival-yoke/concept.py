@@ -12,7 +12,7 @@ import power
 from viz import COLORS, mannequin, shade, tris_of
 
 comps = build.components()
-extras = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "pod": power.pod_module(), "lid": power.pod_lid(), "strip": power.strip(), "diffuser": power.fitted_diffuser()}
+extras = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "pod": power.pod_module(), "lid": power.pod_lid(), "id": module.id_module(), "tube": module.tube_module(), "strip": power.strip(), "diffuser": power.fitted_diffuser()}
 
 
 PENDING = {}
@@ -44,11 +44,11 @@ ax = fig.add_subplot(2, 2, 1, projection="3d", facecolor="#14141a")
 mannequin(ax)
 for k in ("skin", "rail", "lip"):
     add(ax, comps[k], COLORS[k])
-for k in ("cup", "phone", "dock", "fan", "pod", "lid"):
+for k in ("cup", "phone", "dock", "fan", "pod", "lid", "id", "tube"):
     add(ax, extras[k], COLORS["module"])
 add(ax, extras["strip"], COLORS["strip"])
 add(ax, extras["diffuser"], COLORS["diffuser"], 0.5)
-frame(ax, (0, 0, 80), 230, 22, 78, "everything on: modules, LED strip + cover, pod at the back")
+frame(ax, (0, 0, 80), 230, 22, 78, "full kit: carry, comfort and glow modules")
 
 ax = fig.add_subplot(2, 2, 2, projection="3d", facecolor="#14141a")
 for k in ("rail", "lip", "skin", "pad"):  # far side first: painter's algorithm, viewed from below

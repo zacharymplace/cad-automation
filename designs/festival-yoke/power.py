@@ -7,9 +7,10 @@ import math
 import cadquery as cq
 
 import build
+import layout
 import module
 
-POD_ANGLE = 300
+POD_ANGLE = layout.angle("pod")
 BATT = (60, 40, 10)      # pouch cell length (along the rail), width, thickness; ~4000 mAh 3.7 V, protected. Measure yours.
 BOARD = (32, 22, 6)      # USB-C charge + 5 V boost board with protection
 WALL = 2.4
@@ -21,10 +22,7 @@ FAN_WATT = 1.5
 CELL_WH = 3.7 * 4.0      # 14.8 Wh nominal
 EFFICIENCY = 0.85        # boost converter and cable losses
 
-MODULE_ANGLES = {
-    "cup": module.CUP_ANGLE, "phone": module.PHONE_ANGLE, "dock": module.DOCK_ANGLE,
-    "fan": module.FAN_ANGLE, "pod": POD_ANGLE,
-}
+MODULE_ANGLES = layout.angles()   # modules on the collar in the active kit, for the diffuser cut-outs
 
 _inner = (BATT[1] + 3, BATT[0] + 6, BATT[2] + 1 + BOARD[2] + 3)         # x (across), y (along the rail), z
 _outer = (_inner[0] + 2 * WALL, _inner[1] + 2 * WALL)
@@ -123,6 +121,10 @@ def overlap(a: cq.Workplane, b: cq.Workplane) -> float:
 
 
 def main():
+    import kit
+    if not layout.has_leds():
+        print(f"kit {layout.KIT} has no power pod, so no strip, cover or pod to build")
+        return
     build.OUT.mkdir(parents=True, exist_ok=True)
     pod, lid, dif, led = pod_module(), pod_lid(), fitted_diffuser(), strip()
     cq.exporters.export(pod, str(build.OUT / "module_pod.stl"))
@@ -132,7 +134,7 @@ def main():
     for q, (sx, sy) in build.QUARTERS.items():
         cq.exporters.export(build.quarter(dif, sx, sy), str(build.OUT / f"diffuser_fitted_{q}.stl"))
     # everything must clear everything
-    mods = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "pod": pod}
+    mods = kit.modules()
     yoke = build.yoke()
     worst = {}
     for name, m in mods.items():
@@ -151,7 +153,7 @@ def main():
             v = overlap(mods[a], mods[b])
             if v > 0.5:
                 print(f"WARN {a} and {b} overlap {v:.0f} mm3")
-    print(f"clash checks: {sum(1 for v in worst.values() if v <= 0.5)}/{len(worst)} clean")
+    print(f"kit {layout.KIT} clash checks: {sum(1 for v in worst.values() if v <= 0.5)}/{len(worst)} clean")
     for line in power_notes():
         print(line)
 

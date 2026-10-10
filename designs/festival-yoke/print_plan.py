@@ -5,6 +5,8 @@ import math
 import numpy as np
 
 import build
+import kit
+import layout
 import module
 import power
 
@@ -47,15 +49,17 @@ def parts():
     p = {}
     for q, (sx, sy) in build.QUARTERS.items():
         p[f"yoke_{q}"] = (build.parts()[q], "TPU 95A", 0.9, "yoke quarter")
-    dif = power.fitted_diffuser()
-    for q, (sx, sy) in build.QUARTERS.items():
-        p[f"diffuser_fitted_{q}"] = (build.quarter(dif, sx, sy), "PETG (natural)", 0.9, "LED cover quarter")
+    if layout.has_leds():
+        dif = power.fitted_diffuser()
+        for q, (sx, sy) in build.QUARTERS.items():
+            p[f"diffuser_fitted_{q}"] = (build.quarter(dif, sx, sy), "PETG (natural)", 0.9, "LED cover quarter")
     p["module_clip_coupon"] = (module.clip_coupon(), "PETG", 0.7, "fit test for the rail clip")
-    for name, fn, note in (("module_cup", module.cup_module, "cup cradle"), ("module_phone", module.phone_module, "phone cradle"),
-                           ("module_dock", module.dock_module, "ear-defender dock"), ("module_fan", module.fan_module, "fan frame"),
-                           ("module_pod", power.pod_module, "power pod tray")):
-        p[name] = (fn(), "PETG", 0.5, note)
-    p["module_pod_lid"] = (power.pod_lid(), "PETG", 0.5, "power pod lid")
+    notes = {"cup": "cup cradle", "phone": "phone cradle", "dock": "ear-defender dock", "fan": "fan frame", "pod": "power pod tray",
+             "id": "ID card pouch", "tube": "hydration tube clip", "blank": "blank mounting plate", "cover": "rail cover"}
+    for name, shape in kit.modules().items():
+        p[f"module_{name}"] = (shape, "PETG", 0.5, notes[name])
+    if layout.has_leds():
+        p["module_pod_lid"] = (power.pod_lid(), "PETG", 0.5, "power pod lid")
     return p
 
 
@@ -83,7 +87,7 @@ def write_md(rows):
         for n, mat, note, best, over, contact, dims, fits, g, h in rows
     )
     total_g = sum(r[8] for r in rows if not r[0].endswith("coupon"))
-    md = f"""# Print plan: size {build.SIZE}
+    md = f"""# Print plan: size {build.SIZE}, kit {layout.KIT}
 
 Nothing here has been printed. This plan puts the cheap, informative tests first and holds back every big print until
 the one before it has been checked. Part names match the files in `out/{build.SIZE}/` (STL files are not committed:

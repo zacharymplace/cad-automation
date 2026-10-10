@@ -1,4 +1,4 @@
-# Print plan: size M
+# Print plan: size M, kit full
 
 Nothing here has been printed. This plan puts the cheap, informative tests first and holds back every big print until
 the one before it has been checked. Part names match the files in `out/M/` (STL files are not committed:
@@ -10,7 +10,7 @@ run `build.py`, `module.py` and `power.py` to make them).
 Print a 20 mm calibration cube in each filament, then a 2 mm thick, 60 x 40 mm TPU plate. The TPU plate must come out
 smooth with no stringing or gaps: the yoke skin is that thin. Fix temperature, speed and retraction here, not on the yoke.
 
-**Stage 1: the fit pack (the first real print, about 82 g).**
+**Stage 1: the fit pack (the first real print, about 81 g).**
 Print `yoke_fr` and `yoke_br` (rigid PETG proxy first, then TPU), `diffuser_fitted_fr` (natural PETG) and `module_clip_coupon` (PETG). Together they test, with
 no waste: the dovetail seam (the front-right tabs go into the back-right pockets), the rail clip and its screw holes, the
 diffuser snap, the edge rounding, and how TPU behaves at 2 mm.
@@ -67,19 +67,21 @@ Orientation and support area are computed from the geometry: the orientation wit
 | `yoke_br` | TPU 95A | yoke quarter | as designed | 9693 | 276 | 200 x 129 x 37 | ok | 34 | 4.3 |
 | `yoke_fl` | TPU 95A | yoke quarter | as designed | 8657 | 256 | 153 x 139 x 37 | ok | 31 | 3.9 |
 | `yoke_bl` | TPU 95A | yoke quarter | as designed | 9404 | 277 | 188 x 129 x 37 | ok | 34 | 4.2 |
-| `diffuser_fitted_fr` | PETG (natural) | LED cover quarter | as designed | 3616 | 301 | 153 x 128 x 20 | ok | 7 | 0.5 |
-| `diffuser_fitted_br` | PETG (natural) | LED cover quarter | as designed | 3343 | 345 | 188 x 130 x 20 | ok | 6 | 0.5 |
-| `diffuser_fitted_fl` | PETG (natural) | LED cover quarter | as designed | 3613 | 296 | 153 x 128 x 20 | ok | 7 | 0.5 |
-| `diffuser_fitted_bl` | PETG (natural) | LED cover quarter | as designed | 4177 | 350 | 188 x 130 x 20 | ok | 8 | 0.5 |
+| `diffuser_fitted_fr` | PETG (natural) | LED cover quarter | as designed | 3214 | 301 | 153 x 128 x 20 | ok | 6 | 0.4 |
+| `diffuser_fitted_br` | PETG (natural) | LED cover quarter | as designed | 3315 | 343 | 188 x 130 x 20 | ok | 6 | 0.5 |
+| `diffuser_fitted_fl` | PETG (natural) | LED cover quarter | as designed | 3300 | 296 | 153 x 128 x 20 | ok | 6 | 0.4 |
+| `diffuser_fitted_bl` | PETG (natural) | LED cover quarter | as designed | 3318 | 348 | 188 x 130 x 20 | ok | 6 | 0.5 |
 | `module_clip_coupon` | PETG | fit test for the rail clip | flipped | 382 | 880 | 51 x 47 x 14 | ok | 10 | 0.6 |
 | `module_cup` | PETG | cup cradle | as designed | 1813 | 3652 | 124 x 130 x 113 | ok | 39 | 2.5 |
-| `module_phone` | PETG | phone cradle | as designed | 4022 | 1833 | 113 x 115 x 174 | ok | 42 | 2.6 |
+| `module_phone` | PETG | phone cradle | as designed | 4046 | 1833 | 102 x 107 x 174 | ok | 42 | 2.6 |
 | `module_dock` | PETG | ear-defender dock | on its +y side | 4366 | 335 | 128 x 34 x 145 | ok | 32 | 2.0 |
-| `module_fan` | PETG | fan frame | as designed | 5212 | 539 | 101 x 107 x 112 | ok | 28 | 1.7 |
-| `module_pod` | PETG | power pod tray | flipped | 2920 | 666 | 84 x 72 x 29 | ok | 16 | 1.0 |
-| `module_pod_lid` | PETG | power pod lid | flipped | 0 | 3277 | 84 x 72 x 4 | ok | 5 | 0.3 |
+| `module_fan` | PETG | fan frame | as designed | 5224 | 530 | 114 x 112 x 112 | ok | 28 | 1.7 |
+| `module_pod` | PETG | power pod tray | on its +x side | 1347 | 1071 | 29 x 49 x 71 | ok | 16 | 1.0 |
+| `module_id` | PETG | ID card pouch | flipped | 720 | 2028 | 69 x 94 x 62 | ok | 21 | 1.3 |
+| `module_tube` | PETG | hydration tube clip | on its +x side | 700 | 320 | 24 x 56 x 47 | ok | 9 | 0.6 |
+| `module_pod_lid` | PETG | power pod lid | flipped | 0 | 3277 | 71 x 48 x 4 | ok | 5 | 0.3 |
 
-Printed mass without the coupon: about 321 g.
+Printed mass without the coupon: about 349 g.
 
 ## Things this plan cannot tell you
 

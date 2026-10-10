@@ -4,6 +4,9 @@
 # Override per run with: FESTIVAL_YOKE_SIZE=L uv run --no-project --with cadquery build.py
 size = "M"
 
+# Kit: which modules are on the collar. See [kits.*] below; override per run with FESTIVAL_YOKE_KIT=glow.
+kit = "full"
+
 [sizes.S]
 head_circumference = 540
 neck_circumference = 320
@@ -80,3 +83,23 @@ clearance = 0.25              # gap between tab and pocket; tune to your printer
 [print]
 bed = [220, 220, 250]
 density_g_cc = 1.25           # PETG/TPU ballpark
+
+[kits.core]
+modules = []
+blurb = "Just the collar: yoke, foam seats, rail and lip. Wearable on its own, nothing powered."
+
+[kits.glow]
+modules = ["pod"]
+blurb = "Core plus the power pod, LED strip and diffuser cover."
+
+[kits.carry]
+modules = ["cup", "phone", "id", "pod"]
+blurb = "Core plus the hands-free carriers: cup, phone and a medical-ID / card pouch. The pod rides along as the counterweight at the back."
+
+[kits.comfort]
+modules = ["dock", "fan", "pod"]
+blurb = "Core plus sensory and cooling help: ear-defender dock and fan, with the power pod."
+
+[kits.full]
+modules = ["cup", "phone", "dock", "fan", "pod", "id", "tube"]
+blurb = "Everything: carry, comfort, glow, plus a hydration-tube clip."

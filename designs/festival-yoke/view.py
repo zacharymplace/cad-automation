@@ -6,6 +6,7 @@ from pathlib import Path
 import cadquery as cq
 
 import build
+import layout
 import module
 import power
 import sizing
@@ -29,7 +30,11 @@ for q, shp in build.parts().items():
             "i": [i for t in tris for i in t],
         })
 
-for name, shp in (("cup_module", module.cup_module()), ("phone_module", module.phone_module()), ("dock_module", module.dock_module()), ("fan_module", module.fan_module()), ("pod_module", power.pod_module()), ("pod_lid", power.pod_lid()), ("strip", power.strip()), ("diffuser", power.fitted_diffuser())):
+import kit
+mod_items = [(f"{n}_module", s) for n, s in kit.modules().items()]
+if layout.has_leds():
+    mod_items += [("pod_lid", power.pod_lid()), ("strip", power.strip()), ("diffuser", power.fitted_diffuser())]
+for name, shp in mod_items:
     verts, tris = shp.val().tessellate(1.5, 0.5)
     meshes.append({"name": name, "group": name if name in ("diffuser", "strip") else "module",
                    "v": [round(c, 2) for p in verts for c in (p.x, p.y, p.z)], "i": [i for t in tris for i in t]})

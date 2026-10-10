@@ -13,15 +13,20 @@ from viz import COLORS, mannequin, shade, tris_of
 fig = plt.figure(figsize=(16, 6.2), facecolor="#14141a")
 views = [("3/4 front", 22, 62), ("side", 0, 0), ("top", 90, -90)]
 comps = build.components()
-comps["module"] = module.cup_module().union(module.phone_module()).union(module.dock_module()).union(module.fan_module()).union(power.pod_module()).union(power.pod_lid())
-comps["diffuser"] = power.fitted_diffuser()
-comps["strip"] = power.strip()
+import kit
+import layout
+mods = list(kit.modules().values()) + ([power.pod_lid()] if layout.has_leds() else [])
+for i, extra in enumerate(mods):   # drawn separately: unioning eight modules is very slow and changes nothing visually
+    comps[f"module{i}"] = extra
+if layout.has_leds():
+    comps["diffuser"] = power.fitted_diffuser()
+    comps["strip"] = power.strip()
 for i, (title, el, az) in enumerate(views):
     ax = fig.add_subplot(1, 3, i + 1, projection="3d", facecolor="#14141a")
     mannequin(ax)
     for name, shp in comps.items():
         tr = tris_of(shp)
-        ax.add_collection3d(Poly3DCollection(tr, facecolors=shade(tr, COLORS[name], 0.55 if name == "diffuser" else 1.0), edgecolor="none"))
+        ax.add_collection3d(Poly3DCollection(tr, facecolors=shade(tr, COLORS["module" if name.startswith("module") else name], 0.55 if name == "diffuser" else 1.0), edgecolor="none"))
     ax.set_xlim(-200, 200); ax.set_ylim(-200, 200); ax.set_zlim(-60, 340)
     ax.set_box_aspect((1, 1, 1)); ax.view_init(el, az); ax.set_axis_off()
     ax.set_title(title, color="#e8e8ee", fontsize=11, family="monospace")
@@ -36,7 +41,7 @@ for i, (title, el, az) in enumerate([("top, pulled apart", 90, -90), ("3/4 front
     for name, shp in build.parts().items():
         sx, sy = build.QUARTERS[name]
         tr = tris_of(shp) + np.array([sx * 22, sy * 22, 0])
-        ax.add_collection3d(Poly3DCollection(tr, facecolors=shade(tr, PART_COLORS[name]), edgecolor="none"))
+        ax.add_collection3d(Poly3DCollection(tr, facecolors=shade(tr, PART_COLORS["module" if name.startswith("module") else name]), edgecolor="none"))
     ax.set_xlim(-220, 220); ax.set_ylim(-220, 220); ax.set_zlim(-120, 120)
     ax.set_box_aspect((1, 1, 0.5)); ax.view_init(el, az); ax.set_axis_off()
     ax.set_title(title, color="#e8e8ee", fontsize=11, family="monospace")
