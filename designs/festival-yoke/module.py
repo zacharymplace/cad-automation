@@ -1,5 +1,5 @@
-"""Clip-on modules for the shoulder rail: a cup cradle (front-right) and a phone cradle (front-left).
-Both snap onto the T-rail through the same clip. Run: uv run --no-project --with cadquery module.py"""
+"""Clip-on modules for the shoulder rail: cup cradle (front-right), phone cradle (front-left), ear-defender dock
+(right side) and fan (left side). All snap onto the T-rail through the same clip. Run: uv run --no-project --with cadquery module.py"""
 import math
 
 import cadquery as cq
@@ -22,6 +22,18 @@ PHONE_ANGLE = 125
 PHONE_W, PHONE_H, PHONE_T = 84, 165, 14     # phone in its case
 PHONE_TILT = 8       # deg, top leans outward so the screen faces up toward the eyes
 PHONE_GAP = 38       # distance from the rail line to the cradle's lowest inner edge
+
+
+# ear-defender dock: a bowl that parks one ear cup on the shoulder, with strap slots and a tether eyelet
+DOCK_ANGLE = 0
+DOCK_CUP = (100, 85)    # ear cup outline, long x short, mm (parametric: measure your defenders)
+DOCK_DEPTH = 28
+
+# fan: square frame for a 5 V fan, aimed up and inward at the face from shoulder level
+FAN_ANGLE = 180
+FAN_SIZE, FAN_T, FAN_WALL = 80, 25, 2.7     # fan outline and thickness
+FAN_ELEV = 40                               # deg above horizontal, aimed toward the wearer's face
+FAN_X = 32                                  # fan centre, outward from the rail line (puts its lowest edge over the clip)
 
 
 def pose(angle: float):
@@ -102,6 +114,37 @@ def phone_module(angle: float = PHONE_ANGLE) -> cq.Workplane:
     return mount(clip_local().union(arm).union(cradle), angle)
 
 
+def dock_module(angle: float = DOCK_ANGLE) -> cq.Workplane:
+    _, _, _, _, z_arm = z_levels()
+    arm = cq.Workplane("XY").box(46, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
+    arm = arm.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(30, 0).circle(2.5).extrude(10))  # tether eyelet
+    L, W = DOCK_CUP
+    xc = 46 + W / 2 + 3
+    bowl = cq.Workplane("XY").workplane(offset=z_arm).center(xc, 0).ellipse(L / 2 + 3, W / 2 + 3).extrude(DOCK_DEPTH)
+    bowl = bowl.cut(cq.Workplane("XY").workplane(offset=z_arm + 3).center(xc, 0).ellipse(L / 2, W / 2).extrude(DOCK_DEPTH))
+    for sy in (-1, 1):  # velcro strap slots in the floor, either side of the cup
+        bowl = bowl.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(xc, sy * (W / 2 - 8)).slot2D(24, 4, 0).extrude(6))
+    bowl = bowl.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(xc, 0).ellipse(L / 2 - 16, W / 2 - 16).extrude(6))  # open floor, saves weight and drains
+    return mount(clip_local().union(arm).union(bowl), angle)
+
+
+def fan_module(angle: float = FAN_ANGLE) -> cq.Workplane:
+    _, _, _, _, z_arm = z_levels()
+    inner = FAN_SIZE + 0.6
+    outer = inner + 2 * FAN_WALL
+    frame = cq.Workplane("XY").box(outer, outer, FAN_T + 2, centered=(True, True, False))
+    frame = frame.cut(cq.Workplane("XY").box(inner, inner, FAN_T + 1, centered=(True, True, False)).translate((0, 0, 2)))  # pocket, open at the outlet end
+    frame = frame.cut(cq.Workplane("XY").box(inner - 9, inner - 9, 4, centered=(True, True, False)).translate((0, 0, -1)))   # intake opening, leaves a retaining lip
+    frame = frame.cut(cq.Workplane("XY").box(10, 8, 8, centered=(True, True, False)).translate((0, -outer / 2, 10)))        # cable notch
+    # axis (+z, the outlet) points up and toward the neck: rotating about y by theta sends z to (sin t, 0, cos t)
+    theta = -(90 - FAN_ELEV)
+    zc = z_arm + 8 + (outer / 2) * math.cos(math.radians(theta)) + 20
+    frame = frame.rotate((0, 0, 0), (0, 1, 0), theta).translate((FAN_X, 0, zc))
+    low = frame.vertices("<Z").val().Center()          # lowest corner of the tilted frame: hang the bracket from it
+    bracket = cq.Workplane("XY").box(14, 18, low.z + 9 - z_arm, centered=(True, True, False)).translate((low.x + 4, 0, z_arm))
+    return mount(clip_local().union(bracket).union(frame), angle)
+
+
 def torso(grow: float = 0.0) -> cq.Workplane:
     """Mannequin torso below the collar (same numbers as view.py), for clash checks."""
     return cq.Workplane("XY").workplane(offset=-300).ellipse(build.AO + 10 + grow, build.BO - 5 + grow).extrude(300 - build.DROP - 3.5)
@@ -120,10 +163,21 @@ def report(name: str, m: cq.Workplane):
 
 def main():
     build.OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in (("module_cup", cup_module), ("module_phone", phone_module)):
-        m = fn()
-        cq.exporters.export(m, str(build.OUT / f"{name}.stl"))
-        report(name, m)
+    made = {}
+    for name, fn in (("module_cup", cup_module), ("module_phone", phone_module), ("module_dock", dock_module), ("module_fan", fan_module)):
+        made[name] = fn()
+        cq.exporters.export(made[name], str(build.OUT / f"{name}.stl"))
+        report(name, made[name])
+    names = list(made)
+    worst = 0.0
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            c = made[a].intersect(made[b])
+            v = sum(s.Volume() for s in c.solids().vals()) if c.vals() else 0.0
+            worst = max(worst, v)
+            if v:
+                print(f"WARN {a} and {b} overlap by {v:.0f} mm3")
+    print(f"module-to-module overlap: {worst:.0f} mm3 worst case (want 0)")
 
 
 if __name__ == "__main__":

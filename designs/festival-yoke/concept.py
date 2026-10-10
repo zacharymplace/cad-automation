@@ -11,7 +11,7 @@ import module
 from viz import COLORS, mannequin, shade, tris_of
 
 comps = build.components()
-extras = {"cup": module.cup_module(), "phone": module.phone_module(), "diffuser": build.diffuser()}
+extras = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "diffuser": build.diffuser()}
 
 
 PENDING = {}
@@ -43,9 +43,10 @@ ax = fig.add_subplot(2, 2, 1, projection="3d", facecolor="#14141a")
 mannequin(ax)
 for k in ("skin", "rail", "lip"):
     add(ax, comps[k], COLORS[k])
-add(ax, extras["cup"], COLORS["module"]); add(ax, extras["phone"], COLORS["module"])
+for k in ("cup", "phone", "dock", "fan"):
+    add(ax, extras[k], COLORS["module"])
 add(ax, extras["diffuser"], COLORS["diffuser"], 0.55)
-frame(ax, (0, 0, 80), 215, 22, 78, "everything on: yoke, LED cover, cup right, phone left")
+frame(ax, (0, 0, 80), 230, 22, 78, "everything on: cup, phone, ear dock (right), fan (left), LED cover")
 
 ax = fig.add_subplot(2, 2, 2, projection="3d", facecolor="#14141a")
 for k in ("rail", "lip", "skin", "pad"):  # far side first: painter's algorithm, viewed from below
@@ -72,3 +73,22 @@ flush()
 fig.suptitle(f"festival-yoke concept, size {build.SIZE}  |  nothing above the shoulders", color="#e8e8ee", fontsize=13, family="monospace")
 fig.savefig(build.OUT / "concept.png", dpi=105, facecolor=fig.get_facecolor(), bbox_inches="tight")
 print("wrote", build.OUT / "concept.png")
+
+
+# second sheet: ear-defender dock and fan
+fig = plt.figure(figsize=(15, 6.5), facecolor="#14141a")
+for i, (key, angle, title, el, az, off) in enumerate([
+    ("dock", module.DOCK_ANGLE, "ear-defender dock (right shoulder)", 28, 20, (60, 0, -10)),
+    ("fan", module.FAN_ANGLE, "80 mm fan aimed at the face (left shoulder)", 22, 200, (-60, 0, 30)),
+]):
+    ax = fig.add_subplot(1, 2, i + 1, projection="3d", facecolor="#14141a")
+    mannequin(ax)
+    for k in ("skin", "rail", "lip"):
+        add(ax, comps[k], COLORS[k])
+    add(ax, extras[key], COLORS["module"])
+    px, py, zs, h = module.pose(angle)
+    frame(ax, (px + off[0], py + off[1], zs + off[2]), 140, el, az, title)
+flush()
+fig.suptitle(f"festival-yoke modules, size {build.SIZE}", color="#e8e8ee", fontsize=13, family="monospace")
+fig.savefig(build.OUT / "concept_modules.png", dpi=105, facecolor=fig.get_facecolor(), bbox_inches="tight")
+print("wrote", build.OUT / "concept_modules.png")

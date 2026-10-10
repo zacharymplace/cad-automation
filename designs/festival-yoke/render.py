@@ -12,7 +12,7 @@ from viz import COLORS, mannequin, shade, tris_of
 fig = plt.figure(figsize=(16, 6.2), facecolor="#14141a")
 views = [("3/4 front", 22, 62), ("side", 0, 0), ("top", 90, -90)]
 comps = build.components()
-comps["module"] = module.cup_module().union(module.phone_module())
+comps["module"] = module.cup_module().union(module.phone_module()).union(module.dock_module()).union(module.fan_module())
 comps["diffuser"] = build.diffuser()
 for i, (title, el, az) in enumerate(views):
     ax = fig.add_subplot(1, 3, i + 1, projection="3d", facecolor="#14141a")

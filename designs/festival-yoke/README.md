@@ -21,10 +21,11 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - LED diffuser cover: thin curved cover over the LED channel (9.6 mm wide at its narrowest, fits an 8 mm strip), ~40 g in 4 quarters. A hook on its outer edge grips the lip and a two-step bead snaps into a 0.5 mm groove in the lip (press down to fit). The lip now stands on the skin, not on its feather edge. Snap force and TPU/PETG flex are untested: `snap_section.py` draws the cross-section.
 - Dovetail tabs and pockets (0.25 mm clearance) join the four quarters: two per side seam, one on the back. `build.py` checks for overlap and loose crumbs.
 
-- `module.py`: two clip-on modules on the same 56 mm clip with two M3 retention screws. Cup cradle at front-right (ring at upper-chest height, side opening so the cup slides out toward the hand, 77 g). Phone cradle at front-left (snaps in from the wearer side, open back window, 8 deg tilt so the screen tilts up, 84 g). Both checked clear of the yoke and the mannequin torso.
+- `module.py`: four clip-on modules on the same 56 mm clip with two M3 retention screws, built at fixed rail angles: cup cradle front-right (77 g), phone cradle front-left (84 g), ear-defender dock on the right side (65 g), fan on the left side (55 g). The dock is a bowl that parks one ear cup on the shoulder, with strap slots and a tether eyelet; set `DOCK_CUP` to your defenders. The fan frame holds an 80 mm 5 V fan aimed up and inward at the face; its top is 89 mm above the neck edge, about jaw height. All are checked clear of the yoke, the mannequin torso and each other.
 
 ## Not done yet
 - More modules (phone, fan arm, ear-defender mount); translucent LED diffuser cover; module pocket is position-specific (right side, rail at 0.82), other spots need regenerating.
+- Dock and fan are concept-level: defender size varies a lot, and the fan has no power source (USB lead to a bank in a pocket for now).
 - Cup ring sits ~75 mm in front of the chest. The longer clip and screws should resist prying, but that is unproven until a print is tried with a full cup.
 - Joints are untested in print: tune `joint.clearance` after the first TPU test. They hold the parts in plan only; add glue or a pin if the seam lifts.
 - Fit test: print one quarter in TPU first.
