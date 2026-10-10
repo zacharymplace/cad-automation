@@ -13,6 +13,7 @@ cfg = tomllib.loads((ROOT / "config.toml").read_text())
 SIZE, W = sizing.resolve(cfg)
 OUT = ROOT / "out" / SIZE
 Y, R, G, P, J = cfg["yoke"], cfg["rail"], cfg["glow"], cfg["print"], cfg["joint"]
+PAD, D = cfg["pad"], cfg["diffuser"]
 
 AI, BI = W["neck_opening_a"], W["neck_opening_b"]
 AO, BO = W["shoulder_half_width"], W["shoulder_half_depth"]
@@ -41,10 +42,23 @@ def cone(dz: float) -> cq.Workplane:
 
 
 def skin() -> cq.Workplane:
+    """Collar skin with rounded edges. Rounding is attempted at decreasing radii until the finished skin is a valid
+    solid (the kernel is fragile on some sizes); with none valid it is left sharp and a warning is printed."""
+    for r in (Y["round"], Y["round"] * 0.8, Y["round"] * 0.6, Y["round"] * 0.4):
+        s = _skin(r)
+        if s.val().isValid() and s.val().Volume() > 0:
+            return s
+    print("WARN edge rounding skipped for this size (kernel could not produce a valid rounded skin)")
+    return _skin(0)
+
+
+def _skin(r: float) -> cq.Workplane:
     t = Y["thickness"]
     s = cone(0).cut(cone(-t))
     k = (AO - AI) * t / DROP + 1
     s = s.cut(cq.Workplane("XY").workplane(offset=-DROP - 5).ellipse(AI + k, BI + k).extrude(DROP + 10))
+    if r:
+        s = s.edges().fillet(r)  # round the neck and shoulder edges before anything else is cut into it
     # lightening slots, skipping the front gap (60-120 deg)
     length = (AO - AI) * 0.38
     for deg in range(15, 360, 30):  # offset so no slot sits on a seam
@@ -68,9 +82,58 @@ def rail() -> cq.Workplane:
     return stem.union(cap)
 
 
+LIP_SETBACK = 0.6
+
+
 def lip() -> cq.Workplane:
     w = G["lip_width"]
-    return ring(1.0, w, 0, -DROP - 1, G["lip_height"] + 1)
+    return ring(1.0, w + LIP_SETBACK, -LIP_SETBACK, -DROP - 1, G["lip_height"] + 1)  # set back from the rim so it never shares a surface with the rounded edge
+
+
+def pads() -> cq.Workplane:
+    """Skin-conforming seats under the collar for stick-on foam."""
+    t = Y["thickness"]
+    band = cone(-t + 0.3).cut(cone(-t - PAD["thickness"]))  # overlaps the skin by 0.3 mm so the union is clean
+    a, b, _ = surface(PAD["position"])
+    out = None
+    for deg in PAD["angles"]:
+        th = math.radians(deg)
+        cx, cy = a * math.cos(th), b * math.sin(th)
+        heading = math.degrees(math.atan2(a * math.sin(th), b * math.cos(th)))
+        oval = (
+            cq.Workplane("XY").workplane(offset=-DROP - 8).center(cx, cy)
+            .ellipse(PAD["length"] / 2, PAD["width"] / 2).extrude(DROP + 16)
+            .rotate((cx, cy, 0), (cx, cy, 1), heading)
+        )
+        piece = band.intersect(oval)
+        out = piece if out is None else out.union(piece)
+    return out
+
+
+def diffuser() -> cq.Workplane:
+    """Thin cover over the LED channel between rail and lip. Outer hook grips the lip."""
+    t, gp = D["thickness"], D["gap"]
+    a0, b0, zs = surface(R["position"])
+    rail_top = zs + R["stem_height"] + R["cap_height"]
+    lip_top = -DROP + G["lip_height"]
+    zA, zB = rail_top + gp + t, lip_top + gp + t
+    aA, bA = a0 + R["cap_width"] / 2, b0 + R["cap_width"] / 2
+    aB, bB = AO + 1.4, BO + 1.4
+    dz = zA - zB
+    ka, kb = (aB - aA) * t / dz + 0.5, (bB - bA) * t / dz + 0.5
+
+    def frustum(shift):
+        return (
+            cq.Workplane("XY").workplane(offset=zA + shift).ellipse(aA - ka, bA - kb)
+            .workplane(offset=-dz).ellipse(aB, bB).loft()
+        )
+
+    band = frustum(0).cut(frustum(-t))
+    band = band.cut(cq.Workplane("XY").workplane(offset=zB - 5).ellipse(aA, bA).extrude(dz + 10))
+    hook = ring(1.0, LIP_SETBACK - 0.1, 1.4, zB - t - D["hook"], D["hook"] + t)
+    # small flange on the inner edge locates the cover against the rail cap
+    flange = ring(R["position"], -(R["cap_width"] / 2 + 0.2), R["cap_width"] / 2 + 1.4, zA - t - 2.5, 2.5 + t)
+    return band.union(hook).union(flange).cut(gap())
 
 
 def gap() -> cq.Workplane:
@@ -79,12 +142,12 @@ def gap() -> cq.Workplane:
 
 def components() -> dict[str, cq.Workplane]:
     g = gap()
-    return {"skin": skin(), "rail": rail().cut(g), "lip": lip().cut(g)}
+    return {"skin": skin().cut(g), "rail": rail().cut(g), "lip": lip().cut(g), "pad": pads()}
 
 
 def yoke() -> cq.Workplane:
     c = components()
-    return c["skin"].union(c["rail"]).union(c["lip"])
+    return c["skin"].union(c["rail"]).union(c["lip"]).union(c["pad"])
 
 
 QUARTERS = {"fr": (1, 1), "br": (1, -1), "fl": (-1, 1), "bl": (-1, -1)}
@@ -145,14 +208,34 @@ def main():
         print(f"yoke_{name:<5}{bb.xlen:6.0f}{bb.ylen:6.0f}{bb.zlen:6.0f}      {g:>9.1f}  {'ok' if fits else 'TOO BIG'}")
     cq.exporters.export(y, str(OUT / "assembly.stl"))
 
+    # LED diffuser cover, printed in the same four quarters
+    dif = diffuser()
+    dtotal = 0.0
+    for name, (sx, sy) in QUARTERS.items():
+        dq = quarter(dif, sx, sy)
+        bb = dq.val().BoundingBox()
+        dims = sorted([bb.xlen, bb.ylen])
+        fits = dims[0] <= min(bed[:2]) and dims[1] <= max(bed[:2]) and bb.zlen <= bed[2]
+        g = dq.val().Volume() / 1000 * P["density_g_cc"]
+        dtotal += g
+        total += g
+        cq.exporters.export(dq, str(OUT / f"diffuser_{name}.stl"))
+        print(f"diffuser_{name:<2}{bb.xlen:6.0f}{bb.ylen:6.0f}{bb.zlen:6.0f}      {g:>9.1f}  {'ok' if fits else 'TOO BIG'}")
+    touch = dif.intersect(y)
+    touch_mm3 = sum(s.Volume() for s in touch.solids().vals()) if touch.vals() else 0.0
+
     # joint check: tabs must not overlap their pockets, and the glued-up whole should match the unsplit yoke
     overlap = sum(q[a].intersect(q[b]).val().Volume() for a, b in (("fr", "br"), ("fl", "bl"), ("br", "bl")) if q[a].intersect(q[b]).vals())
     missing = y.val().Volume() - sum(s.val().Volume() for s in q.values())
     loose = [n for n, s in q.items() if len(s.solids().vals()) != 1]
-    need = max(max(s.val().BoundingBox().xlen, s.val().BoundingBox().ylen) for s in q.values())
+    need = max(max(s.val().BoundingBox().xlen, s.val().BoundingBox().ylen) for s in list(q.values()) + [quarter(dif, sx, sy) for sx, sy in QUARTERS.values()])
     print(f"\nSmallest square bed that fits every part: {need:.0f} mm (configured {min(bed[:2])} mm)")
     print(f"Total solid-plastic upper bound: {total:.0f} g (skin is thin, real print is lighter)")
     print(f"Joint check: part-to-part overlap {overlap:.2f} mm3 (want 0), clearance gaps {missing:.0f} mm3, loose crumbs: {loose or "none"}")
+    a0, b0, _ = surface(R["position"])
+    channel = min((AO - G["lip_width"]) - (a0 + R["cap_width"] / 2), (BO - G["lip_width"]) - (b0 + R["cap_width"] / 2))
+    print(f"LED channel between rail and lip: {channel:.1f} mm wide at its narrowest (fits an 8 mm strip: {'yes' if channel >= 8 else 'NO'})")
+    print(f"Diffuser: {dtotal:.0f} g of the total, overlap with yoke {touch_mm3:.2f} mm3 (want 0)")
     print(f"Highest point: {y.val().BoundingBox().zmax:.1f} mm vs neck edge. Nothing above the shoulders.")
 
 

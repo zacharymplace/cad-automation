@@ -11,7 +11,9 @@ label{display:block;cursor:pointer}
 <label><input type="checkbox" id="skin" checked> yoke skin (TPU)</label>
 <label><input type="checkbox" id="rail" checked> module rail</label>
 <label><input type="checkbox" id="lip" checked> LED lip</label>
-<label><input type="checkbox" id="module" checked> cup module</label>
+<label><input type="checkbox" id="pad" checked> pad seats (underside)</label>
+<label><input type="checkbox" id="module" checked> cup + phone modules</label>
+<label><input type="checkbox" id="diffuser" checked> LED cover</label>
 <label><input type="checkbox" id="explode"> show print split</label>
 <label><input type="checkbox" id="spin" checked> turntable</label></div>
 <div id="hint">drag to orbit · scroll to zoom · right-drag to pan</div>
@@ -21,22 +23,23 @@ label{display:block;cursor:pointer}
 /*DATA*/
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x14141a);
 const cam=new THREE.PerspectiveCamera(35,innerWidth/innerHeight,1,5000);
-cam.up.set(0,0,1);cam.position.set(560,-640,260);
+cam.up.set(0,0,1);cam.position.set(560,640,260);
 const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);r.setPixelRatio(devicePixelRatio);document.body.appendChild(r.domElement);
 const ctl=new THREE.OrbitControls(cam,r.domElement);ctl.target.set(0,0,90);ctl.update();
 scene.add(new THREE.HemisphereLight(0xffffff,0x303040,.9));
 const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(300,-400,600);scene.add(dl);
 const grid=new THREE.GridHelper(800,16,0x333344,0x25252f);grid.rotation.x=Math.PI/2;grid.position.z=-260;scene.add(grid);
 
-const groups={skin:new THREE.Group(),rail:new THREE.Group(),lip:new THREE.Group(),module:new THREE.Group(),man:new THREE.Group()};
+const groups={skin:new THREE.Group(),rail:new THREE.Group(),lip:new THREE.Group(),pad:new THREE.Group(),module:new THREE.Group(),diffuser:new THREE.Group(),man:new THREE.Group()};
 Object.values(groups).forEach(g=>scene.add(g));
-const base={skin:[0xff7a59,0xffa07a],rail:[0x4fd1c5,0x81e6d9],lip:[0xf6e05e,0xfaf089],module:[0xb794f4,0xd6bcfa]};
+const base={skin:[0xff7a59,0xffa07a],rail:[0x4fd1c5,0x81e6d9],lip:[0xf6e05e,0xfaf089],pad:[0x4c8dff,0x7aa8ff],module:[0xb794f4,0xd6bcfa],diffuser:[0xfff2a8,0xfff2a8]};
 let k=0;
 MESHES.forEach(m=>{
   const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.Float32BufferAttribute(m.v,3));g.setIndex(m.i);g.computeVertexNormals();
   const split=document.getElementById('explode');
   const mesh=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:base[m.group][0],roughness:.55,metalness:.05,side:THREE.DoubleSide}));
+  if(m.group==='diffuser'){mesh.material.transparent=true;mesh.material.opacity=.5;}
   mesh.userData={alt:base[m.group][1],main:base[m.group][0],k:k++};
   groups[m.group].add(mesh);
 });
@@ -49,7 +52,7 @@ const sh=new THREE.Mesh(new THREE.CylinderGeometry(.5,1,S.drop,48,1,true),mat);s
 const cap=new THREE.Mesh(new THREE.CircleGeometry(.5,48),mat);cap.scale.set(S.a,S.b,1);cap.position.z=-off;groups.man.add(cap);
 const torso=new THREE.Mesh(new THREE.CylinderGeometry(1,.85,220,48),mat);torso.rotation.x=Math.PI/2;torso.scale.set(S.a-5,1,S.b);torso.position.z=-S.drop-off-110;groups.man.add(torso);
 
-for(const id of ['man','skin','rail','lip','module'])document.getElementById(id).onchange=e=>groups[id].visible=e.target.checked;
+for(const id of ['man','skin','rail','lip','pad','module','diffuser'])document.getElementById(id).onchange=e=>groups[id].visible=e.target.checked;
 document.getElementById('explode').onchange=e=>{
   Object.entries(groups).forEach(([gk,g])=>{if(gk!=='man')g.children.forEach(m=>m.material.color.setHex(e.target.checked&&m.userData.k%2?m.userData.alt:m.userData.main));});
 };

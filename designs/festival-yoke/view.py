@@ -20,7 +20,7 @@ for q, shp in build.parts().items():
         piece = shp.intersect(cshape)
         if not piece.vals():
             continue
-        verts, tris = piece.val().tessellate(0.5)
+        verts, tris = piece.val().tessellate(1.5, 0.5)
         meshes.append({
             "name": f"{comp}_{q}",
             "group": comp,
@@ -28,9 +28,10 @@ for q, shp in build.parts().items():
             "i": [i for t in tris for i in t],
         })
 
-verts, tris = module.cup_module().val().tessellate(0.5)
-meshes.append({"name": "cup_module", "group": "module",
-               "v": [round(c, 2) for p in verts for c in (p.x, p.y, p.z)], "i": [i for t in tris for i in t]})
+for name, shp in (("cup_module", module.cup_module()), ("phone_module", module.phone_module()), ("diffuser", build.diffuser())):
+    verts, tris = shp.val().tessellate(1.5, 0.5)
+    meshes.append({"name": name, "group": "diffuser" if name == "diffuser" else "module",
+                   "v": [round(c, 2) for p in verts for c in (p.x, p.y, p.z)], "i": [i for t in tris for i in t]})
 
 HP, HQ = sizing.head_axes(W["head_circumference"])
 mannequin = {  # average adult, mm, neck base (C7) at z=0, front is +y

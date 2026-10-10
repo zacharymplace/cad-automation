@@ -43,9 +43,10 @@ shoulder_drop = 40
 thickness = 2.0               # skin thickness, print in TPU
 front_gap = 70                # open front so it flexes on over the head
 slot_width = 16
+round = 0.6                   # edge rounding radius on the skin (it sits next to other people's faces)
 
 [rail]                        # T-rail for clip-on modules (cup, phone, fan arm), runs round the sides and back
-position = 0.82               # 0 = neck edge, 1 = outer edge
+position = 0.70               # 0 = neck edge, 1 = outer edge; leaves >= 9 mm LED channel even at the front
 stem_width = 3
 stem_height = 5
 cap_width = 6
@@ -55,9 +56,21 @@ cap_height = 2
 lip_height = 5
 lip_width = 1.6
 
+[pad]                         # raised, skin-conforming seats on the underside for stick-on foam where it rests on the trapezius
+position = 0.5
+length = 36                   # radial
+width = 24
+thickness = 3
+angles = [30, 150, 210, 330]  # between the slots, clear of the seams
+
+[diffuser]                    # translucent snap-over cover for the LED channel, printed in natural PETG
+thickness = 1.2
+gap = 0.3                     # clearance over the rail cap and lip
+hook = 4.5                    # height of the outer hook that grips the lip
+
 [joint]                       # dovetail tabs hold the four quarters together
-positions_side = [0.35, 0.65] # along the side seams, 0 = neck edge, 1 = outer edge (keep clear of the rail at 0.82)
-positions_back = [0.5]        # the back seam is short, so one tab
+positions_side = [0.3, 0.5]   # along the side seams, 0 = neck edge, 1 = outer edge (keep clear of the rail)
+positions_back = [0.45]        # the back seam is short, so one tab
 root_width = 6
 tip_width = 10
 length = 12

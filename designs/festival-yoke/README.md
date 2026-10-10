@@ -4,7 +4,7 @@ Parametric, printable shoulder yoke for festivals. Design rule: nothing rises ab
 
 ```
 uv run --no-project --with cadquery build.py     # out/*.stl + weight/bed report
-uv run --no-project --with cadquery view.py      # out/viewer.html (serve: python3 -m http.server -d out, then open /M/viewer.html)
+uv run --no-project --with cadquery view.py      # out/viewer.html (serve: python3 -m http.server -d out, then open /M/viewer.html); `concept.py` makes the four-panel concept sheet `out/M/concept.png`
 ```
 
 Pick a size in `config.toml` (`size = "M"`, or `custom`), or override per run with `FESTIVAL_YOKE_SIZE=L`. Measure the wearer first: see [MEASURING.md](MEASURING.md). Outputs go in `out/<size>/`; `build_all.py` builds S/M/L/XL and prints one comparison table.
@@ -16,9 +16,12 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - Sloped 2 mm TPU skin on the trapezius, open front to flex over the head, lightening slots. 4 quarters.
 - T-rail round the sides and back for clip-on modules (cup, phone, fan arm, ear-defender mount).
 - Outer lip forming an LED-strip channel between lip and rail.
+- Edge rounding (0.6 mm, auto-reduced if the CAD kernel struggles) on the neck and shoulder edges.
+- Four skin-conforming foam seats on the underside (blue in the concept sheet), between the slots and clear of the seams.
+- LED diffuser cover: thin curved cover over the LED channel (8.8 mm wide at its narrowest, fits an 8 mm strip), outer hook grips the lip. 4 quarters, ~35 g. Friction fit, not a snap: untested.
 - Dovetail tabs and pockets (0.25 mm clearance) join the four quarters: two per side seam, one on the back. `build.py` checks for overlap and loose crumbs.
 
-- `module.py`: cup cradle that snaps onto the rail at front-right (55 deg). The ring hangs at upper-chest height with a side opening, so the cup slides out toward the hand. 56 mm long clip with two M3 self-tapping retention screws into the rail stem, 76 g solid; checked clear of the yoke and the mannequin torso. Change `ANGLE`, `HANG`, `OPEN`, `LENGTH` at the top of the file.
+- `module.py`: two clip-on modules on the same 56 mm clip with two M3 retention screws. Cup cradle at front-right (ring at upper-chest height, side opening so the cup slides out toward the hand, 77 g). Phone cradle at front-left (snaps in from the wearer side, open back window, 8 deg tilt so the screen tilts up, 84 g). Both checked clear of the yoke and the mannequin torso.
 
 ## Not done yet
 - More modules (phone, fan arm, ear-defender mount); translucent LED diffuser cover; module pocket is position-specific (right side, rail at 0.82), other spots need regenerating.
