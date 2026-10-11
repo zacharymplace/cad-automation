@@ -55,6 +55,9 @@ New small modules in `module.py`: ID card pouch (card window faces out, tether e
 
 `concept_kit.py` draws each kit; `out/M/kits.png` is the montage.
 
+## Strength (`strength.py`)
+Hand calculations (beam formulas and a snap-strain estimate, not FEA) for the load-bearing parts, at 1 g and at a 5 g crowd bump. They found three weak spots, now fixed: the cup and dock arms were 8 mm thick (5 g safety factor 2.5 and 3.4, now 11 mm: 4.7 and 6.3), the TPU rail cap was thin (clip lift safety factor 1.6, now a 2.5 mm cap: 2.6), and the diffuser snap hook would have strained PETG past its limit (6% vs 3.5% allowed, now a longer hook and a smaller bead: 2.4%). The M3 retention screws are the tightest remaining item at 1.6; they clamp rather than carry the lift, but treat them as the first thing to check in the load test. All material numbers are assumptions: use your filament's datasheet.
+
 ## Printing
 `PRINT_PLAN.md` (made by `print_plan.py`) is the staged plan: material check, then a small fit pack (two yoke quarters, one cover quarter, a clip coupon), then the bare collar, then each module under load, then electronics on a bench. It lists slicer starting points and per-part orientation, support area and time. The yoke quarters need supports under the whole slope; the plan starts them in rigid PETG as a proxy before TPU.
 

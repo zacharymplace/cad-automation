@@ -53,7 +53,7 @@ position = 0.65               # 0 = neck edge, 1 = outer edge
 stem_width = 3
 stem_height = 5
 cap_width = 6
-cap_height = 2
+cap_height = 2.5              # taller cap: lifts the safety factor on the rail clip (see strength.py)
 
 [glow]                        # outer lip that holds an LED strip between it and the rail
 position = 0.95               # stands on the skin (not on its feather edge) so it is properly anchored
@@ -70,7 +70,7 @@ angles = [30, 150, 210, 330]  # between the slots, clear of the seams
 [diffuser]                    # translucent snap-over cover for the LED channel, printed in natural PETG
 thickness = 1.2
 gap = 0.3                     # clearance over the rail cap and lip
-hook = 4.5                    # height of the outer hook that grips the lip
+hook = 5.5                    # height of the outer hook that grips the lip; longer = lower snap strain
 
 [joint]                       # dovetail tabs hold the four quarters together
 positions_side = [0.3, 0.5]   # along the side seams, 0 = neck edge, 1 = outer edge (keep clear of the rail)

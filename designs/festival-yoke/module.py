@@ -31,6 +31,7 @@ DOCK_CUP = (100, 85)    # ear cup outline, long x short, mm (parametric: measure
 DOCK_DEPTH = 28
 
 # small modules
+ARM_T = 11     # arm thickness for the heavy-load modules (cup, dock); strength.py found 8 mm too thin under a 5 g bump
 ID_ANGLE = layout.angle("id")
 TUBE_ANGLE = layout.angle("tube")
 BLANK_ANGLE = layout.angle("blank")
@@ -112,7 +113,7 @@ def mount(local: cq.Workplane, angle: float) -> cq.Workplane:
 def cup_module(angle: float = CUP_ANGLE) -> cq.Workplane:
     _, _, _, _, z_arm = z_levels()
     shift = cup_shift(angle)
-    arm = cq.Workplane("XY").box(38 + shift, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
+    arm = cq.Workplane("XY").box(38 + shift, 20, ARM_T, centered=(False, True, False)).translate((0, 0, z_arm))
     xr = 36 + shift + CUP_ID / 2 + WALL
     floor_z = z_arm + 8 - CUP_HANG
     post = cq.Workplane("XY").box(10, 14, z_arm + 8 - floor_z + 3, centered=(False, True, False)).translate((27 + shift, 0, floor_z - 3))
@@ -153,8 +154,8 @@ def phone_module(angle: float = PHONE_ANGLE) -> cq.Workplane:
 
 def dock_module(angle: float = DOCK_ANGLE) -> cq.Workplane:
     _, _, _, _, z_arm = z_levels()
-    arm = cq.Workplane("XY").box(46, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
-    arm = arm.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(30, 0).circle(2.5).extrude(10))  # tether eyelet
+    arm = cq.Workplane("XY").box(46, 20, ARM_T, centered=(False, True, False)).translate((0, 0, z_arm))
+    arm = arm.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(30, 0).circle(2.5).extrude(ARM_T + 2))  # tether eyelet
     L, W = DOCK_CUP
     xc = 46 + W / 2 + 3
     bowl = cq.Workplane("XY").workplane(offset=z_arm).center(xc, 0).ellipse(L / 2 + 3, W / 2 + 3).extrude(DOCK_DEPTH)

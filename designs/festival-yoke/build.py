@@ -82,6 +82,7 @@ def rail() -> cq.Workplane:
     return stem.union(cap)
 
 
+BEAD_LEAD, BEAD_STEP = 0.2, 0.35                      # how far the two bead steps stand out from the hook's inner face
 SNAP_DEPTH, SNAP_HEIGHT, SNAP_DROP = 0.5, 1.4, 1.2   # groove in the lip's outer face: depth, height, distance below the lip top
 LIP_U = G["position"]
 
@@ -164,8 +165,8 @@ def diffuser() -> cq.Workplane:
     flange = ring(R["position"], -(R["cap_width"] / 2 + 0.2), R["cap_width"] / 2 + 1.4, zA - t - 2.5, 2.5 + t)
     # two-step bead on the hook's inner face: narrow lead-in below, full step above with a flat top that locks in the groove
     z0 = snap_z() + 0.1
-    lead = ring(LIP_U, -face + 0.25, face + 0.2, z0, 0.5)
-    step = ring(LIP_U, -face + 0.45, face + 0.2, z0 + 0.5, 0.7)
+    lead = ring(LIP_U, -face + BEAD_LEAD, face + 0.2, z0, 0.5)
+    step = ring(LIP_U, -face + BEAD_STEP, face + 0.2, z0 + 0.5, 0.7)
     return band.union(hook).union(flange).union(lead).union(step).cut(gap())
 
 
