@@ -95,6 +95,15 @@ def write_md(rows):
         for n, mat, note, best, over, contact, dims, fits, g, h in rows
     )
     total_g = sum(r[8] for r in rows if not r[0].endswith("coupon"))
+    bed = build.P["bed"]
+    too_big = [(r[0], r[6]) for r in rows if not r[7]]
+    need = max(max(r[6][:2]) for r in rows)
+    if too_big:
+        bed_note = (f"**Bed:** this size has {len(too_big)} part(s) that do not fit the configured {bed[0]} x {bed[1]} mm bed: "
+                    + ", ".join(f"`{n}` ({d[0]:.0f} x {d[1]:.0f})" for n, d in too_big)
+                    + f". The largest part is {need:.0f} mm, so it needs a bed of about {need + 3:.0f} mm, or change `bed` under `[print]` in `config.toml` to see the rest of the plan for your printer.")
+    else:
+        bed_note = f"**Bed:** every part fits a {bed[0]} x {bed[1]} mm bed (the largest is {need:.0f} mm)."
     md = f"""# Print plan: size {build.SIZE}, kit {layout.KIT}
 
 Nothing here has been printed. This plan puts the cheap, informative tests first and holds back every big print until
@@ -164,6 +173,8 @@ Orientation and support area are computed from the geometry: the orientation wit
 
 Printed mass without the coupon: about {total_g:.0f} g.
 
+{bed_note}
+
 ## Things this plan cannot tell you
 
 - Whether the clearances (0.25 mm dovetail, 0.3 mm rail pocket, the 0.5 mm snap groove) suit your printer. That is what Stage 1 is for.
@@ -171,8 +182,9 @@ Printed mass without the coupon: about {total_g:.0f} g.
 - How the collar feels on a body. Only Stage 2 tells you.
 - Whether the electronics are safe. Stage 4 is a bench test, not a certification.
 """
-    (build.ROOT / "PRINT_PLAN.md").write_text(md)
-    print("wrote", build.ROOT / "PRINT_PLAN.md")
+    name = "PRINT_PLAN.md" if build.SIZE == "M" else f"PRINT_PLAN_{build.SIZE}.md"
+    (build.ROOT / name).write_text(md)
+    print("wrote", build.ROOT / name)
 
 
 if __name__ == "__main__":

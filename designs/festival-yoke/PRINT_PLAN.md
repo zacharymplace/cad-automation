@@ -10,7 +10,7 @@ run `build.py`, `module.py` and `power.py` to make them).
 Print a 20 mm calibration cube in each filament, then a 2 mm thick, 60 x 40 mm TPU plate. The TPU plate must come out
 smooth with no stringing or gaps: the yoke skin is that thin. Fix temperature, speed and retraction here, not on the yoke.
 
-**Stage 1: the fit pack (the first real print, about 89 g).**
+**Stage 1: the fit pack (the first real print, about 88 g).**
 Print `flat_skin_fr` and `flat_skin_br` (TPU, flat, no supports), `hoop_lip_right` and `hoop_bar_coupon` (PETG, upside down), `diffuser_fitted_fr` (natural PETG) and `module_clip_coupon` (PETG). Together they test, with
 no waste: forming the flat skin into the cone, the dovetail seam (the front-right tabs go into the back-right pockets), gluing a lip segment and a docking bar on along the engraved guide lines, the clip sliding onto the bar, the
 diffuser snap, and how TPU behaves at 2 mm.
@@ -63,39 +63,41 @@ Orientation and support area are computed from the geometry: the orientation wit
 
 | Part | Material | What | Best orientation | Support mm2 | Bed contact mm2 | Size mm | Fits bed | Mass g | Hours |
 |---|---|---|---|---|---|---|---|---|---|
-| `flat_skin_fr` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 12698 | 157 x 157 x 2 | ok | 28 | 3.6 |
-| `flat_skin_br` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 14258 | 200 x 155 x 2 | ok | 32 | 4.0 |
-| `flat_skin_fl` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 12698 | 157 x 157 x 2 | ok | 28 | 3.6 |
-| `flat_skin_bl` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 14058 | 190 x 155 x 2 | ok | 31 | 3.9 |
-| `hoop_lip_right` | PETG | lip segment, glued to the skin (print upside down) | flipped | 579 | 441 | 81 x 212 x 13 | ok | 5 | 0.3 |
+| `flat_skin_fr` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 12679 | 157 x 157 x 2 | ok | 28 | 3.6 |
+| `flat_skin_br` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 14252 | 200 x 155 x 2 | ok | 32 | 4.0 |
+| `flat_skin_fl` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 12679 | 157 x 157 x 2 | ok | 28 | 3.5 |
+| `flat_skin_bl` | TPU 95A | flat skin quarter (print flat, bend into the cone) | as designed | 0 | 14051 | 190 x 155 x 2 | ok | 31 | 3.9 |
+| `hoop_lip_right` | PETG | lip segment, glued to the skin (print upside down) | flipped | 580 | 441 | 81 x 212 x 13 | ok | 5 | 0.3 |
 | `hoop_lip_front_right` | PETG | lip segment, glued to the skin (print upside down) | as designed | 186 | 117 | 71 x 22 x 13 | ok | 1 | 0.1 |
 | `hoop_lip_front_left` | PETG | lip segment, glued to the skin (print upside down) | as designed | 186 | 116 | 71 x 22 x 13 | ok | 1 | 0.1 |
-| `hoop_lip_left` | PETG | lip segment, glued to the skin (print upside down) | flipped | 580 | 441 | 81 x 212 x 13 | ok | 5 | 0.3 |
-| `hoop_lip_back` | PETG | lip segment, glued to the skin (print upside down) | flipped | 454 | 345 | 212 x 24 x 13 | ok | 4 | 0.3 |
-| `hoop_bar_cup` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2044 | 0 | 73 x 68 x 23 | ok | 6 | 0.4 |
-| `hoop_bar_phone` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2153 | 0 | 80 x 54 x 25 | ok | 6 | 0.4 |
-| `hoop_bar_dock` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2073 | 0 | 76 x 64 x 24 | ok | 6 | 0.4 |
-| `hoop_bar_fan` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2092 | 0 | 76 x 64 x 24 | ok | 6 | 0.4 |
-| `hoop_bar_pod` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2141 | 0 | 80 x 20 x 26 | ok | 7 | 0.4 |
+| `hoop_lip_left` | PETG | lip segment, glued to the skin (print upside down) | flipped | 579 | 441 | 81 x 212 x 13 | ok | 5 | 0.3 |
+| `hoop_lip_back` | PETG | lip segment, glued to the skin (print upside down) | flipped | 453 | 344 | 212 x 24 x 13 | ok | 4 | 0.3 |
+| `hoop_bar_cup` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2046 | 0 | 73 x 68 x 23 | ok | 6 | 0.4 |
+| `hoop_bar_phone` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2159 | 0 | 80 x 54 x 25 | ok | 6 | 0.4 |
+| `hoop_bar_dock` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2074 | 0 | 76 x 63 x 24 | ok | 6 | 0.4 |
+| `hoop_bar_fan` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2092 | 0 | 76 x 63 x 24 | ok | 6 | 0.4 |
+| `hoop_bar_pod` | PETG | docking bar, glued to the skin (print upside down) | as designed | 2134 | 0 | 80 x 20 x 26 | ok | 7 | 0.4 |
 | `hoop_bar_id` | PETG | docking bar, glued to the skin (print upside down) | as designed | 1913 | 0 | 20 x 80 x 20 | ok | 6 | 0.4 |
-| `hoop_bar_tube` | PETG | docking bar, glued to the skin (print upside down) | as designed | 1912 | 0 | 20 x 80 x 20 | ok | 6 | 0.4 |
-| `diffuser_fitted_fr` | PETG (natural) | LED cover quarter | as designed | 3629 | 301 | 153 x 128 x 22 | ok | 7 | 0.5 |
-| `diffuser_fitted_br` | PETG (natural) | LED cover quarter | as designed | 3497 | 345 | 188 x 130 x 22 | ok | 7 | 0.5 |
-| `diffuser_fitted_fl` | PETG (natural) | LED cover quarter | as designed | 3474 | 296 | 153 x 128 x 22 | ok | 7 | 0.5 |
-| `diffuser_fitted_bl` | PETG (natural) | LED cover quarter | as designed | 3468 | 350 | 188 x 130 x 22 | ok | 7 | 0.5 |
+| `hoop_bar_tube` | PETG | docking bar, glued to the skin (print upside down) | as designed | 1913 | 0 | 20 x 80 x 20 | ok | 6 | 0.4 |
+| `diffuser_fitted_fr` | PETG (natural) | LED cover quarter | as designed | 3623 | 301 | 153 x 128 x 22 | ok | 7 | 0.5 |
+| `diffuser_fitted_br` | PETG (natural) | LED cover quarter | as designed | 3567 | 344 | 188 x 130 x 22 | ok | 7 | 0.5 |
+| `diffuser_fitted_fl` | PETG (natural) | LED cover quarter | as designed | 3468 | 296 | 153 x 128 x 22 | ok | 7 | 0.5 |
+| `diffuser_fitted_bl` | PETG (natural) | LED cover quarter | as designed | 3552 | 350 | 188 x 130 x 22 | ok | 7 | 0.5 |
 | `module_clip_coupon` | PETG | fit test for the clip's T-slot (slides onto the bar) | flipped | 392 | 875 | 51 x 47 x 15 | ok | 10 | 0.6 |
-| `hoop_bar_coupon` | PETG | docking bar for the clip coupon | as designed | 2044 | 0 | 73 x 68 x 23 | ok | 6 | 0.4 |
-| `module_cup` | PETG | cup cradle | as designed | 1929 | 3652 | 127 x 133 x 116 | ok | 42 | 2.6 |
+| `hoop_bar_coupon` | PETG | docking bar for the clip coupon | as designed | 2046 | 0 | 73 x 68 x 23 | ok | 6 | 0.4 |
+| `module_cup` | PETG | cup cradle | as designed | 1928 | 3652 | 127 x 133 x 116 | ok | 42 | 2.6 |
 | `module_phone` | PETG | phone cradle | as designed | 4036 | 1833 | 106 x 113 x 174 | ok | 42 | 2.6 |
-| `module_dock` | PETG | ear-defender dock | on its +y side | 4514 | 382 | 128 x 35 x 145 | ok | 34 | 2.1 |
+| `module_dock` | PETG | ear-defender dock | on its +y side | 4425 | 382 | 128 x 35 x 145 | ok | 34 | 2.1 |
 | `module_fan` | PETG | fan frame | as designed | 6113 | 582 | 114 x 112 x 113 | ok | 30 | 1.8 |
 | `module_pod` | PETG | power pod tray | on its +x side | 1343 | 1071 | 29 x 49 x 71 | ok | 16 | 1.0 |
-| `module_id` | PETG | ID card pouch | flipped | 743 | 2279 | 81 x 94 x 62 | ok | 23 | 1.4 |
+| `module_id` | PETG | ID card pouch | flipped | 743 | 2275 | 81 x 94 x 62 | ok | 23 | 1.4 |
 | `module_tube` | PETG | hydration tube clip | on its +x side | 847 | 320 | 25 x 56 x 47 | ok | 9 | 0.6 |
 | `module_fan_guard` | PETG | fan outlet guard (screws on with four M2 self-tapping screws) | as designed | 0 | 2941 | 86 x 86 x 2 | ok | 5 | 0.3 |
 | `module_pod_lid` | PETG | power pod lid | flipped | 0 | 3277 | 71 x 48 x 4 | ok | 5 | 0.3 |
 
 Printed mass without the coupon: about 415 g.
+
+**Bed:** every part fits a 220 x 220 mm bed (the largest is 212 mm).
 
 ## Things this plan cannot tell you
 

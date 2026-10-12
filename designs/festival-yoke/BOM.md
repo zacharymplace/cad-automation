@@ -1,6 +1,6 @@
 # Bill of materials and rough cost (size M)
 
-Prices are my estimates in US dollars, anchored on a few listings seen in October 2026. They are not quotes, they exclude shipping, tax and tools, and they swing a lot by seller and country. Check every line before buying. Printed masses come from the CAD; the filament line adds a 25% allowance for supports, purge and a failed print.
+The LED strip for size M is about 843 mm in two halves, so buy 1 m. Prices are my estimates in US dollars, anchored on a few listings seen in October 2026. They are not quotes, they exclude shipping, tax and tools, and they swing a lot by seller and country. Check every line before buying. Printed masses come from the CAD; the filament line adds a 25% allowance for supports, purge and a failed print.
 
 ## Cost per kit
 
@@ -36,7 +36,7 @@ First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the
 | protected pouch cell 3.7 V ~4000 mAh | 11-25 | built-in protection circuit, JST connector; about 60 x 40 x 10 mm |
 | USB-C charge and 5 V boost board | 4-12 | with overcurrent and short-circuit protection; about 32 x 22 x 6 mm. Take a reputable one, not the cheapest |
 | resettable fuse 2 A, slide switch, JST plug | 3-6 | fuse in the cell lead |
-| LED strip 5 V COB, 8 mm, 1 m | 3-12 | needs about 0.85 m; 5 mm on size S. Prices range from about $1 to a few dollars per metre on marketplaces to far more at retail |
+| LED strip 5 V COB, 8 mm, per metre | 3-12 | length depends on the size (see the strip line below); 4-5 mm on size S. Prices range from about $1 to a few dollars per metre on marketplaces to far more at retail |
 | PWM dimmer or MOSFET driver | 2-6 | so the firmware can cap brightness and cannot flash |
 | wire, heat shrink, solder | 5-10 | if you do not already have them |
 | M2 x 6 self-tapping screws (8) | 4-8 | four for the pod lid, four for the fan guard |
@@ -54,7 +54,7 @@ First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the
 | protected pouch cell 3.7 V ~4000 mAh | - | 1 | 1 | 1 | 1 |
 | USB-C charge and 5 V boost board | - | 1 | 1 | 1 | 1 |
 | resettable fuse 2 A, slide switch, JST plug | - | 1 | 1 | 1 | 1 |
-| LED strip 5 V COB, 8 mm, 1 m | - | 1 | 1 | 1 | 1 |
+| LED strip 5 V COB, 8 mm, per metre | - | 1 | 1 | 1 | 1 |
 | PWM dimmer or MOSFET driver | - | 1 | 1 | 1 | 1 |
 | wire, heat shrink, solder | - | 1 | 1 | 1 | 1 |
 | M2 x 6 self-tapping screws (8) | - | 1 | 1 | 1 | 1 |

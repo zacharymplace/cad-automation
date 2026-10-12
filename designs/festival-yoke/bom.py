@@ -1,12 +1,15 @@
 """Bill of materials and rough cost per kit, size M. Printed masses come from the CAD (print_plan.parts); prices are my
 estimates in USD, anchored on a handful of listings found in Oct 2026, NOT quotes: check them before buying.
-Run: uv run --no-project --with cadquery bom.py   (writes BOM.md)
+Run: uv run --no-project --with cadquery bom.py   (writes BOM.md for size M, BOM_<size>.md for the others; FESTIVAL_YOKE_SIZE=XXL picks a size)
 """
 import json
 from collections import defaultdict
 
+import math
+
 import build
 import layout
+import power
 import print_plan
 
 KITS = layout.KITS
@@ -23,7 +26,7 @@ PARTS = {
     "protected pouch cell 3.7 V ~4000 mAh": (11, 25, "built-in protection circuit, JST connector; about 60 x 40 x 10 mm"),
     "USB-C charge and 5 V boost board": (4, 12, "with overcurrent and short-circuit protection; about 32 x 22 x 6 mm. Take a reputable one, not the cheapest"),
     "resettable fuse 2 A, slide switch, JST plug": (3, 6, "fuse in the cell lead"),
-    "LED strip 5 V COB, 8 mm, 1 m": (3, 12, "needs about 0.85 m; 5 mm on size S. Prices range from about $1 to a few dollars per metre on marketplaces to far more at retail"),
+    "LED strip 5 V COB, 8 mm, per metre": (3, 12, "length depends on the size (see the strip line below); 4-5 mm on size S. Prices range from about $1 to a few dollars per metre on marketplaces to far more at retail"),
     "PWM dimmer or MOSFET driver": (2, 6, "so the firmware can cap brightness and cannot flash"),
     "wire, heat shrink, solder": (5, 10, "if you do not already have them"),
     "M2 x 6 self-tapping screws (8)": (4, 8, "four for the pod lid, four for the fan guard"),
@@ -42,7 +45,7 @@ def kit_purchases(kit):
         items["spring plunger M3"] = len(mods)
     if "pod" in mods:
         for k in ("protected pouch cell 3.7 V ~4000 mAh", "USB-C charge and 5 V boost board", "resettable fuse 2 A, slide switch, JST plug",
-                  "LED strip 5 V COB, 8 mm, 1 m", "PWM dimmer or MOSFET driver", "wire, heat shrink, solder"):
+                  "LED strip 5 V COB, 8 mm, per metre", "PWM dimmer or MOSFET driver", "wire, heat shrink, solder"):
             items[k] = 1
         items["M2 x 6 self-tapping screws (8)"] = 1
     if "fan" in mods:
@@ -87,16 +90,21 @@ def kit_prints(parts, kit):
 
 def main():
     parts = print_plan.parts()
+    strip_mm = 2 * power.strip_length()
+    strip_metres = max(1, math.ceil(strip_mm / 1000))
     rows = []
-    out = ["# Bill of materials and rough cost (size M)", "",
-           "Prices are my estimates in US dollars, anchored on a few listings seen in October 2026. They are not quotes, they exclude shipping, tax and tools, and they swing a lot by seller and country. Check every line before buying. Printed masses come from the CAD; the filament line adds a 25% allowance for supports, purge and a failed print.", ""]
+    out = [f"# Bill of materials and rough cost (size {build.SIZE})", "",
+           f"The LED strip for size {build.SIZE} is about {strip_mm:.0f} mm in two halves, so buy {strip_metres} m. " + "Prices are my estimates in US dollars, anchored on a few listings seen in October 2026. They are not quotes, they exclude shipping, tax and tools, and they swing a lot by seller and country. Check every line before buying. Printed masses come from the CAD; the filament line adds a 25% allowance for supports, purge and a failed print.", ""]
     for kit in KITS:
         grams = kit_prints(parts, kit)
         items = kit_purchases(kit)
         fil_lo = sum(g * WASTE / 1000 * FILAMENT[m][0] for m, g in grams.items())
         fil_hi = sum(g * WASTE / 1000 * FILAMENT[m][1] for m, g in grams.items())
-        buy_lo = sum(PARTS[k][0] * (n if k == "spring plunger M3" else 1) for k, n in items.items())
-        buy_hi = sum(PARTS[k][1] * (n if k == "spring plunger M3" else 1) for k, n in items.items())
+        if "LED strip 5 V COB, 8 mm, per metre" in items:
+            items["LED strip 5 V COB, 8 mm, per metre"] = strip_metres
+        qty = lambda k, n: n if k in ("spring plunger M3", "LED strip 5 V COB, 8 mm, per metre") else 1
+        buy_lo = sum(PARTS[k][0] * qty(k, n) for k, n in items.items())
+        buy_hi = sum(PARTS[k][1] * qty(k, n) for k, n in items.items())
         rows.append((kit, KITS[kit]["modules"], grams, fil_lo, fil_hi, buy_lo, buy_hi, items))
     out += ["## Cost per kit", "", "Filament is shown pro rata for the grams used. Add the spool minimum: you buy 1 kg of each material, so the first build costs more (see below).", "",
             "| Kit | Modules | Printed g | Filament USD | Parts USD | Total USD |", "|---|---|---|---|---|---|"]
@@ -132,7 +140,8 @@ def main():
             "- 80 mm 8015 5 V fans: about 3-9 USD each depending on seller and connector.", "",
             "## What this does not include", "",
             "The printer, your time, shipping, tax, a spare for each part you will break while tuning, and anything for selling it (certification, insurance, packaging, support). Test prints and failures usually double the filament cost of the first kit."]
-    (build.ROOT / "BOM.md").write_text("\n".join(out) + "\n")
+    name = "BOM.md" if build.SIZE == "M" else f"BOM_{build.SIZE}.md"
+    (build.ROOT / name).write_text("\n".join(out) + "\n")
     print("\n".join(out[:20]))
 
 
