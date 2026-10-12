@@ -30,6 +30,9 @@ S/M/L/XL/XXL presets and a custom option, driven by five measurements (`sizing.p
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Viability (`VIABILITY.md`, `viability.py`)
+Monte Carlo simulations of what it costs to make and sell, what price it would need, break-even volumes, the glue joint's failure rate, and whether the test stages pay for themselves. Short version: not viable as a hand-made consumer product at festival-accessory prices (about $250 to cover the cost of the bare collar and about $600 for the full kit); possible as a lean niche product (about $200 core, $300 glow, $500 full) or as sold plans; worth the cheap next step but not inventory; and the glued bar would fail in about a quarter of units a season as designed, so it needs a wider flange and pegs.
+
 ## Sizing check (`SIZING.md`)
 The S/M/L/XL presets were checked against the ANSUR II survey (4,082 men and 1,986 women, computed from the public CSVs): they cover about 98% of that sample. Changes: the head model now uses the survey's breadth and length ratios (an ellipse fitted to the circumference was too big), the neck presets are now at the base of the neck as the measuring guide says, the L and XL shoulder drops follow the population's 24 degree median slope, and the printed foam seats are gone from the formed model (they are engraved marks plus foam stickers). The survey is a US Army sample with no seated posture, so treat the presets as starting points; an XXL has since been added (shoulders 470 mm), the least verified size; it needs a bed of about 250 mm. Shoulder depth has no survey equivalent and is the least supported number.
 
