@@ -30,6 +30,17 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Putting it on (`donning.py`)
+Open-front design, no fastener. For size M the head (about 161 x 201 mm) goes through a 189 x 171 mm opening with 14 mm to spare each side, sitting about 15 mm forward of the collar centre; the front gap must open from 70 to about 115 mm (a 45 mm spread). A 2D ring model puts the force at a few N per front tip with peak plan strain of 2-3% in the skin, well under what a weak one-handed grip manages. That model is an upper-bound stiffness guess (glued rigid segments and seams will change it): measure it with a spring scale in Stage 2 of the print plan. Fit the modules after the collar is on. With the full kit every module clears the head's path; the first tuning put the phone at 110 degrees, where it blocked the head, so the phone is now kept at 125 degrees or further round.
+
+**Problem found: the modules cannot be snapped onto the rail as designed.** The clip's lips tuck under the 1.5 mm cap overhang, so the cap would have to flex 1.2 mm past them: about 2,000 N per side and 200% strain in TPU. A person could not do it and the TPU would not survive it. The retention screws also mean a tool, which defeats a one-handed design. The attach method has to change before anything is printed; options are in the notes below.
+
+### Module attachment: what replaces the snap-on clip
+All three keep the rail as the mounting line. None is built yet; pick one before printing.
+1. **Slide-on docking bars (recommended).** Replace the continuous curved rail with straight bars glued where the kit's modules go, each a little longer than a clip, with one open end. The clip's T-slot is straight, so a module slides on from the end with almost no force and pulls off the same way, one-handed and tool-free; a spring detent or a printed bump holds it in place. It also removes rail where nothing is mounted (about 20 g lighter) and lets a module be slid a few centimetres. Cost: the straight bars stand slightly proud of the curved collar, the diffuser's inner edge loses its continuous rail to rest on, and the modules' pockets and z levels must be reworked.
+2. **Hook-and-latch clip.** A hook under the inner cap overhang resists the prying load, and a small spring catch on the outer side holds it down: tilt in, press, done. Strongest mechanically, but the hook must be short because the rail curves, and it needs a real latch design and test.
+3. **Magnets and a cleat.** Modules drop onto the rail and magnets hold them. Simple to use, but small magnets are weak against the cup's lift (about 24 N, 120 N at 5 g), and strong magnets near the chest are a problem for people with pacemakers and some pumps: I would avoid them for this audience.
+
 ## Flat-print skin (`flatpack.py`)
 The collar skin is almost exactly a developable cone (Gaussian curvature about 1e-7 per mm2; a 200 mm sphere is 2.5e-5), so `flatpack.py` unrolls each quarter into a flat fan shape with a least-squares conformal map and checks the stretch (under 0.2%) and that the seam edges match across each joint (97.37 mm both sides). The four flat TPU pieces print face up with no supports, and carry the slots, the dovetail tabs and pockets, and engraved guide lines for the rail, the lip and the foam seats. Bend them into the cone and join the dovetails. The skin bends at about 1.2% strain, well within TPU.
 
@@ -52,11 +63,11 @@ Pick a kit with `kit = "full"` in `config.toml` or `FESTIVAL_YOKE_KIT=glow`. Mod
 
 | Kit | Modules | Printed g (M) | Loaded g | COM offset | Margin inside the foam seats |
 |---|---|---|---|---|---|
-| core | none: yoke, seats, rail, lip | 131 | 131 | 6 mm | 48 mm |
-| glow | pod (strip + cover come with it) | 184 | 289 | 49 mm | 5 mm |
-| carry | cup, phone, ID pouch, pod | 285 | 970 | 66 mm | 0 mm |
-| comfort | dock, fan, pod | 242 | 637 | 66 mm | 8 mm |
-| full | all seven | 349 | 1354 | 24 mm | 33 mm |
+| core | none: yoke, seats, rail, lip | 134 | 134 | 6 mm | 48 mm |
+| glow | pod (strip + cover come with it) | 188 | 293 | 48 mm | 6 mm |
+| carry | cup, phone, ID pouch, pod | 291 | 976 | 66 mm | 0 mm |
+| comfort | dock, fan, pod | 248 | 643 | 66 mm | 8 mm |
+| full | all seven | 357 | 1362 | 18 mm | 36 mm |
 
 "Margin" is how far the loaded centre of mass is inside the rectangle spanned by the four foam seats (+-123 mm across, +-54 mm front to back); at or below zero the collar pitches or rolls and one side lifts off. The carry kit sits right on that edge with a full cup, so use a smaller cup or lighten the front there. Masses are estimates (see `balance.py`).
 

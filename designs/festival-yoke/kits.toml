@@ -10,13 +10,13 @@ id = 0
 pod = 315
 
 ["M.comfort"]
-dock = 45
-fan = 180
-pod = 255
+dock = 135
+fan = 0
+pod = 285
 
 ["M.full"]
 cup = 40
-phone = 110
+phone = 125
 dock = 225
 fan = 315
 pod = 270

@@ -31,7 +31,7 @@ def near_side(a, tol=45):
 
 ALL = range(0, 360, 15)
 CANDIDATES = {
-    "cup": (25, 40, 55, 70), "phone": (110, 125, 140, 155, 170), "id": (0, 15, 30, 45, 60, 120, 135, 150, 165, 180), "tube": (0, 15, 30, 45, 60),
+    "cup": (25, 40, 55, 70), "phone": (125, 140, 155, 170), "id": (0, 15, 30, 45, 60, 120, 135, 150, 165, 180), "tube": (0, 15, 30, 45, 60),
     "dock": [a for a in ALL if near_side(a) and not 60 <= a <= 120], "fan": [a for a in ALL if near_side(a) and not 60 <= a <= 120],
     "pod": [a for a in ALL if 225 <= a <= 315],
 }
