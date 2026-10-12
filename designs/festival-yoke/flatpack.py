@@ -16,6 +16,8 @@ from scipy.interpolate import LinearNDInterpolator
 from scipy.sparse.linalg import spsolve
 
 import build
+import dock
+import layout
 
 AI, BI, AO, BO, DROP = build.AI, build.BI, build.AO, build.BO, build.DROP
 T = build.Y["thickness"]
@@ -162,6 +164,15 @@ def strip_polygon(poly: np.ndarray, width: float, closed: bool = False) -> np.nd
     return np.vstack([poly + nrm, (poly - nrm)[::-1]])
 
 
+def closed_strip(poly: np.ndarray, width: float, z0: float, h: float) -> cq.Workplane:
+    """A closed loop thickened to `width`, as a ring (outer outline minus inner outline)."""
+    poly = poly[:-1] if np.allclose(poly[0], poly[-1]) else poly
+    d = np.roll(poly, -1, axis=0) - np.roll(poly, 1, axis=0)
+    d /= np.linalg.norm(d, axis=1, keepdims=True) + 1e-12
+    nrm = np.stack([-d[:, 1], d[:, 0]], axis=1) * width / 2
+    return prism(poly + nrm, z0, h).cut(prism(poly - nrm, z0 - 1, h + 2))
+
+
 def prism(poly: np.ndarray, z0: float, h: float) -> cq.Workplane:
     return cq.Workplane("XY").workplane(offset=z0).polyline([tuple(p) for p in poly]).close().extrude(h)
 
@@ -220,15 +231,17 @@ def piece(name: str, sx: int, sy: int, xcut: float, tab_edges: list[str], pocket
     for which in tab_edges:
         us = build.J["positions_side"] if which == "seam" else build.J["positions_back"]
         for u in us:
-            body = body.union(prism(on_edge(which, u, dovetail_pts(), 1), 0, T))
+            trial = body.union(prism(on_edge(which, u, dovetail_pts(), 1), 0, T))
+            body = trial if trial.val().isValid() and trial.val().Volume() > 0 else body
     for which in pocket_edges:
         us = build.J["positions_side"] if which == "seam" else build.J["positions_back"]
         for u in us:
-            body = body.cut(prism(on_edge(which, u, dovetail_pts(build.J["clearance"]), -1), -1, T + 2))
+            trial = body.cut(prism(on_edge(which, u, dovetail_pts(build.J["clearance"]), -1), -1, T + 2))
+            body = trial if trial.val().isValid() and trial.val().Volume() > 0 else body
 
     # lightening slots, same angles as the formed skin; keep those inside this quarter
     for deg in range(15, 360, 30):
-        if 60 <= deg <= 120:
+        if 60 <= deg <= 120 or build.slot_blocked(deg):
             continue
         pts = slot_plan(deg)
         # the slot belongs to this quarter if its centre lies in it; its outline is mapped through this quarter's grid
@@ -239,21 +252,29 @@ def piece(name: str, sx: int, sy: int, xcut: float, tab_edges: list[str], pocket
         flat = pat.to_flat(pts)          # slot_plan already carries the real plan signs
         if np.isnan(flat).any():
             continue
-        body = body.cut(prism(flat, -1, T + 2))
+        trial = body.cut(prism(flat, -1, T + 2))
+        if trial.val().isValid() and trial.val().Volume() > 0.9 * body.val().Volume():
+            body = trial
+        else:
+            print(f"WARN flat_{name}: a slot was skipped (the CAD kernel rejected the cut)")
 
     # engraved guide lines on the top face: rail and lip centre lines, and the foam seat ovals
-    def engrave(poly_plan, closed=False):
+    def engrave(poly_plan, label="guide", closed=False):
         nonlocal body
         f = pat.to_flat(poly_plan * np.array([sx, sy]))
         f = f[~np.isnan(f).any(axis=1)]
         if len(f) < 3:
             return
-        body = body.cut(prism(strip_polygon(f, GROOVE_W), T - GROOVE_D, GROOVE_D + 1))
+        cutter = closed_strip(f, GROOVE_W, T - GROOVE_D, GROOVE_D + 1) if closed else prism(strip_polygon(f, GROOVE_W), T - GROOVE_D, GROOVE_D + 1)
+        trial = body.cut(cutter)
+        if trial.val().isValid() and trial.val().Volume() > 0.9 * body.val().Volume():
+            body = trial
+        else:
+            print(f"WARN flat_{name}: the engraved {label} was skipped (the CAD kernel rejected the cut)")
 
     ph0 = 0.02
-    for u in (build.R["position"], build.LIP_U):
-        th_end = math.acos(min(0.999, xcut / build.surface(u)[0]))
-        engrave(ellipse_arc(u, ph0, th_end - 0.02))
+    th_end = math.acos(min(0.999, xcut / build.surface(build.LIP_U)[0]))
+    engrave(ellipse_arc(build.LIP_U, ph0, th_end - 0.02), "lip guide")
     for deg in build.PAD["angles"]:
         th = math.radians(deg)
         if (math.cos(th) > 0) != (sx > 0) or (math.sin(th) > 0) != (sy > 0):
@@ -264,7 +285,18 @@ def piece(name: str, sx: int, sy: int, xcut: float, tab_edges: list[str], pocket
         t = np.linspace(0, 2 * math.pi, 48)
         ox, oy = build.PAD["length"] / 2 * np.cos(t), build.PAD["width"] / 2 * np.sin(t)
         pts = np.stack([cx + ox * math.cos(ang) - oy * math.sin(ang), cy + ox * math.sin(ang) + oy * math.cos(ang)], axis=1)
-        engrave(pts)
+        engrave(pts, "foam seat oval", closed=True)
+    for angle in layout.angles().values():          # centre line of each docking bar, mapped through this quarter (partial across a seam)
+        fr = dock.frame(angle)
+        line = np.array([fr["M"] + s * fr["d"] for s in np.linspace(-dock.BAR_LENGTH / 2, dock.BAR_LENGTH / 2, 40)])
+        mapped = pat.to_flat(line)
+        mapped = mapped[~np.isnan(mapped).any(axis=1)]
+        if len(mapped) >= 3:
+            trial = body.cut(prism(strip_polygon(mapped, GROOVE_W), T - GROOVE_D, GROOVE_D + 1))
+            if trial.val().isValid() and trial.val().Volume() > 0.9 * body.val().Volume():
+                body = trial
+            else:
+                print(f"WARN flat_{name}: guide line for the bar at {angle:.0f} deg skipped (the CAD kernel rejected the cut)")
     return pat, body
 
 
@@ -285,7 +317,7 @@ def flat_parts():
     return out
 
 
-SEGMENTS = {          # sector of the ring each rigid segment covers, degrees (0 = right side, 90 = front); cuts fall away from the skin seams
+SEGMENTS = {          # sector of the lip ring each rigid segment covers, degrees (0 = right side, 90 = front)
     "right": (-45, 45), "front_right": (45, 90), "front_left": (90, 135), "left": (135, 225), "back": (225, 315),
 }
 
@@ -296,25 +328,20 @@ def _sector(a0: float, a1: float) -> cq.Workplane:
 
 
 def hoop_segments() -> dict[str, cq.Workplane]:
-    """Rigid rail and lip segments, base cut to the skin surface so they sit flat on it; print them upside down (cap or
-    lip top on the bed) and they need no supports. Segments straddle the skin seams, which stiffens the joints."""
-    R, G = build.R, build.G
-    zs = build.surface(R["position"])[2]
-    stem = build.ring(R["position"], R["stem_width"] / 2, R["stem_width"] / 2, zs - 8, 8 + R["stem_height"])
-    cap = build.ring(R["position"], R["cap_width"] / 2, R["cap_width"] / 2, zs + R["stem_height"], R["cap_height"])
-    rail = stem.union(cap).cut(build.cone(0))
+    """The rigid parts glued to the flat skin: lip segments and one straight docking bar per module in the active kit.
+    All print upside down (bar cap or lip top on the bed) without supports. Their bases are cut to the skin surface."""
+    G = build.G
     zl = build.surface(build.LIP_U)[2]
     lip = build.ring(build.LIP_U, G["lip_width"] / 2, G["lip_width"] / 2, zl - 8, 8 + G["lip_height"])
     lip = lip.cut(build.ring(build.LIP_U, 0.5 - G["lip_width"] / 2, G["lip_width"] / 2 + 0.1, build.snap_z(), build.SNAP_HEIGHT))
-    lip = lip.cut(build.cone(0))
-    gap = build.gap()
+    lip = lip.cut(build.cone(0)).cut(build.gap())
     out = {}
-    for kind, ring_shape in (("rail", rail), ("lip", lip)):
-        ring_shape = ring_shape.cut(gap)
-        for name, (a0, a1) in SEGMENTS.items():
-            seg = ring_shape.intersect(_sector(a0, a1))
-            if seg.vals() and seg.val().Volume() > 5:
-                out[f"{kind}_{name}"] = seg
+    for name, (a0, a1) in SEGMENTS.items():
+        seg = lip.intersect(_sector(a0, a1))
+        if seg.vals() and seg.val().Volume() > 5:
+            out[f"lip_{name}"] = seg
+    for module_name, angle in layout.angles().items():
+        out[f"bar_{module_name}"] = dock.bar(angle, sink=0.0)
     return out
 
 

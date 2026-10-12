@@ -16,7 +16,7 @@ KIT = os.environ.get("FESTIVAL_YOKE_KIT") or cfg["kit"]
 KITS = cfg["kits"]
 
 # fallback angles (deg on the rail, 0 = right side, 90 = front, 180 = left, 270 = back)
-DEFAULTS = {"cup": 40, "phone": 140, "dock": 225, "fan": 345, "pod": 300, "id": 30, "tube": 15, "blank": 200, "cover": 180}
+DEFAULTS = {"cup": 40, "phone": 140, "dock": 225, "fan": 345, "pod": 300, "id": 30, "tube": 15, "blank": 200}
 
 
 def _tuned() -> dict:

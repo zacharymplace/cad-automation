@@ -42,7 +42,7 @@ fig = plt.figure(figsize=(15, 11), facecolor="#14141a")
 
 ax = fig.add_subplot(2, 2, 1, projection="3d", facecolor="#14141a")
 mannequin(ax)
-for k in ("skin", "rail", "lip"):
+for k in [k for k in ("skin", "rail", "lip") if k in comps]:
     add(ax, comps[k], COLORS[k])
 for k in ("cup", "phone", "dock", "fan", "pod", "lid", "id", "tube"):
     add(ax, extras[k], COLORS["module"])
@@ -51,13 +51,13 @@ add(ax, extras["diffuser"], COLORS["diffuser"], 0.5)
 frame(ax, (0, 0, 80), 230, 22, 78, "full kit: carry, comfort and glow modules")
 
 ax = fig.add_subplot(2, 2, 2, projection="3d", facecolor="#14141a")
-for k in ("rail", "lip", "skin", "pad"):  # far side first: painter's algorithm, viewed from below
+for k in [k for k in ("rail", "lip", "skin", "pad") if k in comps]:  # far side first: painter's algorithm, viewed from below
     add(ax, comps[k], COLORS[k])
 frame(ax, (0, 0, -20), 160, -55, 70, "from below: blue foam seats rest on the trapezius")
 
 ax = fig.add_subplot(2, 2, 3, projection="3d", facecolor="#14141a")
 mannequin(ax)
-for k in ("skin", "rail", "lip"):
+for k in [k for k in ("skin", "rail", "lip") if k in comps]:
     add(ax, comps[k], COLORS[k])
 add(ax, extras["cup"], COLORS["module"])
 px, py, zs, h = module.pose(module.CUP_ANGLE)
@@ -65,7 +65,7 @@ frame(ax, (px + 40, py + 40, -60), 130, 18, 40, "cup cradle: slides out sideways
 
 ax = fig.add_subplot(2, 2, 4, projection="3d", facecolor="#14141a")
 mannequin(ax)
-for k in ("skin", "rail", "lip"):
+for k in [k for k in ("skin", "rail", "lip") if k in comps]:
     add(ax, comps[k], COLORS[k])
 add(ax, extras["phone"], COLORS["module"])
 px, py, zs, h = module.pose(module.PHONE_ANGLE)
@@ -85,7 +85,7 @@ for i, (key, angle, title, el, az, off) in enumerate([
 ]):
     ax = fig.add_subplot(1, 2, i + 1, projection="3d", facecolor="#14141a")
     mannequin(ax)
-    for k in ("skin", "rail", "lip"):
+    for k in [k for k in ("skin", "rail", "lip") if k in comps]:
         add(ax, comps[k], COLORS[k])
     add(ax, extras[key], COLORS["module"])
     px, py, zs, h = module.pose(angle)
@@ -105,7 +105,7 @@ for i, (title, el, az, span, show_cover) in enumerate([
 ]):
     ax = fig.add_subplot(1, 2, i + 1, projection="3d", facecolor="#14141a")
     mannequin(ax)
-    for k in ("skin", "rail", "lip"):
+    for k in [k for k in ("skin", "rail", "lip") if k in comps]:
         add(ax, comps[k], COLORS[k])
     add(ax, extras["strip"], COLORS["strip"])
     add(ax, extras["pod"], COLORS["module"]); add(ax, extras["lid"], "#d6bcfa")

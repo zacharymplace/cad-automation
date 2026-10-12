@@ -55,21 +55,25 @@ def main():
         worst = min(worst, b)
         print(f"{name:<14}{load:>7.0f}{lever:>6.0f}  {section:<18}{stress:>11.2f}{a:>8.1f}{b:>8.1f}")
 
-    # clip: the couple from the heaviest load lifts the clip's inner edge against the rail cap
+    # docking bar: the couple from the heaviest load tries to lift the inner edge of the clip against the bar's cap and
+    # peel the bar's flange off the skin
     heavy = max(((n, pay + local[n][0], abs(pay_l.get(n, local[n][1])[0])) for n, pay in balance.PAYLOAD.items() if n in local), key=lambda r: r[1] * r[2], default=None)
     if heavy:
+        import dock
         n, load, lever = heavy
-        M = load / 1000 * G * lever / 1000                        # N*m about the rail line
-        width = 14.0                                              # clip base width, mm
-        F = M / (width / 1000)                                    # N, lifting the inner lip
-        cap_over = (build.R["cap_width"] - build.R["stem_width"]) / 2     # mm of cap overhang gripped by a lip
-        line = F / module.LENGTH                                  # N per mm of clip length
-        root = line * cap_over                                    # N*mm per mm at the cap root
-        Z = build.R["cap_height"] ** 2 / 6                        # mm3 per mm
-        cap_stress = root / Z
-        print(f"\nrail clip under the worst load ({n}, {load:.0f} g at {lever:.0f} mm): couple {M:.2f} N*m, lift force {F:.0f} N")
-        print(f"  TPU cap overhang {cap_over:.1f} mm x {build.R['cap_height']} mm: root stress {cap_stress:.2f} MPa at 1 g, {cap_stress * SHOCK:.1f} MPa at {SHOCK:.0f} g (TPU working {TPU_YIELD} MPa: SF {sf(TPU_YIELD, cap_stress * SHOCK):.1f})")
-        print(f"  retention screws: {2 * SCREW_PULLOUT:.0f} N pull-out vs {F * SHOCK:.0f} N at {SHOCK:.0f} g (SF {sf(2 * SCREW_PULLOUT, F * SHOCK):.1f}); the screws clamp, they do not carry the lift directly")
+        M = load / 1000 * G * lever / 1000                        # N*m about the bar line
+        width = dock.FLANGE_W                                      # the bar's flange width, mm: the peel force is the couple over this lever
+        F = M / (width / 1000)                                    # N, peeling the bar's inner edge off the skin
+        cap_over = (build.R["cap_width"] - build.R["stem_width"]) / 2
+        line = F / module.LENGTH                                  # N per mm of clip length on the cap
+        Z = build.R["cap_height"] ** 2 / 6
+        cap_stress = line * cap_over / Z
+        print(f"\ndocking bar under the worst load ({n}, {load:.0f} g at {lever:.0f} mm): couple {M:.2f} N*m, lift force {F:.0f} N")
+        print(f"  PETG cap overhang {cap_over:.1f} mm x {build.R['cap_height']} mm: root stress {cap_stress:.2f} MPa at 1 g, {cap_stress * SHOCK:.1f} MPa at {SHOCK:.0f} g (PETG {PETG_YIELD:.0f} MPa: SF {sf(PETG_YIELD, cap_stress * SHOCK):.1f})")
+        peel = F / dock.BAR_LENGTH                                # N per mm of bar along the flange edge
+        PEEL_STRENGTH = 2.0                                       # N/mm, flexible adhesive on TPU, rough
+        print(f"  glue peel line load on the bar's flange: {peel:.2f} N/mm at 1 g, {peel * SHOCK:.2f} N/mm at {SHOCK:.0f} g vs about {PEEL_STRENGTH} N/mm for a flexible adhesive on TPU: SF {sf(PEEL_STRENGTH, peel * SHOCK):.1f} at {SHOCK:.0f} g")
+        print("  => the glue joint, not the plastic, is the weak link. Widen the flange, add two locating pegs through the skin per bar, or both")
 
     # diffuser snap hook: a PETG cantilever pushed out by the bead
     t = build.G["lip_width"] / 2 + 1.5 - (build.G["lip_width"] / 2 + 0.1)   # hook thickness, mm

@@ -48,8 +48,8 @@ front_gap = 70                # open front so it flexes on over the head
 slot_width = 16
 round = 0.6                   # edge rounding radius on the skin (it sits next to other people's faces)
 
-[rail]                        # T-rail for clip-on modules (cup, phone, fan arm), runs round the sides and back
-position = 0.65               # 0 = neck edge, 1 = outer edge
+[rail]                        # profile of the straight docking bars the modules slide onto (one bar per module, glued to the skin)
+position = 0.62               # 0 = neck edge, 1 = outer edge: where each bar's ends sit, and the inner edge of the LED channel
 stem_width = 3
 stem_height = 5
 cap_width = 6

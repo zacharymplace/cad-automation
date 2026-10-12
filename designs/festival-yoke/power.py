@@ -28,12 +28,12 @@ _inner = (BATT[1] + 3, BATT[0] + 6, BATT[2] + 1 + BOARD[2] + 3)         # x (acr
 _outer = (_inner[0] + 2 * WALL, _inner[1] + 2 * WALL)
 
 
-def _pod_local() -> tuple[cq.Workplane, cq.Workplane]:
-    _, _, _, _, z_arm = module.z_levels()
+def _pod_local(angle: float) -> tuple[cq.Workplane, cq.Workplane]:
+    _, _, _, _, z_arm = module.z_levels(angle)
     iw, il, ih = _inner
     ow, ol = _outer
     tray = cq.Workplane("XY").box(ow, ol, ih + WALL, centered=(True, True, False)).translate((POD_X, 0, z_arm))
-    body = module.clip_local().union(tray)
+    body = module.clip_local(angle).union(tray)
     body = body.cut(cq.Workplane("XY").box(iw, il, ih + 1, centered=(True, True, False)).translate((POD_X, 0, z_arm + WALL)))
     # corner screw bosses for the lid (M2 self-tapping)
     bx, by = iw / 2 - 3.2, il / 2 - 3.2
@@ -65,18 +65,19 @@ def _pod_local() -> tuple[cq.Workplane, cq.Workplane]:
 
 
 def pod_module(angle: float = POD_ANGLE) -> cq.Workplane:
-    return module.mount(_pod_local()[0], angle)
+    return module.mount(_pod_local(angle)[0], angle)
 
 
 def pod_lid(angle: float = POD_ANGLE) -> cq.Workplane:
-    return module.mount(_pod_local()[1], angle)
+    return module.mount(_pod_local(angle)[1], angle)
 
 
 def keepout(angle: float) -> cq.Workplane:
-    """Footprint of a module's clip, used to open a hole in the diffuser cover where a module sits."""
-    px, py, _, heading = module.pose(angle)
-    box = cq.Workplane("XY").box(25, module.LENGTH + 6, 120, centered=(False, True, True)).translate((-12, 0, -30))
-    return box.rotate((0, 0, 0), (0, 0, 1), heading).translate((px, py, 0))
+    """Footprint of a module's bar and clip, used to open a hole in the diffuser cover where a module sits."""
+    import dock
+    f = dock.frame(angle)
+    box = cq.Workplane("XY").box(30, dock.BAR_LENGTH + 8, 120, centered=(False, True, True)).translate((-14, 0, -30))
+    return dock._place(box, f)
 
 
 def fitted_diffuser() -> cq.Workplane:
@@ -89,9 +90,11 @@ def fitted_diffuser() -> cq.Workplane:
 def strip() -> cq.Workplane:
     """The LED strip: a ribbon lying on the skin in the channel (8 mm wide in plan), cut at the front gap."""
     u = (build.R["position"] + build.LIP_U) / 2
-    plan = build.ring(u, STRIP_WIDTH / 2, STRIP_WIDTH / 2, -80, 160)
+    plan = build.ring(u, STRIP_WIDTH / 2 - 0.6, STRIP_WIDTH / 2 + 0.6, -80, 160)   # nudged 0.6 mm outward: the cover's inner wall is not a uniform offset round an eccentric ellipse
     above_skin = build.cone(0.4 + STRIP_T).cut(build.cone(0.4))
-    return plan.intersect(above_skin).cut(build.gap())
+    ribbon = plan.intersect(above_skin).cut(build.gap())
+    bars = build.rail()
+    return ribbon.cut(bars) if bars is not None else ribbon   # the strip rides over the bar flanges
 
 
 def strip_length() -> float:

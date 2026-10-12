@@ -59,15 +59,19 @@ def solid_g(shape):
     return shape.val().Volume() / 1000 * build.P["density_g_cc"]
 
 
-def payload_local():
+def payload_local(angles):
     """Payload centre of mass in the module's local frame where the module's own centre is a poor guess."""
-    _, _, _, _, z_arm = module.z_levels()
-    floor_z = z_arm + 8 - module.CUP_HANG
-    return {
-        "cup": (36 + module.cup_shift(module.CUP_ANGLE) + module.CUP_ID / 2 + module.WALL, 0, floor_z + 45),
-        "dock": (46 + module.DOCK_CUP[1] / 2 + 3, 0, z_arm + 3 + 30),
-        "pod": (power.POD_X, 0, z_arm + power.WALL + power.BATT[2] / 2 + 0.5),
-    }
+    out = {}
+    if "cup" in angles:
+        z_arm = module.z_levels(angles["cup"])[4]
+        out["cup"] = (36 + module.cup_shift(angles["cup"]) + module.CUP_ID / 2 + module.WALL, 0, z_arm + 8 - module.CUP_HANG + 45)
+    if "dock" in angles:
+        z_arm = module.z_levels(angles["dock"])[4]
+        out["dock"] = (46 + module.DOCK_CUP[1] / 2 + 3, 0, z_arm + 3 + 30)
+    if "pod" in angles:
+        z_arm = module.z_levels(angles["pod"])[4]
+        out["pod"] = (power.POD_X, 0, z_arm + power.WALL + power.BATT[2] / 2 + 0.5)
+    return out
 
 
 def setup():
@@ -89,7 +93,7 @@ def setup():
             g += solid_g(power.pod_lid()) * FILL["module"]
         printed[name] = g
         local[name] = (g, to_local(center(shape), angles[name]))
-    pay_l = payload_local()
+    pay_l = payload_local(angles)
     strip_com = center(power.strip()) if layout.has_leds() else None
     return printed, fixed, local, pay_l, strip_com
 

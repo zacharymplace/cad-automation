@@ -12,7 +12,6 @@ slab = cq.Workplane("XY").box(1000, 0.2, 1000)
 x0 = build.AO - 22
 parts = {
     "skin": (build.skin(), "#ff7a59"),
-    "rail": (build.rail(), "#2bb5a6"),
     "lip (TPU)": (build.lip(), "#f2c230"),
     "diffuser cover": (build.diffuser(), "#d8d2a0"),
 }

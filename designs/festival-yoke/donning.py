@@ -98,17 +98,11 @@ def spread_force(spread: float):
     return abs(f[3 * 0]), max(curv)
 
 
-def clip_fit_force():
-    """Force to push the rail cap through a snap-on clip's lips, if the cap overhang has to flex past them."""
-    R_ = build.R
-    over = (R_["cap_width"] - R_["stem_width"]) / 2            # cap overhang each side, mm
-    lip_in = over - 0.3                                         # how far each lip tucks under the cap
-    length = 56.0
-    I = length * R_["cap_height"] ** 3 / 12
-    delta = lip_in
-    F = 3 * E_TPU * I * delta / over ** 3                       # per side, stubby cantilever
-    eps = 3 * delta * R_["cap_height"] / (2 * over ** 2)
-    return F, eps, over, lip_in
+def slide_on():
+    """Putting a module on: slide the clip along the straight bar; a spring plunger clicks into a dimple."""
+    import dock
+    pocket = build.R["cap_width"] + 2 * 0.3
+    return {"travel": dock.TRAVEL, "bar": dock.BAR_LENGTH, "slack": 0.3, "plunger_n": 5.0, "pocket": pocket}
 
 
 def main():
@@ -123,10 +117,13 @@ def main():
 
     print("  the bare collar (flat skin plus rail and lip segments) is roughly 150 g printed: light enough to lift one-handed; fit modules AFTER it is on")
 
-    F2, eps2, over, lip_in = clip_fit_force()
-    print(f"\nsnap-on rail clip: the {over:.1f} mm cap overhang would have to flex {lip_in:.1f} mm past the lips")
-    print(f"  that needs about {F2:.0f} N per side ({2 * F2:.0f} N total) and {eps2 * 100:.0f}% strain in the TPU: impossible by hand and past what TPU survives")
-    print("  => modules cannot be pressed onto the rail as designed. The attach method must change before printing (see README).")
+    s = slide_on()
+    ok = s["plunger_n"] <= HAND_COMFORT_N
+    print(f"\nmodule attach: slide the clip onto the {s['bar']} mm straight bar from its open end ({s['slack']} mm slack each side), with {s['travel']} mm of travel each way")
+    print(f"  push needed: the spring plunger's click, about {s['plunger_n']:.0f} N (assumed), plus a little friction: {'within' if ok else 'ABOVE'} one-handed reach ({HAND_COMFORT_N:.0f} N)")
+    print("  a module cannot lift straight off (T-slot), so it cannot fall off by accident; it comes off by sliding it out of the open end")
+    print("  the old snap-on clip would have needed about 2,000 N per side: replaced")
+    print("  open question: a printed 80 mm bar must be straight to within about 0.3 mm or the clip will bind: check in the clip coupon test")
 
     if "--modules" in sys.argv:
         modules_vs_head(hp)

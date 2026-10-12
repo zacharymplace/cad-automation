@@ -25,6 +25,19 @@ def surface(u: float) -> tuple[float, float, float]:
     return AI + (AO - AI) * u, BI + (BO - BI) * u, -DROP * u
 
 
+def z_of(x: float, y: float) -> float:
+    """Height of the collar's top surface above the plan point (x, y)."""
+    lo, hi = 0.0, 1.0
+    for _ in range(40):
+        u = (lo + hi) / 2
+        a, bb = AI + (AO - AI) * u, BI + (BO - BI) * u
+        if (x / a) ** 2 + (y / bb) ** 2 > 1:
+            lo = u
+        else:
+            hi = u
+    return -DROP * (lo + hi) / 2
+
+
 def ring(u: float, inner: float, outer: float, z0: float, h: float) -> cq.Workplane:
     """Elliptical wall centred on surface(u), extending `inner`/`outer` mm either side, from z0 up h."""
     a, b, _ = surface(u)
@@ -60,6 +73,27 @@ def skin() -> cq.Workplane:
     return _skin(0)
 
 
+def slot_blocked(deg: float) -> bool:
+    """True if a lightening slot at this angle would sit under a docking bar's flange (the bar needs solid skin to glue to)."""
+    import dock
+    import layout
+    th = math.radians(deg)
+    a, b, _ = surface(0.42)
+    cx, cy = math.cos(th) * a, math.sin(th) * b
+    half = max((AO - AI) * 0.30 - Y["slot_width"], 0) / 2
+    ux, uy = math.cos(th), math.sin(th)
+    pts = [(cx + s * half * ux, cy + s * half * uy) for s in (-1, 0, 1)]
+    for angle in layout.angles().values():
+        f = dock.frame(angle)
+        M, d = f["M"], f["d"]
+        for px, py in pts:
+            t = max(-dock.BAR_LENGTH / 2, min(dock.BAR_LENGTH / 2, (px - M[0]) * d[0] + (py - M[1]) * d[1]))
+            dist = math.hypot(px - (M[0] + t * d[0]), py - (M[1] + t * d[1]))
+            if dist < dock.FLANGE_W / 2 + Y["slot_width"] / 2 + 1.0:
+                return True
+    return False
+
+
 def _skin(r: float) -> cq.Workplane:
     t = Y["thickness"]
     s = cone(0).cut(cone(-t))
@@ -70,7 +104,7 @@ def _skin(r: float) -> cq.Workplane:
     # lightening slots, skipping the front gap (60-120 deg)
     length = (AO - AI) * 0.30
     for deg in range(15, 360, 30):  # offset so no slot sits on a seam
-        if 60 <= deg <= 120:
+        if 60 <= deg <= 120 or slot_blocked(deg):
             continue
         th = math.radians(deg)
         a, b, _ = surface(0.42)
@@ -82,12 +116,10 @@ def _skin(r: float) -> cq.Workplane:
     return s
 
 
-def rail() -> cq.Workplane:
-    u = R["position"]
-    z = surface(u)[2] - 2  # sink 2 mm into the skin
-    stem = ring(u, R["stem_width"] / 2, R["stem_width"] / 2, z, R["stem_height"] + 2)
-    cap = ring(u, R["cap_width"] / 2, R["cap_width"] / 2, z + R["stem_height"] + 2, R["cap_height"])
-    return stem.union(cap)
+def rail():
+    """The docking bars of the active kit (one straight bar per module), in the formed collar; None when the kit has no modules."""
+    import dock
+    return dock.bars_formed()
 
 
 BEAD_LEAD, BEAD_STEP = 0.2, 0.35                      # how far the two bead steps stand out from the hook's inner face
@@ -121,8 +153,8 @@ def led_channel() -> float:
 
 
 def strip_width() -> float:
-    """Widest whole-mm LED strip (max 8) that lies in the channel with 0.5 mm to spare."""
-    return min(8.0, math.floor(led_channel() - 0.5))
+    """Widest whole-mm LED strip (max 8) that lies in the channel beside the cover's inner wall with 0.5 mm to spare."""
+    return min(8.0, math.floor(led_channel() - FLANGE_T - 1.5))
 
 
 def pads() -> cq.Workplane:
@@ -143,6 +175,9 @@ def pads() -> cq.Workplane:
         piece = band.intersect(oval)
         out = piece if out is None else out.union(piece)
     return out
+
+
+FLANGE_T = 1.0          # the cover's inner wall, standing on the skin
 
 
 def diffuser() -> cq.Workplane:
@@ -169,8 +204,8 @@ def diffuser() -> cq.Workplane:
     band = band.cut(cq.Workplane("XY").workplane(offset=zB - 5).ellipse(aA, bA).extrude(dz + 10))
     face = w / 2 + 0.1                                     # hook's inner face stands 0.1 mm off the lip's outer face
     hook = ring(LIP_U, -face, w / 2 + 1.5, zB - t - D["hook"], D["hook"] + t)
-    # small flange on the inner edge locates the cover against the rail cap
-    flange = ring(R["position"], -(R["cap_width"] / 2 + 0.2), R["cap_width"] / 2 + 1.4, zA - t - 2.5, 2.5 + t)
+    # thin wall on the inner edge stands on the skin and holds the inner edge up (there is no continuous rail any more)
+    flange = ring(R["position"], -(R["cap_width"] / 2), R["cap_width"] / 2 + FLANGE_T, zs - 10, zA - (zs - 10)).cut(cone(0.15))
     # two-step bead on the hook's inner face: narrow lead-in below, full step above with a flat top that locks in the groove
     z0 = snap_z() + 0.1
     lead = ring(LIP_U, -face + BEAD_LEAD, face + 0.2, z0, 0.5)
@@ -184,12 +219,17 @@ def gap() -> cq.Workplane:
 
 def components() -> dict[str, cq.Workplane]:
     g = gap()
-    return {"skin": skin().cut(g), "rail": rail().cut(g), "lip": lip().cut(g), "pad": pads()}
+    comps = {"skin": skin().cut(g), "lip": lip().cut(g), "pad": pads()}
+    bars = rail()
+    if bars is not None:
+        comps["rail"] = bars.cut(g)
+    return comps
 
 
-def yoke() -> cq.Workplane:
+def yoke(with_bars: bool = True) -> cq.Workplane:
     c = components()
-    return c["skin"].union(c["rail"]).union(c["lip"]).union(c["pad"])
+    out = c["skin"].union(c["lip"]).union(c["pad"])
+    return out.union(c["rail"]) if with_bars and "rail" in c else out
 
 
 QUARTERS = {"fr": (1, 1), "br": (1, -1), "fl": (-1, 1), "bl": (-1, -1)}
@@ -212,7 +252,7 @@ def prism(pts: list[tuple[float, float]]) -> cq.Workplane:
 
 def parts() -> dict[str, cq.Workplane]:
     """The four print quarters with dovetail joints: each seam has tabs on one part, matching pockets on the other."""
-    y = yoke()
+    y = yoke(with_bars=False)   # the seam joints are a property of the skin; the bars are separate parts
     q = {name: quarter(y, sx, sy) for name, (sx, sy) in QUARTERS.items()}
 
     # (tab part, pocket part, seam point at u -> (x, y), local (s, d) -> global (x, y))
@@ -233,7 +273,8 @@ def parts() -> dict[str, cq.Workplane]:
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    y = yoke()
+    y_full = yoke()
+    y = yoke(with_bars=False)
     q = parts()
     bed, total = P["bed"], 0.0
     print(f"size {SIZE}")
@@ -248,7 +289,7 @@ def main():
         total += g
         cq.exporters.export(shp, str(OUT / f"yoke_{name}.stl"))
         print(f"yoke_{name:<5}{bb.xlen:6.0f}{bb.ylen:6.0f}{bb.zlen:6.0f}      {g:>9.1f}  {'ok' if fits else 'TOO BIG'}")
-    cq.exporters.export(y, str(OUT / "assembly.stl"))
+    cq.exporters.export(y_full, str(OUT / "assembly.stl"))
 
     # LED diffuser cover, printed in the same four quarters
     dif = diffuser()
@@ -281,7 +322,7 @@ def main():
     flex = sum(s.Volume() for s in plain.solids().vals()) if plain.vals() else 0.0
     print(f"Snap: bead overlaps a groove-less lip by {flex:.0f} mm3 (that is what flexes on install); {SNAP_DEPTH} mm deep groove locks it; install by pressing down")
     print(f"Diffuser: {dtotal:.0f} g of the total, overlap with yoke {touch_mm3:.2f} mm3 (want 0)")
-    print(f"Highest point: {y.val().BoundingBox().zmax:.1f} mm vs neck edge. Nothing above the shoulders.")
+    print(f"Highest point: {y_full.val().BoundingBox().zmax:.1f} mm vs neck edge. Nothing above the shoulders.")
 
 
 if __name__ == "__main__":

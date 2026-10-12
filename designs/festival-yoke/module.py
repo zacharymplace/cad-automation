@@ -1,16 +1,15 @@
-"""Clip-on modules for the shoulder rail: cup cradle (front-right), phone cradle (front-left), ear-defender dock
-(right side) and fan (left side). All snap onto the T-rail through the same clip. Run: uv run --no-project --with cadquery module.py"""
+"""Modules for the collar: cup cradle, phone cradle, ear-defender dock, fan, ID pouch, tube clip, blank plate (and the\npower pod in power.py). All slide onto a straight docking bar (dock.py) through the same clip.\nRun: uv run --no-project --with cadquery module.py"""
 import math
 
 import cadquery as cq
 
 import build
+import dock
 import layout
 
 R = build.R
-CLEAR = 0.3          # gap round the rail inside the pocket
-LENGTH = 56          # clip length along the rail; longer clip = less prying under a load
-SCREW_Y = 18         # M3 retention screws sit this far either side of centre
+CLEAR = 0.3          # gap round the bar inside the pocket
+LENGTH = dock.CLIP_LENGTH   # clip length along the bar; longer clip = less prying under a load
 
 # cup cradle
 CUP_ID, WALL, RING_H = 80, 2.4, 40
@@ -35,7 +34,6 @@ ARM_T = 11     # arm thickness for the heavy-load modules (cup, dock); strength.
 ID_ANGLE = layout.angle("id")
 TUBE_ANGLE = layout.angle("tube")
 BLANK_ANGLE = layout.angle("blank")
-COVER_ANGLE = layout.angle("cover")
 ID_CARD = (86, 54, 1.2)   # credit-card sized medical ID / info card
 TUBE_OD = 9.5             # hydration tube outside diameter, mm
 
@@ -47,10 +45,9 @@ FAN_X = 32                                  # fan centre, outward from the rail 
 
 
 def pose(angle: float):
-    """Point on the rail ellipse and the outward-normal heading there."""
-    a, b, zs = build.surface(R["position"])
-    t = math.radians(angle)
-    return a * math.cos(t), b * math.sin(t), zs, math.degrees(math.atan2(a * math.sin(t), b * math.cos(t)))
+    """Bar centre (plan), the height of the skin's highest point under the bar, and the outward-normal heading."""
+    f = dock.frame(angle)
+    return float(f["M"][0]), float(f["M"][1]), f["zmax"], f["heading"]
 
 
 def normal_gap(angle: float, ae: float, be: float) -> float:
@@ -80,38 +77,35 @@ def cup_shift(angle: float) -> float:
     return max(8.0, edge_gap(angle) + 4 - 27, torso_gap(angle) + 8 - 27)
 
 
-def z_levels():
-    _, _, zs, _ = pose(0)
-    stem_top = zs + R["stem_height"]
-    cap_top = stem_top + R["cap_height"]
-    return zs, zs + 3.0, stem_top, cap_top, cap_top + CLEAR + 2.2     # zs, zb (clip underside), stem_top, cap_top, z_arm
+def z_levels(angle: float):
+    """(skin max under the bar, clip underside, bar stem top, bar cap top, arm level) for the bar at `angle`."""
+    f = dock.frame(angle)
+    return f["zmax"], f["stem_top"] - 2.0, f["stem_top"], f["cap_top"], f["cap_top"] + CLEAR + 2.2
 
 
-def clip_local():
-    """Clip body in the local frame: x = outward normal, y = along the rail, origin on the rail line."""
-    zs, zb, _, _, z_arm = z_levels()
+def clip_local(angle: float):
+    """Clip body in the local frame: x = outward normal, y = along the bar, origin on the bar's centre line."""
+    zs, zb, _, _, z_arm = z_levels(angle)
     base = cq.Workplane("XY").box(14, LENGTH, 7.5, centered=(False, True, False)).translate((-5, 0, zb))
     top = cq.Workplane("XY").box(22, 40, 8, centered=(True, True, False)).translate((0, 0, z_arm))
     return base.union(top)
 
 
 def mount(local: cq.Workplane, angle: float) -> cq.Workplane:
-    """Place a local-frame module on the rail at `angle`, then cut the rail pocket, screw holes and skin trim."""
-    px, py, zs, heading = pose(angle)
-    _, zb, stem_top, _, _ = z_levels()
-    u = R["position"]
-    m = local.rotate((0, 0, 0), (0, 0, 1), heading).translate((px, py, 0))
-    stem = build.ring(u, R["stem_width"] / 2 + CLEAR, R["stem_width"] / 2 + CLEAR, zb - 1, stem_top - zb + 1 - 0.3)
-    cap = build.ring(u, R["cap_width"] / 2 + CLEAR, R["cap_width"] / 2 + CLEAR, stem_top - 0.3, R["cap_height"] + 2 * CLEAR)
-    m = m.cut(stem).cut(cap)
-    for y in (-SCREW_Y, SCREW_Y):  # M3 pilot holes from the outer face into the stem channel
-        pilot = cq.Workplane("YZ").workplane(offset=-2).center(y, stem_top - 2).circle(1.3).extrude(14)
-        m = m.cut(pilot.rotate((0, 0, 0), (0, 0, 1), heading).translate((px, py, 0)))
+    """Cut the straight T-slot and the spring-plunger hole in a local-frame module, then place it on its bar."""
+    zs, zb, stem_top, cap_top, z_arm = z_levels(angle)
+    f = dock.frame(angle)
+    sw = R["stem_width"] + 2 * CLEAR
+    cw = R["cap_width"] + 2 * CLEAR
+    m = local.cut(cq.Workplane("XY").box(sw, 300, stem_top - 0.3 - (zb - 1), centered=(True, True, False)).translate((0, 0, zb - 1)))
+    m = m.cut(cq.Workplane("XY").box(cw, 300, cap_top + CLEAR - (stem_top - 0.3), centered=(True, True, False)).translate((0, 0, stem_top - 0.3)))
+    m = m.cut(cq.Workplane("XY").workplane(offset=cap_top).circle(1.25).extrude(z_arm + 10 - cap_top))   # M3 spring plunger, tapped into the roof
+    m = dock._place(m, f)
     return m.cut(build.cone(0).translate((0, 0, 0.3)))  # skin is steeper toward the front: trim to 0.3 mm above it
 
 
 def cup_module(angle: float = CUP_ANGLE) -> cq.Workplane:
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     shift = cup_shift(angle)
     arm = cq.Workplane("XY").box(38 + shift, 20, ARM_T, centered=(False, True, False)).translate((0, 0, z_arm))
     xr = 36 + shift + CUP_ID / 2 + WALL
@@ -121,11 +115,11 @@ def cup_module(angle: float = CUP_ANGLE) -> cq.Workplane:
     ring = ring.cut(cq.Workplane("XY").workplane(offset=floor_z).center(xr, 0).circle(CUP_ID / 2).extrude(RING_H))
     ring = ring.cut(cq.Workplane("XY").workplane(offset=floor_z - 4).center(xr, 0).circle(CUP_ID / 2 - 14).extrude(6))  # open floor
     ring = ring.cut(cq.Workplane("XY").box(30, CUP_OPEN, RING_H, centered=(False, True, False)).translate((xr + 6, 0, floor_z)))
-    return mount(clip_local().union(arm).union(post).union(ring), angle)
+    return mount(clip_local(angle).union(arm).union(post).union(ring), angle)
 
 
 def phone_module(angle: float = PHONE_ANGLE) -> cq.Workplane:
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     iw, it = PHONE_W + 2, PHONE_T + 0.5          # interior width / depth, with a little slack
     ow = iw + 2 * 4                              # overall width
     frame_h = PHONE_H + 8
@@ -149,11 +143,11 @@ def phone_module(angle: float = PHONE_ANGLE) -> cq.Workplane:
     cradle = cradle.translate((tx, 0, tz))
     top_x = tx + frame_h * math.sin(tilt)
     arm = cq.Workplane("XY").box(top_x + 4, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
-    return mount(clip_local().union(arm).union(cradle), angle)
+    return mount(clip_local(angle).union(arm).union(cradle), angle)
 
 
 def dock_module(angle: float = DOCK_ANGLE) -> cq.Workplane:
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     arm = cq.Workplane("XY").box(46, 20, ARM_T, centered=(False, True, False)).translate((0, 0, z_arm))
     arm = arm.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(30, 0).circle(2.5).extrude(ARM_T + 2))  # tether eyelet
     L, W = DOCK_CUP
@@ -163,11 +157,11 @@ def dock_module(angle: float = DOCK_ANGLE) -> cq.Workplane:
     for sy in (-1, 1):  # velcro strap slots in the floor, either side of the cup
         bowl = bowl.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(xc, sy * (W / 2 - 8)).slot2D(24, 4, 0).extrude(6))
     bowl = bowl.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(xc, 0).ellipse(L / 2 - 16, W / 2 - 16).extrude(6))  # open floor, saves weight and drains
-    return mount(clip_local().union(arm).union(bowl), angle)
+    return mount(clip_local(angle).union(arm).union(bowl), angle)
 
 
 def fan_module(angle: float = FAN_ANGLE) -> cq.Workplane:
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     inner = FAN_SIZE + 0.6
     outer = inner + 2 * FAN_WALL
     frame = cq.Workplane("XY").box(outer, outer, FAN_T + 2, centered=(True, True, False))
@@ -180,17 +174,17 @@ def fan_module(angle: float = FAN_ANGLE) -> cq.Workplane:
     frame = frame.rotate((0, 0, 0), (0, 1, 0), theta).translate((FAN_X, 0, zc))
     low = frame.vertices("<Z").val().Center()          # lowest corner of the tilted frame: hang the bracket from it
     bracket = cq.Workplane("XY").box(14, 18, low.z + 9 - z_arm, centered=(True, True, False)).translate((low.x + 4, 0, z_arm))
-    return mount(clip_local().union(bracket).union(frame), angle)
+    return mount(clip_local(angle).union(bracket).union(frame), angle)
 
 
 def clip_coupon(angle: float = CUP_ANGLE) -> cq.Workplane:
-    """Just the clip (no arm, no cradle): a quick fit test for the rail pocket and screw holes."""
-    return mount(clip_local(), angle)
+    """Just the clip (no arm, no cradle): a quick fit test for the T-slot and the plunger hole."""
+    return mount(clip_local(angle), angle)
 
 
 def blank_module(angle: float = BLANK_ANGLE) -> cq.Workplane:
     """The clip and a vertical plate with an M5 hole and four M3 holes: a base for your own attachments."""
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     arm = cq.Workplane("XY").box(32, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
     plate = cq.Workplane("XY").box(4, 46, 46, centered=(False, True, True)).translate((30, 0, z_arm - 10))
     plate = plate.union(cq.Workplane("XY").box(8, 20, 8, centered=(False, True, False)).translate((28, 0, z_arm)))
@@ -199,23 +193,23 @@ def blank_module(angle: float = BLANK_ANGLE) -> cq.Workplane:
     for dy in (-10, 10):
         for dz in (-10, 10):
             plate = plate.cut(cq.Workplane("YZ").workplane(offset=26).center(dy, z_arm - 10 + dz).circle(1.6).extrude(14))
-    return mount(clip_local().union(arm).union(plate), angle)
+    return mount(clip_local(angle).union(arm).union(plate), angle)
 
 
 def tube_module(angle: float = TUBE_ANGLE) -> cq.Workplane:
     """Snap-in C-clip for a hydration tube, standing up from the rail so the mouthpiece falls to the chin."""
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     arm = cq.Workplane("XY").box(24, 20, 8, centered=(False, True, False)).translate((0, 0, z_arm))
     cx = 24 + TUBE_OD / 2 + 1.5
     ring = cq.Workplane("XY").workplane(offset=z_arm).center(cx, 0).circle(TUBE_OD / 2 + 2.2).extrude(18)
     ring = ring.cut(cq.Workplane("XY").workplane(offset=z_arm - 1).center(cx, 0).circle(TUBE_OD / 2 + 0.1).extrude(20))
     ring = ring.cut(cq.Workplane("XY").box(10, TUBE_OD * 0.7, 20, centered=(False, True, False)).translate((cx, 0, z_arm - 1)))  # snap slit, narrower than the tube
-    return mount(clip_local().union(arm).union(ring), angle)
+    return mount(clip_local(angle).union(arm).union(ring), angle)
 
 
 def id_module(angle: float = ID_ANGLE) -> cq.Workplane:
     """Pouch for a card (medical ID, allergy info, 'please give me space'), window facing out, with a tether eyelet."""
-    _, _, _, _, z_arm = z_levels()
+    _, _, _, _, z_arm = z_levels(angle)
     cl, cw, ct = ID_CARD
     ow, oh = cl + 8, cw + 8
     x0 = max(30.0, edge_gap(angle) + 12, torso_gap(angle) + 8)   # plate stands outside the lip and clear of the body
@@ -227,21 +221,7 @@ def id_module(angle: float = ID_ANGLE) -> cq.Workplane:
     sides = sides.cut(cq.Workplane("XY").box(pocket + 3, cl + 1, oh - 2, centered=(False, True, False)).translate((x0 + 2, 0, z_arm + 8 - oh + 2)))  # slot open at the top
     front = cq.Workplane("XY").box(1.6, ow, oh, centered=(False, True, False)).translate((x0 + 2 + pocket, 0, z_arm + 8 - oh))
     front = front.cut(cq.Workplane("XY").box(4, cl - 8, cw - 8, centered=(False, True, False)).translate((x0 + 2 + pocket - 1, 0, z_arm + 8 - oh + 4)))  # window
-    return mount(clip_local().union(arm).union(back).union(sides).union(front), angle)
-
-
-def cover_module(angle: float = COVER_ANGLE, length: float = 80) -> cq.Workplane:
-    """A snap-on cap for an empty stretch of rail, so it does not catch on clothes."""
-    zs, _, stem_top, cap_top, _ = z_levels()
-    u = R["position"]
-    body = build.ring(u, R["cap_width"] / 2 + CLEAR + 1.4, R["cap_width"] / 2 + CLEAR + 1.4, zs + 2.0, cap_top + 2.2 - (zs + 2.0))
-    px, py, _, h = pose(angle)
-    wedge = cq.Workplane("XY").box(60, length, 60, centered=(True, True, False)).translate((0, 0, -30))
-    wedge = wedge.rotate((0, 0, 0), (0, 0, 1), h).translate((px, py, 0))
-    body = body.intersect(wedge)
-    stem = build.ring(u, R["stem_width"] / 2 + CLEAR, R["stem_width"] / 2 + CLEAR, zs, stem_top - zs - 0.3)
-    cap = build.ring(u, R["cap_width"] / 2 + CLEAR, R["cap_width"] / 2 + CLEAR, stem_top - 0.3, R["cap_height"] + 2 * CLEAR)
-    return body.cut(stem).cut(cap)
+    return mount(clip_local(angle).union(arm).union(back).union(sides).union(front), angle)
 
 
 def torso(grow: float = 0.0) -> cq.Workplane:
