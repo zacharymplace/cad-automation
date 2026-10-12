@@ -123,7 +123,48 @@ If it fails below 90 N: add two locating pegs through the skin under each bar an
 - [ ] Put the assembled piece down on a flat surface. Does it keep the cone shape, or sag flat? Note: ______.
 - [ ] Hold it against your shoulder following the size M numbers in `MEASURING.md` (shoulder width 380 mm, shoulder drop 40 mm). Is the slope right? Does the edge land on the shoulder tip? Note: ______.
 
-## 7. Gate
+## 7. Time and yield log
+
+I need real numbers to replace my guesses in `VIABILITY.md`. Fill this in as you go with a stopwatch. Count **hands-on minutes only** (not waiting for prints or glue). Note whether it was your first attempt: the first time is slow, so if you can, time a second repeat of the assembly steps too.
+
+| Step | Minutes, first try | Minutes, repeat | What I assumed (bare collar) |
+|---|---|---|---|
+| Deburr and clean the printed parts (two skin pieces, lip, bar, clip, cover) | ____ | ____ | 15 (for all four skin pieces and lips) |
+| Scuff and wipe the glue surfaces | ____ | ____ | 5 |
+| Form the skin and join the dovetails | ____ | ____ | 10 |
+| Glue the lip segment (handling and clamping only) | ____ | ____ | 15 |
+| Glue the bar (handling and clamping only) | ____ | ____ | 14 per module |
+| Fit the spring plunger and check the clip | ____ | ____ | (in the 14 per module) |
+| Rework, trimming, fixing mistakes | ____ | ____ | 10 |
+| Quality check: slide test, snap test, pull test | ____ | ____ | 25 |
+| **Total hands-on assembly** | ____ | ____ | **85 for the bare collar** |
+
+Print attendance (loading, starting, checking, unloading), per print job:
+
+| Part | Minutes of attention |
+|---|---|
+| flat_skin_fr | ____ |
+| flat_skin_br | ____ |
+| hoop_lip_right | ____ |
+| hoop_bar_cup | ____ |
+| module_clip_coupon | ____ |
+| diffuser_fitted_fr | ____ |
+| I assumed about 7 minutes per job | |
+
+Yield, which sets how much waste to build in:
+
+| Part | Prints attempted | Prints that came out usable | Grams wasted |
+|---|---|---|---|
+| flat_skin_fr | ____ | ____ | ____ |
+| flat_skin_br | ____ | ____ | ____ |
+| hoop_lip_right | ____ | ____ | ____ |
+| hoop_bar_cup | ____ | ____ | ____ |
+| module_clip_coupon | ____ | ____ | ____ |
+| diffuser_fitted_fr | ____ | ____ | ____ |
+
+I assumed about 12% of prints fail. Also note: actual printing hours per part ____, total filament used ____ g (I estimated 88 g), glue cure time actually needed ____ h, and anything that took longer than you expected: ______.
+
+## 8. Gate
 
 Stage 1 passes only when **all** of these are true:
 
@@ -136,10 +177,10 @@ Stage 1 passes only when **all** of these are true:
 
 If the cone does not hold its shape, that is the biggest unknown in the design: stop and send me what you saw. The fallback is a stiffer skin or a thicker skin, not a reprint with different settings.
 
-## 8. Send back to me
+## 9. Send back to me
 
 - Photos: each printed part, the glued assembly from above and from the side, the clip on the bar, the cover on the lip, and anything that failed.
-- Every blank above filled in, plus the printer, the filament brands and the settings you used.
+- Every blank above filled in, including the time and yield log, plus the printer, the filament brands and the settings you used. I will use the log to redo the cost and break-even numbers in `VIABILITY.md` with your real times.
 
 ## Safety for this stage
 
