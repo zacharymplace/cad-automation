@@ -92,7 +92,7 @@ def strip() -> cq.Workplane:
     u = (build.R["position"] + build.LIP_U) / 2
     plan = build.ring(u, STRIP_WIDTH / 2 - 0.6, STRIP_WIDTH / 2 + 0.6, -80, 160)   # nudged 0.6 mm outward: the cover's inner wall is not a uniform offset round an eccentric ellipse
     above_skin = build.cone(0.4 + STRIP_T).cut(build.cone(0.4))
-    ribbon = plan.intersect(above_skin).cut(build.gap())
+    ribbon = build.safe_cut(plan.intersect(above_skin), build.gap())
     bars = build.rail()
     return ribbon.cut(bars) if bars is not None else ribbon   # the strip rides over the bar flanges
 

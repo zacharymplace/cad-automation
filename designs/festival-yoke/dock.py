@@ -71,7 +71,7 @@ def bar(angle: float, sink: float = 0.0) -> cq.Workplane:
     body = _place(body, f).cut(build.cone(-sink))
     flange_plan = _place(_box(FLANGE_W, BAR_LENGTH, -100, 100), f)
     slab = build.cone(FLANGE_T).cut(build.cone(-sink))
-    return body.union(flange_plan.intersect(slab))
+    return build.safe_union(body, flange_plan.intersect(slab))
 
 
 def bars_formed():

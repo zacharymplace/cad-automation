@@ -12,7 +12,7 @@ Stand relaxed, shoulders down, no jacket or thick top.
 | 4 | **Shoulder depth** | Front to back over the top of the shoulder, halfway between neck and shoulder tip. Hold a ruler on the collarbone and read the distance to the back of the shoulder, or have your helper measure it from the side. | `shoulder_depth` |
 | 5 | **Shoulder drop** | Height from the neck base to the shoulder tip. Lay a ruler flat on top of the neck base, level with the floor, and measure straight down to the shoulder tip. | `shoulder_drop` |
 
-Typical adult ranges, for a sanity check: head 530-620, neck 300-420, shoulder width 340-450, shoulder depth 220-310, shoulder drop 30-55.
+Typical adult ranges, for a sanity check (5th to 95th percentile, men and women pooled, from the ANSUR II survey: see SIZING.md): head 537-600, neck at the base 345-480, shoulder width 342-441. Shoulder depth and drop are not surveyed in this form; expect about 200-300 and 35-60.
 
 ## Choosing a size
 
@@ -20,20 +20,20 @@ Presets in `config.toml`:
 
 | Size | Head | Neck | Shoulder width | Depth | Drop |
 |------|------|------|----------------|-------|------|
-| S | 540 | 320 | 350 | 230 | 38 |
-| M | 570 | 350 | 380 | 260 | 40 |
-| L | 590 | 380 | 410 | 280 | 42 |
-| XL | 610 | 410 | 440 | 300 | 45 |
+| S | 550 | 365 | 350 | 230 | 36 |
+| M | 570 | 380 | 380 | 260 | 40 |
+| L | 580 | 425 | 410 | 280 | 45 |
+| XL | 590 | 450 | 440 | 300 | 51 |
 
-These are starting points, not anthropometric data. Shoulder width is the one that matters most: the yoke should sit on the shoulders, not hang off them. If you are between sizes, go by shoulder width and neck, not head.
+The presets were checked against the ANSUR II survey (SIZING.md): they cover about 98% of adults in that sample, but it is a US Army sample, so treat them as starting points. Neck means the circumference at the base of the neck where a shirt collar sits, not at the Adam's apple. Shoulder width is the one that matters most: the yoke should sit on the shoulders, not hang off them. If you are between sizes, go by shoulder width and neck, not head.
 
 If your numbers are not near a preset, use your own:
 
 1. In `config.toml` set `size = "custom"` and fill in `[custom]` with your five measurements.
 2. Run `uv run --no-project --with cadquery build.py`.
-3. Read the fit report it prints. Lines starting `WARN` mean the opening is loose or tight, or the collar is too narrow for the rail.
+3. Read the fit report it prints. Lines starting `WARN` mean the opening is loose or tight, or the collar is too narrow for the docking bars.
 
-The head and neck numbers set the opening. The opening is wider than the head by 14 mm each side, and about 85% of the head's length front to back. The head tilts through the open front to go on, so the opening is deliberately not a full ring.
+The head and neck numbers set the opening. The opening is wider than the head by 19 mm each side (ease plus about 10 mm for hair), and about 87% of the head's length front to back. The head tilts through the open front to go on, so the opening is deliberately not a full ring.
 
 ## Check the fit before printing the rest
 

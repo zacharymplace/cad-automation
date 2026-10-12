@@ -30,6 +30,11 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Sizing check (`SIZING.md`)
+The S/M/L/XL presets were checked against the ANSUR II survey (4,082 men and 1,986 women, computed from the public CSVs): they cover about 98% of that sample. Changes: the head model now uses the survey's breadth and length ratios (an ellipse fitted to the circumference was too big), the neck presets are now at the base of the neck as the measuring guide says, the L and XL shoulder drops follow the population's 24 degree median slope, and the printed foam seats are gone from the formed model (they are engraved marks plus foam stickers). The survey is a US Army sample with no seated posture, so treat the presets as starting points; an XXL is probably worth adding. Shoulder depth has no survey equivalent and is the least supported number.
+
+Along the way the CAD kernel started returning inverted solids for size M's exact opening dimensions. `build.py` now cuts the front gap before rounding the edges (so the gap edges are rounded too) and checks every cut and union (`safe_cut`, `safe_union`), falling back to a compound only where a fuse cannot be done.
+
 ## Parts and cost (`BOM.md`, `bom.py`)
 Printed grams per kit come from the CAD; purchased-part prices are my estimates anchored on a few October 2026 listings, not quotes. Rough totals for size M, excluding shipping, tax and tools: core 14-26 USD, glow 48-113, carry 54-138, comfort 56-143, full 63-172, plus 55-88 USD the first time for whole 1 kg spools of TPU, PETG and natural PETG. The battery, board, strip and spring plungers are the real cost; the plastic is cheap.
 
@@ -68,11 +73,11 @@ Pick a kit with `kit = "full"` in `config.toml` or `FESTIVAL_YOKE_KIT=glow`. Mod
 
 | Kit | Modules | Printed g (M) | Loaded g | COM offset | Margin inside the foam seats |
 |---|---|---|---|---|---|
-| core | none: yoke, seats, lip | 107 | 107 | 5 mm | 49 mm |
-| glow | pod (strip + cover come with it) | 177 | 282 | 50 mm | 4 mm |
-| carry | cup, phone, ID pouch, pod | 303 | 988 | 62 mm | 3 mm |
-| comfort | dock, fan, pod | 248 | 643 | 63 mm | 10 mm |
-| full | all seven | 386 | 1391 | 18 mm | 36 mm |
+| core | none: yoke, lip | 98 | 98 | 6 mm | 48 mm |
+| glow | pod (strip + cover come with it) | 167 | 272 | 52 mm | 2 mm |
+| carry | cup, phone, ID pouch, pod | 287 | 972 | 65 mm | 2 mm |
+| comfort | dock, fan, pod | 241 | 636 | 62 mm | 10 mm |
+| full | all seven | 379 | 1384 | 18 mm | 36 mm |
 
 "Margin" is how far the loaded centre of mass is inside the rectangle spanned by the four foam seats (+-123 mm across, +-54 mm front to back); at or below zero the collar pitches or rolls and one side lifts off. The carry kit sits right on that edge with a full cup, so use a smaller cup or lighten the front there. Masses are estimates (see `balance.py`).
 

@@ -12,6 +12,7 @@ import power
 from viz import COLORS, mannequin, shade, tris_of
 
 comps = build.components()
+comps["pad"] = build.pads()   # drawn for the underside view only; the real seats are foam stickers
 extras = {"cup": module.cup_module(), "phone": module.phone_module(), "dock": module.dock_module(), "fan": module.fan_module(), "pod": power.pod_module(), "lid": power.pod_lid(), "id": module.id_module(), "tube": module.tube_module(), "strip": power.strip(), "diffuser": power.fitted_diffuser()}
 
 

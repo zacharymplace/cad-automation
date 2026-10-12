@@ -6,16 +6,14 @@ Pick a preset with `size = "M"` in config.toml or FESTIVAL_YOKE_SIZE=L in the en
 import math
 import os
 
-HEAD_EASE = 14.0   # mm each side between head width and the yoke opening
-HEAD_RATIO = 0.8   # head width : head length, a typical adult ratio
+HEAD_EASE = 19.0     # mm each side between the bare head width and the yoke opening: ease plus about 10 mm for hair
+HEAD_BREADTH_PER_CIRC = 0.267   # ANSUR II (US Army survey, 4082 men and 1986 women): head breadth / head circumference, pooled
+HEAD_LENGTH_PER_CIRC = 0.343    # head length / head circumference. An ellipse fitted to the circumference overstates both
 
 
 def head_axes(circumference: float) -> tuple[float, float]:
-    """Semi-axes (half width, half length) of an elliptical head of this circumference."""
-    p = HEAD_RATIO
-    k = math.pi * (3 * (p + 1) - math.sqrt((3 * p + 1) * (p + 3)))
-    q = circumference / k
-    return p * q, q
+    """Semi-axes (half width, half length) of the head, from ANSUR II ratios to the head circumference."""
+    return HEAD_BREADTH_PER_CIRC * circumference / 2, HEAD_LENGTH_PER_CIRC * circumference / 2
 
 
 def resolve(cfg: dict) -> tuple[str, dict]:
@@ -25,8 +23,8 @@ def resolve(cfg: dict) -> tuple[str, dict]:
     return size, {
         "head_circumference": table["head_circumference"],
         "neck_circumference": table["neck_circumference"],
-        "neck_opening_a": round(p + HEAD_EASE, 1),
-        "neck_opening_b": round(0.85 * q, 1),
+        "neck_opening_a": round((p + HEAD_EASE) * 2) / 2,   # to the nearest 0.5 mm: round numbers keep the CAD kernel on its well-trodden paths
+        "neck_opening_b": round(0.87 * q * 2) / 2,
         "shoulder_half_width": table["shoulder_width"] / 2,
         "shoulder_half_depth": table["shoulder_depth"] / 2,
         "shoulder_drop": table["shoulder_drop"],

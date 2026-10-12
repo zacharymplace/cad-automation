@@ -18,6 +18,7 @@ def render():
     import power
 
     comps = build.components()
+    comps["pad"] = build.pads()   # drawn for the underside view only; the real seats are foam stickers
     items = []
 
     def add(shape, color, alpha=1.0):

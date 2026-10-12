@@ -334,7 +334,7 @@ def hoop_segments() -> dict[str, cq.Workplane]:
     zl = build.surface(build.LIP_U)[2]
     lip = build.ring(build.LIP_U, G["lip_width"] / 2, G["lip_width"] / 2, zl - 8, 8 + G["lip_height"])
     lip = lip.cut(build.ring(build.LIP_U, 0.5 - G["lip_width"] / 2, G["lip_width"] / 2 + 0.1, build.snap_z(), build.SNAP_HEIGHT))
-    lip = lip.cut(build.cone(0)).cut(build.gap())
+    lip = build.safe_cut(lip.cut(build.cone(0)), build.gap())
     out = {}
     for name, (a0, a1) in SEGMENTS.items():
         seg = lip.intersect(_sector(a0, a1))

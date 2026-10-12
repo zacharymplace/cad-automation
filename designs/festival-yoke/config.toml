@@ -8,36 +8,36 @@ size = "M"
 kit = "full"
 
 [sizes.S]
-head_circumference = 540
-neck_circumference = 320
+head_circumference = 550
+neck_circumference = 365    # at the base of the neck, where a shirt collar sits (ANSUR median for this shoulder width)
 shoulder_width = 350        # across the back, shoulder tip to shoulder tip
 shoulder_depth = 230        # front to back over the top of the shoulder
-shoulder_drop = 38          # neck-base to shoulder-tip height difference
+shoulder_drop = 36          # about 24 degrees of slope over the collar's width (the population median slope)
 
 [sizes.M]
 head_circumference = 570
-neck_circumference = 350
+neck_circumference = 380
 shoulder_width = 380
 shoulder_depth = 260
 shoulder_drop = 40
 
 [sizes.L]
-head_circumference = 590
-neck_circumference = 380
+head_circumference = 580
+neck_circumference = 425
 shoulder_width = 410
 shoulder_depth = 280
-shoulder_drop = 42
+shoulder_drop = 45
 
 [sizes.XL]
-head_circumference = 610
-neck_circumference = 410
+head_circumference = 590
+neck_circumference = 450
 shoulder_width = 440
 shoulder_depth = 300
-shoulder_drop = 45
+shoulder_drop = 51
 
 [custom]                    # used when size = "custom": your own measurements
 head_circumference = 570
-neck_circumference = 350
+neck_circumference = 380
 shoulder_width = 380
 shoulder_depth = 260
 shoulder_drop = 40

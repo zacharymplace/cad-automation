@@ -99,8 +99,9 @@ def _skin(r: float) -> cq.Workplane:
     s = cone(0).cut(cone(-t))
     k = (AO - AI) * t / DROP + 1
     s = s.cut(cq.Workplane("XY").workplane(offset=-DROP - 5).ellipse(AI + k, BI + k).extrude(DROP + 10))
+    s = safe_cut(s, gap())   # the front gap goes in before the edges are rounded, so its edges are rounded too
     if r:
-        s = s.edges().fillet(r)  # round the neck and shoulder edges before anything else is cut into it
+        s = s.edges().fillet(r)  # round the neck, gap and shoulder edges before the slots are cut
     # lightening slots, skipping the front gap (60-120 deg)
     length = (AO - AI) * 0.30
     for deg in range(15, 360, 30):  # offset so no slot sits on a seam
@@ -210,7 +211,38 @@ def diffuser() -> cq.Workplane:
     z0 = snap_z() + 0.1
     lead = ring(LIP_U, -face + BEAD_LEAD, face + 0.2, z0, 0.5)
     step = ring(LIP_U, -face + BEAD_STEP, face + 0.2, z0 + 0.5, 0.7)
-    return band.union(hook).union(flange).union(lead).union(step).cut(gap())
+    return safe_cut(band.union(hook).union(flange).union(lead).union(step), gap())
+
+
+def safe_cut(shape: cq.Workplane, tool: cq.Workplane) -> cq.Workplane:
+    """shape.cut(tool), checked: the CAD kernel sometimes returns an inverted or empty solid for particular dimensions.
+    Retries with the tool nudged by hundredths of a millimetre, and refuses to return a result it cannot trust."""
+    base = shape.val().Volume()
+    for dx, dy in ((0, 0), (0.013, 0.007), (-0.011, 0.017), (0.021, -0.013), (-0.017, -0.019)):
+        try:
+            out = shape.cut(tool.translate((dx, dy, 0))) if (dx or dy) else shape.cut(tool)
+            v = out.val().Volume()
+        except Exception:
+            continue
+        if out.val().isValid() and 0 < v <= base * 1.0001:
+            return out
+    raise RuntimeError("boolean cut failed on every retry: change a dimension by 0.1 mm and try again")
+
+
+def safe_union(a: cq.Workplane, b: cq.Workplane) -> cq.Workplane:
+    """a.union(b), checked like safe_cut: the result must be valid and no smaller than the larger input nor bigger than both added."""
+    va, vb = a.val().Volume(), b.val().Volume()
+    for dx, dy, dz in ((0, 0, 0), (0.013, 0.007, 0.004), (-0.011, 0.017, -0.006), (0.021, -0.013, 0.009), (-0.017, -0.019, -0.011)):
+        try:
+            out = a.union(b.translate((dx, dy, dz))) if (dx or dy or dz) else a.union(b)
+            v = out.val().Volume()
+        except Exception:
+            continue
+        if out.val().isValid() and max(va, vb) * 0.999 <= v <= (va + vb) * 1.0001:
+            return out
+    # the kernel cannot fuse these two: keep them as one compound (they overlap by tenths of a millimetre at most), so
+    # clash and balance checks still work; nothing is printed from this combined shape
+    return cq.Workplane("XY").newObject([cq.Compound.makeCompound([a.val(), b.val()])])
 
 
 def gap() -> cq.Workplane:
@@ -219,17 +251,17 @@ def gap() -> cq.Workplane:
 
 def components() -> dict[str, cq.Workplane]:
     g = gap()
-    comps = {"skin": skin().cut(g), "lip": lip().cut(g), "pad": pads()}
+    comps = {"skin": skin(), "lip": safe_cut(lip(), g)}   # the foam seats are engraved marks in the flat skin, not printed pads
     bars = rail()
     if bars is not None:
-        comps["rail"] = bars.cut(g)
+        comps["rail"] = safe_cut(bars, g)
     return comps
 
 
 def yoke(with_bars: bool = True) -> cq.Workplane:
     c = components()
-    out = c["skin"].union(c["lip"]).union(c["pad"])
-    return out.union(c["rail"]) if with_bars and "rail" in c else out
+    out = safe_union(c["skin"], c["lip"])
+    return safe_union(out, c["rail"]) if with_bars and "rail" in c else out
 
 
 QUARTERS = {"fr": (1, 1), "br": (1, -1), "fl": (-1, 1), "bl": (-1, -1)}
@@ -318,7 +350,7 @@ def main():
     channel = led_channel()
     print(f"LED channel between rail and lip: {channel:.1f} mm wide at its narrowest, takes a strip up to {strip_width():.0f} mm wide"
           + ("" if strip_width() >= 8 else "  <- narrower than the usual 8 mm strip: buy a thinner one"))
-    plain = lip(groove=False).cut(gap()).intersect(dif)
+    plain = safe_cut(lip(groove=False), gap()).intersect(dif)
     flex = sum(s.Volume() for s in plain.solids().vals()) if plain.vals() else 0.0
     print(f"Snap: bead overlaps a groove-less lip by {flex:.0f} mm3 (that is what flexes on install); {SNAP_DEPTH} mm deep groove locks it; install by pressing down")
     print(f"Diffuser: {dtotal:.0f} g of the total, overlap with yoke {touch_mm3:.2f} mm3 (want 0)")
