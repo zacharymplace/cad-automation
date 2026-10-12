@@ -30,6 +30,9 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Parts and cost (`BOM.md`, `bom.py`)
+Printed grams per kit come from the CAD; purchased-part prices are my estimates anchored on a few October 2026 listings, not quotes. Rough totals for size M, excluding shipping, tax and tools: core 14-26 USD, glow 48-113, carry 54-138, comfort 56-143, full 63-172, plus 55-88 USD the first time for whole 1 kg spools of TPU, PETG and natural PETG. The battery, board, strip and spring plungers are the real cost; the plastic is cheap.
+
 ## Safety (`SAFETY.md`, `safety.py`)
 A written hazard review for the full kit, with the stop-ship list and a before-wear test order. The biggest open items: no battery cell or board is chosen or tested, the glue joints under the bars have a thin margin (1.8 at 5 g), the printed modules have sharp edges (the CAD kernel crashed trying to round them), the LED firmware must never flash, and the cup cradle is not for hot drinks. The review added a grid guard to the fan: built into the intake, plus a separate outlet plate (`module_fan_guard.stl`, four M2 screws). The collar is an open C that cannot close on the neck; modules stand out of the collar rim by up to 119 mm (dock) and 106 mm (cup) in the full kit.
 
