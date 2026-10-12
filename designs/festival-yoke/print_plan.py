@@ -5,6 +5,7 @@ import math
 import numpy as np
 
 import build
+import flatpack
 import kit
 import layout
 import module
@@ -47,8 +48,11 @@ def analyse(shape):
 
 def parts():
     p = {}
-    for q, (sx, sy) in build.QUARTERS.items():
-        p[f"yoke_{q}"] = (build.parts()[q], "TPU 95A", 0.9, "yoke quarter")
+    for q, (pat, body) in flatpack.flat_parts().items():
+        p[f"flat_skin_{q}"] = (body, "TPU 95A", 0.9, "flat skin quarter (print flat, bend into the cone)")
+    for name, seg in flatpack.hoop_segments().items():
+        kind = "rail" if name.startswith("rail") else "lip"
+        p[f"hoop_{name}"] = (seg, "PETG", 0.9, f"{kind} segment, glued to the skin (print upside down)")
     if layout.has_leds():
         dif = power.fitted_diffuser()
         for q, (sx, sy) in build.QUARTERS.items():
@@ -99,22 +103,22 @@ run `build.py`, `module.py` and `power.py` to make them).
 Print a 20 mm calibration cube in each filament, then a 2 mm thick, 60 x 40 mm TPU plate. The TPU plate must come out
 smooth with no stringing or gaps: the yoke skin is that thin. Fix temperature, speed and retraction here, not on the yoke.
 
-**Stage 1: the fit pack (the first real print, about {sum(r[8] for r in rows if r[0] in ('yoke_fr', 'yoke_br', 'diffuser_fitted_fr', 'module_clip_coupon')):.0f} g).**
-Print `yoke_fr` and `yoke_br` (rigid PETG proxy first, then TPU), `diffuser_fitted_fr` (natural PETG) and `module_clip_coupon` (PETG). Together they test, with
-no waste: the dovetail seam (the front-right tabs go into the back-right pockets), the rail clip and its screw holes, the
-diffuser snap, the edge rounding, and how TPU behaves at 2 mm.
+**Stage 1: the fit pack (the first real print, about {sum(r[8] for r in rows if r[0] in ('flat_skin_fr', 'flat_skin_br', 'hoop_rail_right', 'hoop_lip_right', 'diffuser_fitted_fr', 'module_clip_coupon')):.0f} g).**
+Print `flat_skin_fr` and `flat_skin_br` (TPU, flat, no supports), `hoop_rail_right` and `hoop_lip_right` (PETG, upside down), `diffuser_fitted_fr` (natural PETG) and `module_clip_coupon` (PETG). Together they test, with
+no waste: forming the flat skin into the cone, the dovetail seam (the front-right tabs go into the back-right pockets), gluing a rail and lip on along the engraved guide lines, the rail clip and its screw holes, the
+diffuser snap, and how TPU behaves at 2 mm.
 
 Check, and write the result down:
-1. The two yoke quarters push together and hold. If they are loose or will not close, change `joint.clearance` in `config.toml` by 0.1 mm and reprint only the pockets' quarter.
-2. The clip snaps onto the rail and the two M3 screws bite the stem. If it will not go on, raise `CLEAR` in `module.py`; if it rocks, lower it.
+1. The two skin pieces bend into the cone and the dovetails push together and hold. If they are loose or will not close, change `joint.clearance` in `config.toml` by 0.1 mm and reprint only the pockets' piece.
+2. The rail and lip segments sit flat on the skin along the guide lines and bond. The clip then snaps onto the rail and the two M3 screws bite the stem. If it will not go on, raise `CLEAR` in `module.py`; if it rocks, lower it.
 3. The diffuser pushes onto the lip with a click and does not fall off when you shake it. If it is too tight or too loose, change `SNAP_DEPTH` or the bead steps in `build.py`.
-4. Hold the two quarters against a shoulder (see MEASURING.md): slope, opening and where the edge lands.
+4. Hold the formed pieces against a shoulder (see MEASURING.md): slope, opening and where the edge lands. The flat pattern is an exact unrolling of the formed shape, so a wrong slope means wrong measurements, not a wrong pattern.
 
-Do not go further until 1 and 2 pass.
+Do not go further until 1 and 2 pass. The biggest unknown is whether a flat TPU sheet, glued to rigid segments, holds the cone shape well enough on the body: that is what this stage tells you.
 
-**Stage 2: the whole bare collar (about {sum(r[8] for r in rows if r[0].startswith('yoke')):.0f} g of TPU, plus the cover).**
-Print the other two yoke quarters and the other three cover quarters. Join the four yoke quarters, add stick-on foam to the four pad seats, and wear it without modules for ten minutes.
-Gate: it sits on the shoulders without sliding or pressing on the neck, the front opening lets the head through, and nothing reaches above the shoulder line. If not, change the five measurements or `shoulder_drop` and rerun `build_all.py`.
+**Stage 2: the whole bare collar (about {sum(r[8] for r in rows if r[0].startswith('flat_skin')):.0f} g of TPU, plus the rail and lip segments and the cover).**
+Print the other two skin pieces, the remaining rail and lip segments and the other three cover quarters. Form and join the four skin pieces, glue on the segments, add stick-on foam at the engraved ovals, and wear it without modules for ten minutes.
+Gate: it sits on the shoulders without sliding or pressing on the neck, the front opening lets the head through, and nothing reaches above the shoulder line. If not, change the five measurements or `shoulder_drop` and rerun `build_all.py` and `flatpack.py`.
 
 **Stage 3: modules, one at a time, under load.**
 Print and test in this order, lightest consequences first:
@@ -139,7 +143,7 @@ Only after everything above fits. Wire the board, cell and strip on a bench firs
 | Speed | 20-30 mm/s, direct drive | 40-60 mm/s | 40 mm/s |
 | Retraction | minimal (about 1 mm) | normal | normal |
 | Cooling | 50-100% | 50-100% | 100% |
-| Supports | yes, under the whole slope (see below) | where the part table shows support area | tree supports under the slope, 0.2 mm top gap |
+| Supports | none (flat) | only where the part table shows support area | tree supports under the slope, 0.2 mm top gap |
 | Adhesion | PEI, glue stick as a release | PEI | PEI |
 
 Print orientation matters for the clips: the lips load by bending along the layers when printed lying as designed, which is the strong direction. Do not stand a clip on its end.
@@ -148,7 +152,7 @@ Print orientation matters for the clips: the lips load by bending along the laye
 
 Orientation and support area are computed from the geometry: the orientation with the least overhang steeper than 45 degrees, out of the six upright ones that have at least 300 mm2 of bed contact. Treat it as a first guess and look at it in the slicer.
 
-**The yoke quarters are the hard print.** The collar is a thin 23-42 degree cone, so most of its underside is an overhang and the part touches the bed on only a thin rim. Expect supports under the whole slope (several thousand mm2 per quarter, see the table), and a brim. Supports in TPU are fiddly. That is why Stage 1 prints the yoke quarters first in rigid PETG as a proxy: it checks the shape, the slope, the dovetails and the rail at far less risk, and it tells you how much support the slope really needs. Print the TPU versions only when the PETG ones fit. Rigid parts will be tighter at the joints than TPU, so judge clearances again on the TPU parts. Time is a rough guess from the mass (TPU {RATE['TPU 95A']:.0f} g/h, PETG {RATE['PETG']:.0f} g/h).
+**The yoke is now printed flat.** The collar skin is almost exactly a developable cone (Gaussian curvature about 1e-7 per mm2), so each quarter unrolls into a flat fan shape with under 0.2% stretch. Those four TPU pieces need no supports, and the rail and lip are separate segments printed upside down, also support-free. The formed shape (`yoke_*.stl` from `build.py`) is kept only as the reference for the clash and balance checks. The cover still needs light supports. Time is a rough guess from the mass (TPU {RATE['TPU 95A']:.0f} g/h, PETG {RATE['PETG']:.0f} g/h).
 
 | Part | Material | What | Best orientation | Support mm2 | Bed contact mm2 | Size mm | Fits bed | Mass g | Hours |
 |---|---|---|---|---|---|---|---|---|---|

@@ -41,6 +41,14 @@ def cone(dz: float) -> cq.Workplane:
     )
 
 
+def skin_blank() -> cq.Workplane:
+    """Collar skin with no slots, rounding or gap: the bare shell, used to develop the flat patterns."""
+    t = Y["thickness"]
+    s = cone(0).cut(cone(-t))
+    k = (AO - AI) * t / DROP + 1
+    return s.cut(cq.Workplane("XY").workplane(offset=-DROP - 5).ellipse(AI + k, BI + k).extrude(DROP + 10))
+
+
 def skin() -> cq.Workplane:
     """Collar skin with rounded edges. Rounding is attempted at decreasing radii until the finished skin is a valid
     solid (the kernel is fragile on some sizes); with none valid it is left sharp and a warning is printed."""

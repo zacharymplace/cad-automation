@@ -30,6 +30,15 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Flat-print skin (`flatpack.py`)
+The collar skin is almost exactly a developable cone (Gaussian curvature about 1e-7 per mm2; a 200 mm sphere is 2.5e-5), so `flatpack.py` unrolls each quarter into a flat fan shape with a least-squares conformal map and checks the stretch (under 0.2%) and that the seam edges match across each joint (97.37 mm both sides). The four flat TPU pieces print face up with no supports, and carry the slots, the dovetail tabs and pockets, and engraved guide lines for the rail, the lip and the foam seats. Bend them into the cone and join the dovetails. The skin bends at about 1.2% strain, well within TPU.
+
+The rail and lip become separate rigid segments (`hoop_*.stl`, PETG): their base is cut to the skin surface so they sit flat on it, they are glued along the engraved lines, and they print upside down (cap or lip top on the bed) with no supports. The cuts fall across the skin seams, which stiffens the joints. `build.py`'s monolithic yoke STLs are now only the reference shape used by the clash, balance and strength checks.
+
+Not yet proven: that a flat TPU skin glued to rigid segments holds the cone on a real shoulder. That is the main thing Stage 1 of the print plan tests. The printed foam seats are replaced by engraved ovals for stick-on foam, so the loaded masses in `balance.py` are about 10 g high.
+
+`flat_view.py` draws the four patterns (`out/M/flat_patterns.png`).
+
 ## Weight and balance (`balance.py`)
 - Printed parts come to about 320 g on size M (thin skin printed near solid, modules at ~20% infill); what you carry on it is about 955 g with a full cup, a phone, one ear defender, the cell and board, the fan and the strip. The collar is the minor part of the load, so the biggest levers are the payload and the layout.
 - The first layout (cup 55, phone 125, dock 0, fan 180, pod 270 deg) put the loaded centre of mass 90 mm off-centre (1.13 N*m of tipping torque). `balance.py` searches the module angles and the current layout (cup 40, phone 140, dock 225, fan 345, pod 300) brings it to 19 mm full and 30 mm with a light load (0.24 N*m), with the clips still 38+ deg apart. The cup post now also stands out far enough to clear the lip and the body at every size.
