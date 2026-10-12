@@ -64,6 +64,8 @@ def parts():
              "id": "ID card pouch", "tube": "hydration tube clip", "blank": "blank mounting plate", "cover": "rail cover"}
     for name, shape in kit.modules().items():
         p[f"module_{name}"] = (shape, "PETG", 0.5, notes[name])
+    if "fan" in kit.modules():
+        p["module_fan_guard"] = (module.fan_guard(placed=False), "PETG", 0.9, "fan outlet guard (screws on with four M2 self-tapping screws)")
     if layout.has_leds():
         p["module_pod_lid"] = (power.pod_lid(), "PETG", 0.5, "power pod lid")
     return p

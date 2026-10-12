@@ -88,13 +88,14 @@ Orientation and support area are computed from the geometry: the orientation wit
 | `module_cup` | PETG | cup cradle | as designed | 1929 | 3652 | 127 x 133 x 116 | ok | 42 | 2.6 |
 | `module_phone` | PETG | phone cradle | as designed | 4036 | 1833 | 106 x 113 x 174 | ok | 42 | 2.6 |
 | `module_dock` | PETG | ear-defender dock | on its +y side | 4514 | 382 | 128 x 35 x 145 | ok | 34 | 2.1 |
-| `module_fan` | PETG | fan frame | as designed | 5194 | 582 | 114 x 112 x 113 | ok | 28 | 1.7 |
+| `module_fan` | PETG | fan frame | as designed | 6113 | 582 | 114 x 112 x 113 | ok | 30 | 1.8 |
 | `module_pod` | PETG | power pod tray | on its +x side | 1343 | 1071 | 29 x 49 x 71 | ok | 16 | 1.0 |
 | `module_id` | PETG | ID card pouch | flipped | 743 | 2279 | 81 x 94 x 62 | ok | 23 | 1.4 |
 | `module_tube` | PETG | hydration tube clip | on its +x side | 847 | 320 | 25 x 56 x 47 | ok | 9 | 0.6 |
+| `module_fan_guard` | PETG | fan outlet guard (screws on with four M2 self-tapping screws) | as designed | 0 | 2941 | 86 x 86 x 2 | ok | 5 | 0.3 |
 | `module_pod_lid` | PETG | power pod lid | flipped | 0 | 3277 | 71 x 48 x 4 | ok | 5 | 0.3 |
 
-Printed mass without the coupon: about 408 g.
+Printed mass without the coupon: about 415 g.
 
 ## Things this plan cannot tell you
 

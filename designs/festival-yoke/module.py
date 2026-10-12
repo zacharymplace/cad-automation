@@ -41,6 +41,7 @@ TUBE_OD = 9.5             # hydration tube outside diameter, mm
 FAN_ANGLE = layout.angle("fan")
 FAN_SIZE, FAN_T, FAN_WALL = 80, 25, 2.7     # fan outline and thickness
 FAN_ELEV = 40                               # deg above horizontal, aimed toward the wearer's face
+FAN_GUARD_PITCH, FAN_GUARD_BAR = 9.0, 1.6              # grid pitch and bar width: 7.4 mm gaps, too small for a finger or a hair bundle to reach the blades
 FAN_X = 32                                  # fan centre, outward from the rail line (puts its lowest edge over the clip)
 
 
@@ -168,6 +169,14 @@ def fan_module(angle: float = FAN_ANGLE) -> cq.Workplane:
     frame = frame.cut(cq.Workplane("XY").box(inner, inner, FAN_T + 1, centered=(True, True, False)).translate((0, 0, 2)))  # pocket, open at the outlet end
     frame = frame.cut(cq.Workplane("XY").box(inner - 9, inner - 9, 4, centered=(True, True, False)).translate((0, 0, -1)))   # intake opening, leaves a retaining lip
     frame = frame.cut(cq.Workplane("XY").box(10, 8, 8, centered=(True, True, False)).translate((0, -outer / 2, 10)))        # cable notch
+    # finger and hair guard on the intake: a grid across the opening, gaps under 8 mm (the outlet has a separate screw-on guard)
+    for k in range(-4, 4):
+        c = (k + 0.5) * FAN_GUARD_PITCH
+        frame = frame.union(cq.Workplane("XY").box(FAN_GUARD_BAR, inner - 9, 2, centered=(True, True, False)).translate((c, 0, 0)))
+        frame = frame.union(cq.Workplane("XY").box(inner - 9, FAN_GUARD_BAR, 2, centered=(True, True, False)).translate((0, c, 0)))
+    for sx in (-1, 1):   # pilot holes for the outlet guard's M2 self-tapping screws
+        for sy in (-1, 1):
+            frame = frame.cut(cq.Workplane("XY").workplane(offset=FAN_T + 2 - 8).center(sx * (inner / 2 + FAN_WALL / 2), sy * (inner / 2 + FAN_WALL / 2)).circle(0.85).extrude(9))
     # axis (+z, the outlet) points up and toward the neck: rotating about y by theta sends z to (sin t, 0, cos t)
     theta = -(90 - FAN_ELEV)
     zc = z_arm + 8 + (outer / 2) * math.cos(math.radians(theta)) + 20
@@ -175,6 +184,27 @@ def fan_module(angle: float = FAN_ANGLE) -> cq.Workplane:
     low = frame.vertices("<Z").val().Center()          # lowest corner of the tilted frame: hang the bracket from it
     bracket = cq.Workplane("XY").box(14, 18, low.z + 9 - z_arm, centered=(True, True, False)).translate((low.x + 4, 0, z_arm))
     return mount(clip_local(angle).union(bracket).union(frame), angle)
+
+
+def fan_guard(angle: float = FAN_ANGLE, placed: bool = True) -> cq.Workplane:
+    """Grid guard for the fan's outlet, fixed with four M2 self-tapping screws; print it flat. `placed` puts it on the
+    tilted frame for clash checks."""
+    inner = FAN_SIZE + 0.6
+    outer = inner + 2 * FAN_WALL
+    plate = cq.Workplane("XY").box(outer, outer, 1.6, centered=(True, True, False))
+    for i in range(-4, 5):
+        for j in range(-4, 5):
+            plate = plate.cut(cq.Workplane("XY").box(FAN_GUARD_PITCH - FAN_GUARD_BAR, FAN_GUARD_PITCH - FAN_GUARD_BAR, 4, centered=(True, True, False)).translate((i * FAN_GUARD_PITCH, j * FAN_GUARD_PITCH, -1)))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            plate = plate.cut(cq.Workplane("XY").workplane(offset=-1).center(sx * (inner / 2 + FAN_WALL / 2), sy * (inner / 2 + FAN_WALL / 2)).circle(1.25).extrude(4))
+    if not placed:
+        return plate
+    _, _, _, _, z_arm = z_levels(angle)
+    theta = -(90 - FAN_ELEV)
+    zc = z_arm + 8 + (outer / 2) * math.cos(math.radians(theta)) + 20
+    plate = plate.translate((0, 0, FAN_T + 2)).rotate((0, 0, 0), (0, 1, 0), theta).translate((FAN_X, 0, zc))
+    return dock._place(plate, dock.frame(angle))
 
 
 def clip_coupon(angle: float = CUP_ANGLE) -> cq.Workplane:
@@ -249,6 +279,11 @@ def main():
         cq.exporters.export(shape, str(build.OUT / f"module_{name}.stl"))
         report(f"module_{name}", shape)
     cq.exporters.export(clip_coupon(), str(build.OUT / "module_clip_coupon.stl"))
+    if "fan" in made:
+        cq.exporters.export(fan_guard(placed=False), str(build.OUT / "module_fan_guard.stl"))
+        g = fan_guard()
+        c = g.intersect(made["fan"])
+        print(f"fan outlet guard: overlap with the fan frame {sum(s.Volume() for s in c.solids().vals()) if c.vals() else 0:.0f} mm3 (it sits on the frame end face, so a little is expected only if the pilot geometry touches)")
     names = list(made)
     worst = 0.0
     for i, a in enumerate(names):

@@ -30,6 +30,9 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - `power.py` also runs 18 clash checks between every module, the strip, the fitted cover and the yoke.
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
+## Safety (`SAFETY.md`, `safety.py`)
+A written hazard review for the full kit, with the stop-ship list and a before-wear test order. The biggest open items: no battery cell or board is chosen or tested, the glue joints under the bars have a thin margin (1.8 at 5 g), the printed modules have sharp edges (the CAD kernel crashed trying to round them), the LED firmware must never flash, and the cup cradle is not for hot drinks. The review added a grid guard to the fan: built into the intake, plus a separate outlet plate (`module_fan_guard.stl`, four M2 screws). The collar is an open C that cannot close on the neck; modules stand out of the collar rim by up to 119 mm (dock) and 106 mm (cup) in the full kit.
+
 ## Putting it on (`donning.py`)
 Open-front design, no fastener. For size M the head (about 161 x 201 mm) goes through a 189 x 171 mm opening with 14 mm to spare each side, sitting about 15 mm forward of the collar centre; the front gap must open from 70 to about 115 mm (a 45 mm spread). A 2D ring model puts the force at a few N per front tip with peak plan strain of 2-3% in the skin, well under what a weak one-handed grip manages. That model is an upper-bound stiffness guess (glued rigid segments and seams will change it): measure it with a spring scale in Stage 2 of the print plan. Fit the modules after the collar is on. With the full kit every module clears the head's path; the first tuning put the phone at 110 degrees, where it blocked the head, so the phone is now kept at 125 degrees or further round.
 
