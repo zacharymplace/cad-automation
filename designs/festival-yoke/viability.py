@@ -38,7 +38,8 @@ def unit_cost(k, price, size_label, lev=None):
     """Per-unit cost distribution for one kit at a selling price. Returns dict of arrays (USD)."""
     lev = lev or {}
     g = k["g"]
-    hours = g["TPU"] / RATE["TPU"] + g["PETG"] / RATE["PETG"] + g["NAT"] / RATE["NAT"]
+    tpu_hours = 0.0 if lev.get("sheet") else g["TPU"] / (RATE["TPU"] * lev.get("tpu_speed", 1.0))
+    hours = tpu_hours + g["PETG"] / RATE["PETG"] + g["NAT"] / RATE["NAT"]
     mods = len(k["modules"])
     has_pod = "pod" in k["modules"]
     # print and yield (assumption: beta-distributed; mean about 12% of prints fail, range 5-30%)
@@ -47,16 +48,23 @@ def unit_cost(k, price, size_label, lev=None):
     redo = 1 / ((1 - p_fail) * (1 - qa_scrap))
     machine_rate = tri(1.5, 3.0, 5.0) * lev.get("machine", 1.0)                    # USD/h, from the FDM costing guides found (1.5-5 EUR/h)
     machine = hours * machine_rate * redo
-    jobs = 4 + 1.6 * mods                                 # build plates per unit
+    jobs = (0 if lev.get("sheet") else 4) + 1.6 * mods + (0 if lev.get("sheet") else 0)   # build plates per unit; a cut skin needs none
     attend = jobs * 0.12 * tri(20, 28, 40)               # 7 minutes per job at the print operator's rate
     # assembly labour minutes (assumption): deburr, form, glue lip and bars, foam, QA; each module and the electronics add time
     minutes = 60 + 14 * mods + (75 if has_pod else 0) + 25
+    minutes += lev.get("minutes_add", 0) + mods * lev.get("minutes_per_module", 0)
+    minutes += 12 if lev.get("sheet") else 0                  # nest and cut the skin, strip it, check the edges
     minutes = minutes * tri(0.7, 1.0, 1.7) * lev.get("minutes", 1.0)
     labour_rate = tri(18, 26, 40) * lev.get("wage", 1.0)
     assembly = minutes / 60 * labour_rate * (1 / (1 - qa_scrap))
     support = 0.3 * labour_rate                           # warranty and customer service, hours per unit
     filament = tri(k["fil"][0], k["fil"][0] + 0.4 * (k["fil"][1] - k["fil"][0]), k["fil"][1]) * redo
     parts = lev.get("parts", 1.0) * tri(k["parts"][0], k["parts"][0] + 0.4 * (k["parts"][1] - k["parts"][0]), k["parts"][1]) * (1 / (1 - qa_scrap))
+    if lev.get("sheet"):
+        # remove the TPU filament, add cut sheet (ASSUMPTION: I could not find a price: 2 mm TPU 95A, four pieces nested, about 0.3 m2 incl. offcuts) and the cutting service
+        filament = filament - g["TPU"] * 1.25 / 1000 * tri(22, 29, 35) * redo
+        parts = parts + tri(20, 40, 90) + tri(8, 15, 30)
+    parts = parts - mods * lev.get("part_save_per_module", 0) * tri(0.6, 1.0, 1.6)
     packaging = tri(3, 5, 9)
     shipping = tri(9, 14, 30) * lev.get("ship", 1.0)
     cac = tri(10, 30, 90) * lev.get("cac", 1.0)                                 # paid customer acquisition per sale, niche product
@@ -78,6 +86,52 @@ def fixed_cost(k):
 
 
 def pct(a, q): return float(np.percentile(a, q))
+
+
+def cost_levers():
+    """Design and process changes that keep every function and the quality: what each does to the price needed."""
+    kits = parse_bom(ROOT / "BOM.md")
+    levers = [
+        ("baseline", {}),
+        ("print TPU on a 0.6 mm nozzle at about 5 mm3/s (2.5x faster than my 8 g/h assumption)", {"tpu_speed": 2.5}),
+        ("CUT the skin from 2 mm TPU sheet instead of printing it (waterjet or knife; sheet price unknown, assumed)", {"sheet": True}),
+        ("print the lip with the skin as one TPU part: no separate lip parts, no lip gluing (needs a redesign of the lip and cover)", {"minutes_add": -15}),
+        ("replace the spring plungers with a printed flexure detent (no hardware, less assembly)", {"part_save_per_module": 3.0, "minutes_per_module": -3}),
+        ("ship the skin flat in an envelope (flat-pack design)", {"ship": 0.55}),
+        ("a gluing and fitting jig, pegs already locate the bar (assembly time x0.85)", {"minutes": 0.85}),
+        ("buy parts at 100+ units (parts x0.7)", {"parts": 0.7}),
+    ]
+    print("\n================ design and process levers (size M): price to cover cost / price for a 40% margin ================")
+    print(f"{'lever':<122}{'core':>10}{'glow':>11}{'full':>11}")
+    combos = {}
+    for label, lev in levers:
+        cells = []
+        for kit in ("core", "glow", "full"):
+            vv = unit_cost(kits[kit], 200, "M", lev)
+            nofee = vv["variable"] - vv["fee"]
+            cells.append(((nofee + 0.30) / (1 - 0.029), (nofee + 0.30) / (1 - 0.029 - 0.40)))
+        print(f"{label:<122}" + "".join(f"{pct(c[0], 50):>5.0f}/{pct(c[1], 50):<5.0f}" for c in cells))
+    # all non-controversial levers combined, with and without cutting the skin
+    safe = {"tpu_speed": 2.5, "minutes_add": -15, "part_save_per_module": 3.0, "minutes_per_module": -3, "ship": 0.55, "minutes": 0.85, "parts": 0.7}
+    for label, lev in (("COMBINED, printed skin (all levers except cutting)", safe), ("COMBINED, cut skin (all levers)", {**safe, "sheet": True}),
+                       ("COMBINED, cut skin, plus a lean operation (own printers, cheap labour, community sales)",
+                        {**safe, "sheet": True, "wage": 0.5, "machine": 0.5, "cac": 0.3, "returns": 0.5})):
+        cells = []
+        for kit in ("core", "glow", "full"):
+            vv = unit_cost(kits[kit], 200, "M", lev)
+            nofee = vv["variable"] - vv["fee"]
+            cells.append(((nofee + 0.30) / (1 - 0.029), (nofee + 0.30) / (1 - 0.029 - 0.40)))
+        print(f"{label:<122}" + "".join(f"{pct(c[0], 50):>5.0f}/{pct(c[1], 50):<5.0f}" for c in cells))
+    # injection moulding the flat skin: tooling against the cost of printing it
+    base = unit_cost(kits["core"], 200, "M", {})
+    cut = unit_cost(kits["core"], 200, "M", {"sheet": True})
+    tpu_print_cost = base["machine"] + base["filament"] - cut["filament"]
+    print(f"\nPrinting the skin costs about {pct(base['make'] - cut['make'], 50):.0f} USD more per kit than cutting it (median).")
+    mould_part = tri(4, 8, 16)                                    # ASSUMPTION: four small TPU parts per kit, rigid-resin per-part figures found were 0.6-4 USD each
+    tool = tri(5000, 9000, 18000)                                 # aluminium tooling for the four flat parts, from the 3,000-12,000 USD ranges found, doubled for TPU and four shapes
+    saving = (base["machine"] + base["filament"] + 0.4 * base["labour"]) - mould_part
+    units = tool / np.maximum(saving, 1)
+    print(f"Injection moulding the skin (tool about {pct(tool, 50):,.0f} USD, parts about {pct(mould_part, 50):.0f} USD a kit): saves about {pct(saving, 50):.0f} USD a kit against printing; the tool pays back after about {pct(units, 50):,.0f} kits (p10 {pct(units, 10):,.0f}, p90 {pct(units, 90):,.0f}).")
 
 
 def sensitivity():
@@ -141,6 +195,7 @@ def digital_model():
 
 
 def main():
+    cost_levers()
     sensitivity()
     lean_breakeven()
     digital_model()

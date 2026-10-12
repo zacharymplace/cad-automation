@@ -70,6 +70,34 @@ This carries far less risk, and an open, hackable design may suit the people it 
 
 What people pay for the single functions today (from listings I found, October 2026): neck fans $10-20 retail, sensory ear defenders about $14-17, hydration packs about $27-58, festival LED novelties about $13-29 in bulk. Added together the separate items come to roughly $60-120. This product is priced as an integrated, accessibility-fitted system, and the price premium has to be earned by that fit. The "sensory-friendly wearables" market I found is small (about $72 million a year worldwide in one report), so do not assume a big pool.
 
+## Lowering the cost without losing function or quality
+
+I added these as levers in `viability.py` (`cost_levers`). Median price to cover cost / price for a 40% margin, size M. Savings are from my assumptions, and the sheet price is a guess because I could not find one.
+
+| Change | core | glow | full |
+|---|---|---|---|
+| baseline | 250 / 424 | 403 / 685 | 601 / 1,022 |
+| print TPU on a 0.6 mm nozzle at about 5 mm3/s (my baseline assumed about 1.8) | 209 / 355 | 362 / 616 | 561 / 954 |
+| replace the M3 spring plungers with a printed flexure detent | 250 / 424 | 397 / 674 | 562 / 956 |
+| gluing and fitting jig (the pegs already locate the bar) | 241 / 410 | 386 / 656 | 576 / 979 |
+| buy parts at 100+ units | 244 / 416 | 376 / 639 | 564 / 959 |
+| ship the flat skin in an envelope | 240 / 408 | 392 / 667 | 591 / 1,005 |
+| print the lip with the skin (no lip parts, no lip gluing; needs a redesign) | 240 / 408 | 393 / 669 | 592 / 1,007 |
+| cut the skin from 2 mm TPU sheet instead of printing it | 245 / 416 | 397 / 676 | 597 / 1,015 |
+| **all of the above except cutting** | **177 / 301** | **296 / 504** | **444 / 755** |
+| all of the above with cutting | 212 / 361 | 330 / 561 | 478 / 813 |
+| all of the above with cutting, plus a lean operation | 144 / 245 | 227 / 387 | 322 / 548 |
+
+**What this says.** Together the changes cut the price needed by about 28% with no loss of function, and with a lean operation as well the bare collar could cover its cost at about $145 and the full kit at about $320. The biggest single levers are printing the TPU faster (about $40 a kit), dropping the spring plungers (about $40 on the full kit), a fitting jig, and buying parts in bulk.
+
+**Cutting the skin from sheet is a wash on cost on my numbers**, because the sheet and the cutting service (about $30-120 a set, assumed) cost about what the 15 hours of printing does. It would still give a cleaner, stronger, layer-free skin and free the printers, so it is worth quoting. I found waterjet, knife and pulsed CO2 laser cutting of TPU (waterjet is cold, so no fumes); I did not find a sheet price.
+
+**Injection moulding the flat skin pays off once volume is proven.** The skin is nearly flat, with no undercuts, so it moulds well. On assumed figures (aluminium tool about $10,000, parts about $9 a kit) it saves about $88 a kit against printing, and the tool pays back after about 120 kits (range 77 to 180). Generic guides put aluminium tools at $3,000-12,000 and break-even against printing at 400-800 parts; none of that was TPU-specific. Do this only after the demand test.
+
+**What I would not cut:** the skin thickness, the slots, the 30 mm flange and pegs, the fan guards, the LED cover, or any of the safety items. They are the margin the strength and safety checks rely on.
+
+**Costs design cannot fix:** about $85 a sale goes on finding the customer, shipping, returns and payment fees. A good size guide (the five-measurement check) cuts wrong-size returns, and community or partner sales cut the acquisition cost.
+
 ## Reliability: the glue joint
 
 I simulated the weakest joint, a cup (402 g, 91 mm out) peeling its bar off the skin. Inputs: peak acceleration per use (median 1.3 g, 95th percentile 4.5 g, lognormal) and adhesive peel strength (median 2.0 N/mm, 35% scatter). A barbed peg is assumed to hold 15 N before it pulls back through the 2 mm TPU. All three are guesses until the Stage 1 tests measure them.
