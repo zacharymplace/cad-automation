@@ -7,7 +7,7 @@ Run from `viability.py` (40,000 Monte Carlo draws per case; `viability_results.j
 - **As a hand-made consumer product at festival-gadget prices: no.** A hand-assembled kit costs more to make and sell than commodity festival items sell for, by roughly 5 to 10 times.
 - **As a small, lean, niche accessibility product, or as plans you sell: possible, unproven.** The numbers work if costs are lean and customers pay roughly $200 for the bare collar, $300 for glow and $500 for the full kit.
 - **There is a reason to take the next small step** (the Stage 1 print, a design fix and a demand test, a few hundred dollars in cash) **and no reason yet to spend money on inventory, certification or tooling.**
-- **The simulations found a design problem:** the glued bar fails in about one in four units over a season under the assumed handling. Fix it before building more (below).
+- **The simulations found a design problem:** the glued bar failed in about one in four units over a season under the assumed handling. I changed it (30 mm glued flange plus two barbed locating pegs through the skin), which brings that to about 2-3% on the central assumptions, but it is still 10-40% if the glue is weaker or handling harsher than I assumed. Stage 1 has to measure the real glue strength and peg pull-out force before anyone trusts the number.
 
 ## What it costs to make and sell one (size M)
 
@@ -72,18 +72,21 @@ What people pay for the single functions today (from listings I found, October 2
 
 ## Reliability: the glue joint
 
-I simulated the weakest joint, a cup (402 g, 91 mm out) peeling its bar off the skin. Inputs: peak acceleration per use (median 1.3 g, 95th percentile 4.5 g, lognormal), and adhesive peel strength (median 2.0 N/mm, 35% scatter). Both are guesses until the Stage 1 pull test measures the real strength.
+I simulated the weakest joint, a cup (402 g, 91 mm out) peeling its bar off the skin. Inputs: peak acceleration per use (median 1.3 g, 95th percentile 4.5 g, lognormal) and adhesive peel strength (median 2.0 N/mm, 35% scatter). A barbed peg is assumed to hold 15 N before it pulls back through the 2 mm TPU. All three are guesses until the Stage 1 tests measure them.
 
 | Design | Chance of failure per peak | Per season (30 peaks) |
 |---|---|---|
-| 20 mm flange (current) | 1.0% | **26%** |
-| same, adhesive scatter 50% | 1.6% | 37% |
-| same, gentler peaks (95th percentile 3 g) | 0.2% | 5% |
-| 30 mm flange | 0.2% | 7% |
-| 20 mm flange + 2 locating pegs | 0.1% | 3.5% |
-| 30 mm flange + pegs | 0.03% | 1% |
+| 20 mm flange, glue only (the previous design) | 1.0% | **26%** |
+| same, adhesive scatter 50% | 1.5% | 37% |
+| 30 mm flange, glue only | 0.3% | 8% |
+| **30 mm flange + 2 pegs (current design)** | **0.1%** | **2.6%** |
+| same, weak glue (1.0 N/mm) | 0.9% | 23% |
+| same, weak pegs (6 N each) and weak glue | 1.8% | 41% |
+| 30 mm flange + 4 pegs, weak glue | 0.4% | 10% |
+| 30 mm flange + 2 pegs, harsh handling (95th percentile 7 g) | 0.8% | 21% |
+| 30 mm flange + 4 pegs, harsh handling | 0.5% | 15% |
 
-**The current design would fail too often to sell.** Wider flange plus pegs gets it near 1% per season, and that is the next design change to make. A cup spilling on the wearer is not a minor failure.
+**The change helps a lot on the central assumptions (26% to 2.6%) but does not make the joint safe by itself.** If the real glue is half as strong, or handling is harsher, the failure rate is back above 20%. If Stage 1 shows that, the next step is a mechanical fixing (a screw through the bar and skin into a small backing plate) instead of relying on glue. A cup spilling on the wearer is not a minor failure.
 
 ## Do the stages pay for themselves?
 

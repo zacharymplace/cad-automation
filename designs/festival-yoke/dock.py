@@ -19,7 +19,10 @@ R = build.R
 CLIP_LENGTH = 56          # the clip's length along the bar
 TRAVEL = 12               # slide distance each way
 BAR_LENGTH = CLIP_LENGTH + 2 * TRAVEL
-FLANGE_W, FLANGE_T = 20.0, 1.5   # wide flange: a heavy module tries to peel the bar's inner edge, and the peel force falls as the flange widens
+FLANGE_W, FLANGE_T = 30.0, 1.5   # wide flange: a heavy module tries to peel the bar's inner edge, and the peel force falls as the flange widens
+PEG_R, PEG_BARB_R, PEG_BARB_L = 1.5, 2.2, 1.4   # locating peg: shaft radius, barb radius at its shoulder, barb length (the barb snaps through a hole in the skin)
+PEG_HOLE_R = 1.6                                 # hole in the skin, 0.1 mm clear of the shaft
+PEG_X, PEG_Y = -9.0, 26.0                        # pegs sit near the flange's inner edge (where the peel starts), this far along the bar either side of centre
 STOP_H = 2.5              # stop block rises this far above the cap
 DIMPLES = (-10.0, 0.0, 10.0)   # detent positions along the bar, mm from the centre
 
@@ -49,6 +52,23 @@ def frame(angle: float) -> dict:
             "stem_top": stem_top, "cap_top": stem_top + R["cap_height"]}
 
 
+def peg_points(angle: float) -> list[np.ndarray]:
+    """Plan positions of the bar's two locating pegs."""
+    f = frame(angle)
+    return [f["M"] + PEG_X * f["n"] + s * PEG_Y * f["d"] for s in (-1, 1)]
+
+
+def peg_axis(px: float, py: float):
+    """Point on the skin's top surface, the outward unit normal there, and the skin's thickness along that normal."""
+    z = build.z_of(px, py)
+    eps = 0.5
+    gx = (build.z_of(px + eps, py) - build.z_of(px - eps, py)) / (2 * eps)
+    gy = (build.z_of(px, py + eps) - build.z_of(px, py - eps)) / (2 * eps)
+    n = np.array([-gx, -gy, 1.0])
+    n /= np.linalg.norm(n)
+    return np.array([px, py, z]), n, build.Y["thickness"] * n[2]
+
+
 def _place(shape: cq.Workplane, f: dict) -> cq.Workplane:
     return shape.rotate((0, 0, 0), (0, 0, 1), f["heading"]).translate((float(f["M"][0]), float(f["M"][1]), 0))
 
@@ -71,7 +91,14 @@ def bar(angle: float, sink: float = 0.0) -> cq.Workplane:
     body = _place(body, f).cut(build.cone(-sink))
     flange_plan = _place(_box(FLANGE_W, BAR_LENGTH, -100, 100), f)
     slab = build.cone(FLANGE_T).cut(build.cone(-sink))
-    return build.safe_union(body, flange_plan.intersect(slab))
+    out = build.safe_union(body, flange_plan.intersect(slab))
+    for px, py in peg_points(angle):   # two pegs along the skin's normal: shaft through the skin, then a barb that snaps under it
+        P, n, t_n = peg_axis(px, py)
+        shaft = cq.Solid.makeCylinder(PEG_R, 0.6 + t_n, cq.Vector(*(P + 0.6 * n)), cq.Vector(*(-n)))
+        barb = cq.Solid.makeCone(PEG_BARB_R, 1.2, PEG_BARB_L, cq.Vector(*(P - t_n * n)), cq.Vector(*(-n)))
+        out = build.safe_union(out, cq.Workplane("XY").add(shaft))
+        out = build.safe_union(out, cq.Workplane("XY").add(barb))
+    return out
 
 
 def bars_formed():

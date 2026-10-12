@@ -183,23 +183,33 @@ def main():
     print("\n================ reliability of the glued bar (cup, 402 g at 91 mm) ================")
     mass, lever = 0.402, 0.091
     peaks = rng.lognormal(math.log(1.3), 0.755, N)         # peak g in a season: median 1.3 g, 95th percentile 4.5 g (ASSUMPTION)
-    for label, flange, strength_med, cv in (("20 mm flange, flexible adhesive (current)", 20, 2.0, 0.35),
-                                              ("20 mm flange, adhesive scatter 50%", 20, 2.0, 0.5),
-                                              ("30 mm flange", 30, 2.0, 0.35),
-                                              ("20 mm flange + 2 pegs (strength x1.8)", 20, 3.6, 0.35),
-                                              ("30 mm flange + 2 pegs", 30, 3.6, 0.35)):
-        strength = rng.lognormal(math.log(strength_med), math.sqrt(math.log(1 + cv ** 2)), N)   # N/mm peel
-        couple = mass * 9.81 * lever * peaks               # N*m
-        line = couple / (flange / 1000) / 80               # N/mm over the 80 mm bar
-        pf = float((line > strength).mean())
-        # per-unit risk over a season: 30 independent peak events
-        season = 1 - (1 - pf) ** 30
-        print(f"  {label:<44} P(fail) per peak {pf * 100:5.2f}%   per season of 30 peaks {season * 100:5.1f}%")
-    mild = rng.lognormal(math.log(1.0), math.log(3.0 / 1.0) / 1.645, N)     # a gentler season: median 1 g, 95th percentile 3 g
-    strength = rng.lognormal(math.log(2.0), math.sqrt(math.log(1 + 0.35 ** 2)), N)
-    line = mass * 9.81 * lever * mild / 0.020 / 80
-    pf = float((line > strength).mean())
-    print(f"  (gentler peaks, 95th percentile 3 g, current 20 mm flange)       P(fail) per peak {pf * 100:5.2f}%   per season of 30 peaks {(1 - (1 - pf) ** 30) * 100:5.1f}%")
+
+    def fail_rate(flange, strength_med, cv, pegs=0, peg_med=15.0, peg_cv=0.6, peak=None):
+        """A bar lets go when the lift at the inner edge exceeds what the glue line and the pegs can hold."""
+        peak = peaks if peak is None else peak
+        strength = rng.lognormal(math.log(strength_med), math.sqrt(math.log(1 + cv ** 2)), N)       # N/mm peel
+        peg_force = pegs * rng.lognormal(math.log(peg_med), math.sqrt(math.log(1 + peg_cv ** 2)), N)  # N, barbs pulling back through TPU
+        lift = mass * 9.81 * lever * peak / (flange / 1000)                                           # N at the inner edge
+        capacity = strength * 80 + peg_force                                                          # N: glue over the 80 mm bar, plus the pegs
+        # glue holds a line load, so compare the load the glue must carry after the pegs share the lift
+        glue_load = np.maximum(lift - peg_force, 0) / 80
+        pf = float((glue_load > strength).mean())
+        return pf, 1 - (1 - pf) ** 30
+
+    variants = [("20 mm flange, glue only (the previous design)", dict(flange=20, strength_med=2.0, cv=0.35)),
+                ("20 mm flange, adhesive scatter 50%", dict(flange=20, strength_med=2.0, cv=0.5)),
+                ("30 mm flange, glue only", dict(flange=30, strength_med=2.0, cv=0.35)),
+                ("30 mm flange + 2 pegs (15 N each, current design)", dict(flange=30, strength_med=2.0, cv=0.35, pegs=2)),
+                ("30 mm flange + 2 pegs, weak glue (1.0 N/mm)", dict(flange=30, strength_med=1.0, cv=0.5, pegs=2)),
+                ("30 mm flange + 2 pegs, weak pegs (6 N each) and weak glue", dict(flange=30, strength_med=1.0, cv=0.5, pegs=2, peg_med=6.0)),
+                ("30 mm flange + 4 pegs (15 N each), weak glue (1.0 N/mm)", dict(flange=30, strength_med=1.0, cv=0.5, pegs=4)),
+                ("30 mm flange + 4 pegs, harsh handling (95th percentile 7 g)", dict(flange=30, strength_med=2.0, cv=0.35, pegs=4,
+                                                                                       peak=rng.lognormal(math.log(1.3), math.log(7 / 1.3) / 1.645, N))),
+                ("30 mm flange + 2 pegs, harsh handling (95th percentile 7 g)", dict(flange=30, strength_med=2.0, cv=0.35, pegs=2,
+                                                                                       peak=rng.lognormal(math.log(1.3), math.log(7 / 1.3) / 1.645, N)))]
+    for label, kw in variants:
+        pf, season = fail_rate(**kw)
+        print(f"  {label:<62} P(fail) per peak {pf * 100:5.2f}%   per season of 30 peaks {season * 100:5.1f}%")
     # joint technical success of the staged plan (SUBJECTIVE probabilities)
     print("\n================ stage gates (SUBJECTIVE probabilities, my judgement, not data) ================")
     stages = [("Stage 0-1: flat TPU forms and holds a cone, glue holds 90 N, clip slides, cover snaps", 0.55, 700),

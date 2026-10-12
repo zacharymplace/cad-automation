@@ -286,6 +286,13 @@ def piece(name: str, sx: int, sy: int, xcut: float, tab_edges: list[str], pocket
         ox, oy = build.PAD["length"] / 2 * np.cos(t), build.PAD["width"] / 2 * np.sin(t)
         pts = np.stack([cx + ox * math.cos(ang) - oy * math.sin(ang), cy + ox * math.sin(ang) + oy * math.cos(ang)], axis=1)
         engrave(pts, "foam seat oval", closed=True)
+    for angle in layout.angles().values():          # peg holes of each docking bar, then its centre line
+        for px, py in dock.peg_points(angle):
+            flat = pat.to_flat(np.array([[px + dock.PEG_HOLE_R * math.cos(a), py + dock.PEG_HOLE_R * math.sin(a)] for a in np.linspace(0, 2 * math.pi, 16, endpoint=False)]))
+            if not np.isnan(flat).any():
+                trial = body.cut(prism(flat, -1, T + 2))
+                if trial.val().isValid() and trial.val().Volume() > 0.9 * body.val().Volume():
+                    body = trial
     for angle in layout.angles().values():          # centre line of each docking bar, mapped through this quarter (partial across a seam)
         fr = dock.frame(angle)
         line = np.array([fr["M"] + s * fr["d"] for s in np.linspace(-dock.BAR_LENGTH / 2, dock.BAR_LENGTH / 2, 40)])

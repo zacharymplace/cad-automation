@@ -72,8 +72,12 @@ def main():
         print(f"  PETG cap overhang {cap_over:.1f} mm x {build.R['cap_height']} mm: root stress {cap_stress:.2f} MPa at 1 g, {cap_stress * SHOCK:.1f} MPa at {SHOCK:.0f} g (PETG {PETG_YIELD:.0f} MPa: SF {sf(PETG_YIELD, cap_stress * SHOCK):.1f})")
         peel = F / dock.BAR_LENGTH                                # N per mm of bar along the flange edge
         PEEL_STRENGTH = 2.0                                       # N/mm, flexible adhesive on TPU, rough
-        print(f"  glue peel line load on the bar's flange: {peel:.2f} N/mm at 1 g, {peel * SHOCK:.2f} N/mm at {SHOCK:.0f} g vs about {PEEL_STRENGTH} N/mm for a flexible adhesive on TPU: SF {sf(PEEL_STRENGTH, peel * SHOCK):.1f} at {SHOCK:.0f} g")
-        print("  => the glue joint, not the plastic, is the weak link. Widen the flange, add two locating pegs through the skin per bar, or both")
+        PEG_PULL = 15.0                                           # N per peg to pull a barb back through its hole in 2 mm TPU: a guess, measure it
+        pegs = 2 * PEG_PULL
+        print(f"  glue peel line load on the bar's flange ({dock.FLANGE_W:.0f} mm wide): {peel:.2f} N/mm at 1 g, {peel * SHOCK:.2f} N/mm at {SHOCK:.0f} g vs about {PEEL_STRENGTH} N/mm for a flexible adhesive on TPU: SF {sf(PEEL_STRENGTH, peel * SHOCK):.1f} at {SHOCK:.0f} g from the glue alone")
+        shared = max(F * SHOCK - pegs, 0) / dock.BAR_LENGTH
+        print(f"  with two barbed pegs taking {pegs:.0f} N between them (assumed): the glue sees {shared:.2f} N/mm at {SHOCK:.0f} g, SF {sf(PEEL_STRENGTH, shared):.1f}")
+        print("  => pegs stop the bar lifting even if the glue is poor; measure the real peel strength and the peg pull-out force in Stage 1")
 
     # diffuser snap hook: a PETG cantilever pushed out by the bead
     t = build.G["lip_width"] / 2 + 1.5 - (build.G["lip_width"] / 2 + 0.1)   # hook thickness, mm

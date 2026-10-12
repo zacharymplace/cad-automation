@@ -100,19 +100,21 @@ Do this in a ventilated place with gloves and eye protection. Cyanoacrylate bond
 - [ ] Scuff the base of the lip segment and the bar with 400-grit and wipe with isopropyl alcohol. Wipe the matching places on the TPU too.
 - [ ] Find the engraved guide lines on the skin: the long arc is the lip; the straight line near 40 degrees on `flat_skin_fr` is the bar's centre line.
 - [ ] Glue the lip segment along its guide line, straddling the seam between the two skin pieces, with the groove facing outward. Hold or clamp it flat.
+- [ ] Find the two small holes under the bar's guide line (they are for the bar's pegs). Push the bar's two barbed pegs through them from the outside; each barb should snap through and sit under the skin. Push-through force: ______ N (it should need a firm push, not a tool). Note if the TPU tears or the barb will not pass.
 - [ ] Glue the bar on its centre line, flange down, with the **stop-block end toward the front gap** (the higher-angle end, as in the viewer); for this test either way round works, but keep the open end clear so the clip can slide on. Check by sliding the clip on afterward.
 - [ ] Wait the full cure time on the adhesive, at least 24 hours before the pull test.
 
 ## 6. After the glue has cured
 
-**Bar pull test** (this is the weakest joint in the design)
+**Bar pull test** (this is the weakest joint in the design; the bar has a 30 mm glued flange and two barbed pegs through the skin)
 - [ ] Put the clip on the bar and hook the spring scale to it.
 - [ ] Pull **straight up** on the clip. The numbers are what a heavy module can do to the glue:
   - 18 N (about 1.8 kg): a full cup standing still. Hold 10 s. Result: [ ] holds [ ] fails
   - 90 N (about 9 kg): a 5 g bump on that cup. Hold 10 s. Result: [ ] holds [ ] fails
-- [ ] Record where it failed if it did: [ ] glue let go from TPU [ ] glue let go from PETG [ ] TPU tore [ ] bar cracked.
+- [ ] Record where it failed if it did: [ ] glue let go from TPU [ ] glue let go from PETG [ ] TPU tore [ ] bar cracked [ ] a barb pulled back through its hole.
+- [ ] Measure the pegs on their own: before gluing a spare bar, hook the scale to the bar and pull straight up until the pegs let go. Pull-out force: ______ N for the pair (I assumed 30 N). And measure the glue alone by pulling a glued flange with the pegs cut off: ______ N.
 
-If it fails below 90 N: add two locating pegs through the skin under each bar and a second glue line, or tell me and I will change the design.
+If it fails below 90 N: tell me what let go. The next step is a screw through the bar and skin into a small backing plate, which does not depend on the glue.
 
 **Lip and cover**
 - [ ] Press `diffuser_fitted_fr` onto the lip over the part of the ring where the lip segment is glued (0 to 45 degrees). It pushes on with a click and does not fall off when you shake it.

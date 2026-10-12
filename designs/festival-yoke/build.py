@@ -114,6 +114,24 @@ def _skin(r: float) -> cq.Workplane:
             .slot2D(length, Y["slot_width"], deg).extrude(DROP + 10)
         )
         s = s.cut(slot)
+    s = cut_peg_holes(s)
+    return s
+
+
+def cut_peg_holes(s: cq.Workplane) -> cq.Workplane:
+    """Holes through the skin for each docking bar's locating pegs (the bars' feet are glued over them)."""
+    import dock
+    import layout
+    for angle in layout.angles().values():
+        for px, py in dock.peg_points(angle):
+            P, n, t_n = dock.peg_axis(float(px), float(py))
+            hole = cq.Workplane("XY").add(cq.Solid.makeCylinder(dock.PEG_HOLE_R, t_n + 6, cq.Vector(*(P + 3 * n)), cq.Vector(*(-n))))
+            try:
+                trial = s.cut(hole)
+                if trial.val().isValid() and 0 < trial.val().Volume() <= s.val().Volume():
+                    s = trial
+            except Exception:
+                pass
     return s
 
 
@@ -229,6 +247,17 @@ def safe_cut(shape: cq.Workplane, tool: cq.Workplane) -> cq.Workplane:
     raise RuntimeError("boolean cut failed on every retry: change a dimension by 0.1 mm and try again")
 
 
+def drop_junk(shape: cq.Workplane) -> cq.Workplane:
+    """Remove zero-volume or inverted solids that failed booleans can leave in a result: an inverted solid reads as
+    'everything except itself' in the next intersection and shows up as a huge false overlap."""
+    solids = [s for s in shape.solids().vals() if s.Volume() > 0.5]
+    if len(solids) == len(shape.solids().vals()):
+        return shape
+    if len(solids) == 1:
+        return cq.Workplane("XY").newObject([solids[0]])
+    return cq.Workplane("XY").newObject([cq.Compound.makeCompound(solids)])
+
+
 def safe_union(a: cq.Workplane, b: cq.Workplane) -> cq.Workplane:
     """a.union(b), checked like safe_cut: the result must be valid and no smaller than the larger input nor bigger than both added."""
     va, vb = a.val().Volume(), b.val().Volume()
@@ -239,10 +268,21 @@ def safe_union(a: cq.Workplane, b: cq.Workplane) -> cq.Workplane:
         except Exception:
             continue
         if out.val().isValid() and max(va, vb) * 0.999 <= v <= (va + vb) * 1.0001:
-            return out
+            return drop_junk(out)
     # the kernel cannot fuse these two: keep them as one compound (they overlap by tenths of a millimetre at most), so
     # clash and balance checks still work; nothing is printed from this combined shape
     return cq.Workplane("XY").newObject([cq.Compound.makeCompound([a.val(), b.val()])])
+
+
+def overlap_volume(a: cq.Workplane, b: cq.Workplane) -> float:
+    """Volume a and b share, mm3. b is taken apart into its solids first: a compound whose solids overlap each other (the
+    fallback when the kernel cannot fuse the formed collar) gives garbage in a single boolean."""
+    total = 0.0
+    for s in b.solids().vals():
+        c = a.intersect(cq.Workplane("XY").newObject([s]))
+        if c.vals():
+            total += sum(x.Volume() for x in c.solids().vals())
+    return total
 
 
 def gap() -> cq.Workplane:
@@ -254,14 +294,22 @@ def components() -> dict[str, cq.Workplane]:
     comps = {"skin": skin(), "lip": safe_cut(lip(), g)}   # the foam seats are engraved marks in the flat skin, not printed pads
     bars = rail()
     if bars is not None:
-        comps["rail"] = safe_cut(bars, g)
+        # the bars sit clear of the front gap; if a bar's flange does reach it, trim it, and if the kernel cannot, keep it whole
+        if bars.intersect(g).vals() and sum(s.Volume() for s in bars.intersect(g).solids().vals()) > 1.0:
+            try:
+                comps["rail"] = safe_cut(bars, g)
+            except RuntimeError:
+                print("WARN a docking bar reaches the front gap and could not be trimmed: move that module's angle")
+                comps["rail"] = bars
+        else:
+            comps["rail"] = bars
     return comps
 
 
 def yoke(with_bars: bool = True) -> cq.Workplane:
     c = components()
     out = safe_union(c["skin"], c["lip"])
-    return safe_union(out, c["rail"]) if with_bars and "rail" in c else out
+    return drop_junk(safe_union(out, c["rail"])) if with_bars and "rail" in c else out
 
 
 QUARTERS = {"fr": (1, 1), "br": (1, -1), "fl": (-1, 1), "bl": (-1, -1)}

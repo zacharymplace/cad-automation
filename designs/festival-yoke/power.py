@@ -119,8 +119,7 @@ def power_notes() -> list[str]:
 
 
 def overlap(a: cq.Workplane, b: cq.Workplane) -> float:
-    c = a.intersect(b)
-    return sum(s.Volume() for s in c.solids().vals()) if c.vals() else 0.0
+    return build.overlap_volume(a, b)
 
 
 def main():

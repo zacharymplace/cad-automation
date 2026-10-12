@@ -261,8 +261,7 @@ def torso(grow: float = 0.0) -> cq.Workplane:
 
 def report(name: str, m: cq.Workplane):
     def clash(other):
-        c = m.intersect(other)
-        return sum(s.Volume() for s in c.solids().vals()) if c.vals() else 0.0
+        return build.overlap_volume(m, other)
 
     bb = m.val().BoundingBox()
     print(f"{name}: bbox {bb.xlen:.0f} x {bb.ylen:.0f} x {bb.zlen:.0f} mm, solid {m.val().Volume() / 1000 * build.P['density_g_cc']:.0f} g, solids {len(m.solids().vals())}")
