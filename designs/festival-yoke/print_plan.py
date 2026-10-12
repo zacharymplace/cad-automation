@@ -123,7 +123,7 @@ diffuser snap, and how TPU behaves at 2 mm.
 
 Check, and write the result down:
 1. The two skin pieces bend into the cone and the dovetails push together and hold. If they are loose or will not close, change `joint.clearance` in `config.toml` by 0.1 mm and reprint only the pockets' piece.
-2. The lip segment and the bar sit flat on the skin along the guide lines and bond: pull hard on the bar's flange in the direction a heavy module would lift it (the strength check flags the glue joint as the weak link). The clip then slides onto the bar from its open end with light force and the spring plunger clicks into the dimples. If it binds, raise `CLEAR` in `module.py` or check the bar is straight; if it rocks, lower it.
+2. The lip segment and the bar sit flat on the skin along the guide lines and bond: pull hard on the bar's flange in the direction a heavy module would lift it (the strength check flags the glue joint as the weak link). The clip then slides onto the bar from its open end with light force and the printed detent clicks into the dimples. If it binds, raise `CLEAR` in `module.py` or check the bar is straight; if it rocks, lower it.
 3. The diffuser pushes onto the lip with a click and does not fall off when you shake it. If it is too tight or too loose, change `SNAP_DEPTH` or the bead steps in `build.py`.
 4. Hold the formed pieces against a shoulder (see MEASURING.md): slope, opening and where the edge lands. The flat pattern is an exact unrolling of the formed shape, so a wrong slope means wrong measurements, not a wrong pattern.
 

@@ -19,7 +19,6 @@ If 1 or 3 fails, stop and tell me before printing more.
 - [ ] 1 kg TPU 95A, 1 kg PETG, and a small amount of natural (clear) PETG.
 - [ ] Flexible adhesive for PETG to TPU (flexible cyanoacrylate or an MS polymer), isopropyl alcohol, 400-grit sandpaper, nitrile gloves, eye protection.
 - [ ] Digital calipers, a spring scale reading to at least 10 kg (about 100 N), a flat piece of glass or a steel rule, a feeler gauge or paper strips (0.1-0.3 mm).
-- [ ] An M3 spring plunger (ball tip, stainless, about 6 mm long). The test works without it, but you will not feel the detent.
 - [ ] Make a fresh set of STL files (the old `out/M/` folder still holds files from earlier designs, such as `hoop_rail_*.stl` and `yoke_*.stl`: **do not print those**). Run these three, one at a time, from the project folder:
 
 ```bash
@@ -77,7 +76,7 @@ After each print:
 - [ ] It slides the whole travel (about 12 mm each way) without binding.
 - [ ] It cannot be lifted straight up off the bar (the T-slot holds it). It comes off only by sliding out the open end.
 - [ ] Rocking: hold the bar and wiggle the clip. Play side to side: ______ mm (want under 0.6 mm in total).
-- [ ] If you fitted the spring plunger: it clicks into one of the three dimples (centre and 10 mm either side).
+- [ ] The printed detent tongue in the clip roof clicks into one of the three dimples (centre and 8 mm either side) and the tongue flexes freely (it is cut free on three sides). Click force by feel or scale: ______ N (I designed for about 2 N). If it will not click or is too stiff, change `TONGUE_T` or `RIB_PRELOAD` in `module.py`.
 
 **Dovetail on the skin (flat, before forming)**
 - [ ] The two tabs on `flat_skin_fr` fit the two pockets on `flat_skin_br` when you lay the edges together. Measure a tab at its widest: ______ mm and its pocket: ______ mm (want about 0.5 mm of play).
@@ -135,8 +134,8 @@ I need real numbers to replace my guesses in `VIABILITY.md`. Fill this in as you
 | Scuff and wipe the glue surfaces | ____ | ____ | 5 |
 | Form the skin and join the dovetails | ____ | ____ | 10 |
 | Glue the lip segment (handling and clamping only) | ____ | ____ | 15 |
-| Glue the bar (handling and clamping only) | ____ | ____ | 14 per module |
-| Fit the spring plunger and check the clip | ____ | ____ | (in the 14 per module) |
+| Glue the bar (handling and clamping only) | ____ | ____ | 11 per module |
+| Fit the clip and check the detent | ____ | ____ | (in the 11 per module) |
 | Rework, trimming, fixing mistakes | ____ | ____ | 10 |
 | Quality check: slide test, snap test, pull test | ____ | ____ | 25 |
 | **Total hands-on assembly** | ____ | ____ | **85 for the bare collar** |

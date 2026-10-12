@@ -22,7 +22,6 @@ FILAMENT = {"TPU 95A": (22, 35), "PETG": (15, 25), "PETG (natural)": (18, 28)}
 PARTS = {
     "foam seat pads": (2, 5, "3 mm EVA or neoprene foam, adhesive-backed, cut to the four 36 x 24 mm ovals"),
     "flexible adhesive": (8, 15, "flexible cyanoacrylate or MS polymer for PETG to TPU; one tube is plenty"),
-    "spring plunger M3": (1, 6, "stainless, ball tip, about 2 N, 6-7 mm; one per module. Cheapest in packs of 10-20"),
     "protected pouch cell 3.7 V ~4000 mAh": (11, 25, "built-in protection circuit, JST connector; about 60 x 40 x 10 mm"),
     "USB-C charge and 5 V boost board": (4, 12, "with overcurrent and short-circuit protection; about 32 x 22 x 6 mm. Take a reputable one, not the cheapest"),
     "resettable fuse 2 A, slide switch, JST plug": (3, 6, "fuse in the cell lead"),
@@ -41,8 +40,6 @@ def kit_purchases(kit):
     items = defaultdict(int)
     items["foam seat pads"] = 1
     items["flexible adhesive"] = 1
-    if mods:
-        items["spring plunger M3"] = len(mods)
     if "pod" in mods:
         for k in ("protected pouch cell 3.7 V ~4000 mAh", "USB-C charge and 5 V boost board", "resettable fuse 2 A, slide switch, JST plug",
                   "LED strip 5 V COB, 8 mm, per metre", "PWM dimmer or MOSFET driver", "wire, heat shrink, solder"):
@@ -102,7 +99,7 @@ def main():
         fil_hi = sum(g * WASTE / 1000 * FILAMENT[m][1] for m, g in grams.items())
         if "LED strip 5 V COB, 8 mm, per metre" in items:
             items["LED strip 5 V COB, 8 mm, per metre"] = strip_metres
-        qty = lambda k, n: n if k in ("spring plunger M3", "LED strip 5 V COB, 8 mm, per metre") else 1
+        qty = lambda k, n: n if k == "LED strip 5 V COB, 8 mm, per metre" else 1
         buy_lo = sum(PARTS[k][0] * qty(k, n) for k, n in items.items())
         buy_hi = sum(PARTS[k][1] * qty(k, n) for k, n in items.items())
         rows.append((kit, KITS[kit]["modules"], grams, fil_lo, fil_hi, buy_lo, buy_hi, items))
@@ -135,7 +132,6 @@ def main():
             "## Price anchors I looked at (October 2026, not quotes)", "",
             "- 3.7 V 4000 mAh protected pouch cells: about 10-23 EUR across [OpenELAB](https://openelab.io/a/s/products/openelab-805080-4000mah-polymer-lithium-battery), [Soldered](https://soldered.com/products/li-ion-battery-4000mah-3-7v) and [Melopero](https://www.melopero.com/?p=185001). Check that the cell has a protection circuit.",
             "- 5 V COB LED strip, 8 mm: marketplace listings from about 1 to 6 USD per metre before shipping; one retail listing was over 40 GBP for a metre. See the [ManoMano listing](https://www.manomano.co.uk/p/cob-led-strip-320-leds-m-flexible-8mm-cuttable-5v-usb-for-tv-cabinet-bedroom-227965546).",
-            "- M3 ball plungers: about 1.5 AUD each in a [pack of 20 from Minibearings](https://minibearings.com.au/products/m3-6-plungers-plbt030m060s3005), versus about 6 GBP each singly from [Essentra](https://essentracomponents.com/en-gb/p/spring-plungers-ball-slotted/20253370).",
             "- TPU 95A: about 21 GBP per kg ([eSUN via YPC](https://www.ypc.co.uk/product/esun-tpu-95a-filament-1-75mm-flexible-3d-printer-filament-1kg-2-2-lbs-black/)); PETG about 12-21 USD per kg on Amazon and Elegoo listings.",
             "- 80 mm 8015 5 V fans: about 3-9 USD each depending on seller and connector.", "",
             "## What this does not include", "",

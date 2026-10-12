@@ -9,10 +9,10 @@ Filament is shown pro rata for the grams used. Add the spool minimum: you buy 1 
 | Kit | Modules | Printed g | Filament USD | Parts USD | Total USD |
 |---|---|---|---|---|---|
 | core | none | 233 | 6-10 | 10-20 | 16-30 |
-| glow | pod | 313 | 8-13 | 46-117 | 54-130 |
-| carry | cup, phone, id, pod | 441 | 10-17 | 50-138 | 60-155 |
-| comfort | dock, fan, pod | 394 | 9-15 | 53-145 | 62-160 |
-| full | cup, phone, dock, fan, pod, id, tube | 537 | 12-20 | 57-169 | 69-189 |
+| glow | pod | 313 | 8-13 | 45-111 | 53-124 |
+| carry | cup, phone, id, pod | 442 | 10-17 | 46-114 | 56-131 |
+| comfort | dock, fan, pod | 394 | 9-15 | 50-127 | 59-142 |
+| full | cup, phone, dock, fan, pod, id, tube | 538 | 12-20 | 50-127 | 62-147 |
 
 First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the cover): **55-88 USD** for filament alone, then the parts column above. A second kit costs only the grams.
 
@@ -21,8 +21,8 @@ First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the
 | Kit | TPU 95A | PETG | natural PETG |
 |---|---|---|---|
 | core | 213 | 20 | 0 |
-| glow | 213 | 47 | 52 |
-| carry | 213 | 176 | 52 |
+| glow | 213 | 48 | 52 |
+| carry | 213 | 177 | 52 |
 | comfort | 213 | 129 | 52 |
 | full | 213 | 272 | 52 |
 
@@ -32,7 +32,6 @@ First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the
 |---|---|---|
 | foam seat pads | 2-5 | 3 mm EVA or neoprene foam, adhesive-backed, cut to the four 36 x 24 mm ovals |
 | flexible adhesive | 8-15 | flexible cyanoacrylate or MS polymer for PETG to TPU; one tube is plenty |
-| spring plunger M3 | 1-6 | stainless, ball tip, about 2 N, 6-7 mm; one per module. Cheapest in packs of 10-20 |
 | protected pouch cell 3.7 V ~4000 mAh | 11-25 | built-in protection circuit, JST connector; about 60 x 40 x 10 mm |
 | USB-C charge and 5 V boost board | 4-12 | with overcurrent and short-circuit protection; about 32 x 22 x 6 mm. Take a reputable one, not the cheapest |
 | resettable fuse 2 A, slide switch, JST plug | 3-6 | fuse in the cell lead |
@@ -50,7 +49,6 @@ First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the
 |---|---|---|---|---|---|
 | foam seat pads | 1 | 1 | 1 | 1 | 1 |
 | flexible adhesive | 1 | 1 | 1 | 1 | 1 |
-| spring plunger M3 | - | 1 | 4 | 3 | 7 |
 | protected pouch cell 3.7 V ~4000 mAh | - | 1 | 1 | 1 | 1 |
 | USB-C charge and 5 V boost board | - | 1 | 1 | 1 | 1 |
 | resettable fuse 2 A, slide switch, JST plug | - | 1 | 1 | 1 | 1 |
@@ -73,7 +71,6 @@ First build, buying whole spools (1 kg TPU, 1 kg PETG, 1 kg natural PETG for the
 
 - 3.7 V 4000 mAh protected pouch cells: about 10-23 EUR across [OpenELAB](https://openelab.io/a/s/products/openelab-805080-4000mah-polymer-lithium-battery), [Soldered](https://soldered.com/products/li-ion-battery-4000mah-3-7v) and [Melopero](https://www.melopero.com/?p=185001). Check that the cell has a protection circuit.
 - 5 V COB LED strip, 8 mm: marketplace listings from about 1 to 6 USD per metre before shipping; one retail listing was over 40 GBP for a metre. See the [ManoMano listing](https://www.manomano.co.uk/p/cob-led-strip-320-leds-m-flexible-8mm-cuttable-5v-usb-for-tv-cabinet-bedroom-227965546).
-- M3 ball plungers: about 1.5 AUD each in a [pack of 20 from Minibearings](https://minibearings.com.au/products/m3-6-plungers-plbt030m060s3005), versus about 6 GBP each singly from [Essentra](https://essentracomponents.com/en-gb/p/spring-plungers-ball-slotted/20253370).
 - TPU 95A: about 21 GBP per kg ([eSUN via YPC](https://www.ypc.co.uk/product/esun-tpu-95a-filament-1-75mm-flexible-3d-printer-filament-1kg-2-2-lbs-black/)); PETG about 12-21 USD per kg on Amazon and Elegoo listings.
 - 80 mm 8015 5 V fans: about 3-9 USD each depending on seller and connector.
 

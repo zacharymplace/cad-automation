@@ -1,7 +1,7 @@
 """Straight docking bars: one per module, glued to the skin where the module goes.
 
 A module's clip has a straight T-slot open at both ends and slides onto the bar from its open end with almost no
-force (a spring plunger in the clip roof clicks into a dimple on the bar), instead of being pressed onto a curved rail
+force (a printed flexure tongue in the clip roof clicks into a dimple on the bar), instead of being pressed onto a curved rail
 (which needed about 2,000 N). The closed end has a stop. Each bar is a chord of the old rail ellipse: its ends sit on
 the ellipse and its middle sits a few mm inside it; the foot is cut to the skin so the bar stands on it, and a
 conforming flange gives the glue some area.
@@ -24,7 +24,7 @@ PEG_R, PEG_BARB_R, PEG_BARB_L = 1.5, 2.2, 1.4   # locating peg: shaft radius, ba
 PEG_HOLE_R = 1.6                                 # hole in the skin, 0.1 mm clear of the shaft
 PEG_X, PEG_Y = -9.0, 26.0                        # pegs sit near the flange's inner edge (where the peel starts), this far along the bar either side of centre
 STOP_H = 2.5              # stop block rises this far above the cap
-DIMPLES = (-10.0, 0.0, 10.0)   # detent positions along the bar, mm from the centre
+DIMPLES = (-8.0, 0.0, 8.0)   # detent positions along the bar, mm from the centre
 
 
 @functools.lru_cache(maxsize=None)
@@ -86,7 +86,7 @@ def bar(angle: float, sink: float = 0.0) -> cq.Workplane:
     cap = _box(R["cap_width"], BAR_LENGTH, f["stem_top"], f["cap_top"])
     stop = _box(8, 3, f["stem_top"], f["cap_top"] + STOP_H, cy=BAR_LENGTH / 2 - 1.5)
     body = stem.union(cap).union(stop)
-    for y in DIMPLES:   # shallow dimples the clip's spring plunger clicks into
+    for y in DIMPLES:   # shallow dimples the clip's printed detent rib clicks into (kept inside the clip's travel: it stops 9 mm out)
         body = body.cut(cq.Workplane("XY").workplane(offset=f["cap_top"] - 0.5).center(0, y).circle(0.9).extrude(1.5))
     body = _place(body, f).cut(build.cone(-sink))
     flange_plan = _place(_box(FLANGE_W, BAR_LENGTH, -100, 100), f)

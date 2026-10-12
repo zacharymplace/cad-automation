@@ -76,19 +76,20 @@ I added these as levers in `viability.py` (`cost_levers`). Median price to cover
 
 | Change | core | glow | full |
 |---|---|---|---|
-| baseline | 250 / 424 | 403 / 685 | 601 / 1,022 |
-| print TPU on a 0.6 mm nozzle at about 5 mm3/s (my baseline assumed about 1.8) | 209 / 355 | 362 / 616 | 561 / 954 |
-| replace the M3 spring plungers with a printed flexure detent | 250 / 424 | 397 / 674 | 562 / 956 |
-| gluing and fitting jig (the pegs already locate the bar) | 241 / 410 | 386 / 656 | 576 / 979 |
-| buy parts at 100+ units | 244 / 416 | 376 / 639 | 564 / 959 |
-| ship the flat skin in an envelope | 240 / 408 | 392 / 667 | 591 / 1,005 |
-| print the lip with the skin (no lip parts, no lip gluing; needs a redesign) | 240 / 408 | 393 / 669 | 592 / 1,007 |
-| cut the skin from 2 mm TPU sheet instead of printing it | 245 / 416 | 397 / 676 | 597 / 1,015 |
-| **all of the above except cutting** | **177 / 301** | **296 / 504** | **444 / 755** |
-| all of the above with cutting | 212 / 361 | 330 / 561 | 478 / 813 |
-| all of the above with cutting, plus a lean operation | 144 / 245 | 227 / 387 | 322 / 548 |
+| baseline (printed detent already included) | 250 / 424 | 397 / 675 | 559 / 950 |
+| print TPU on a 0.6 mm nozzle at about 5 mm3/s (my baseline assumed about 1.8) | 209 / 355 | 357 / 606 | 519 / 883 |
+| gluing and fitting jig (the pegs already locate the bar) | 241 / 410 | 380 / 646 | 536 / 912 |
+| buy parts at 100+ units | 244 / 415 | 371 / 632 | 529 / 900 |
+| ship the flat skin in an envelope | 240 / 408 | 387 / 657 | 549 / 934 |
+| print the lip with the skin (no lip parts, no lip gluing; needs a redesign) | 240 / 408 | 387 / 659 | 550 / 935 |
+| cut the skin from 2 mm TPU sheet instead of printing it | 245 / 416 | 392 / 666 | 554 / 943 |
+| **all of the above except cutting** | **178 / 302** | **297 / 504** | **449 / 764** |
+| all of the above with cutting | 212 / 360 | 332 / 564 | 483 / 821 |
+| all of the above with cutting, plus a lean operation | 144 / 245 | 228 / 388 | 328 / 557 |
 
-**What this says.** Together the changes cut the price needed by about 28% with no loss of function, and with a lean operation as well the bare collar could cover its cost at about $145 and the full kit at about $320. The biggest single levers are printing the TPU faster (about $40 a kit), dropping the spring plungers (about $40 on the full kit), a fitting jig, and buying parts in bulk.
+The spring plungers were a lever in the previous version of this table; the printed detent is now the design, so it is in the baseline (it took about $40 off the full kit). Its force (about 1.9 N) and strain (about 0.33%) are hand calculations, not tested.
+
+**What this says.** Together the changes cut the price needed by about 28% with no loss of function, and with a lean operation as well the bare collar could cover its cost at about $145 and the full kit at about $330. The biggest single levers are printing the TPU faster (about $40 a kit), a fitting jig, and buying parts in bulk.
 
 **Cutting the skin from sheet is a wash on cost on my numbers**, because the sheet and the cutting service (about $30-120 a set, assumed) cost about what the 15 hours of printing does. It would still give a cleaner, stronger, layer-free skin and free the printers, so it is worth quoting. I found waterjet, knife and pulsed CO2 laser cutting of TPU (waterjet is cold, so no fumes); I did not find a sheet price.
 

@@ -50,7 +50,7 @@ Severity is the worst plausible outcome; "open" means the design does not close 
 
 ### D. Not covered here
 
-- **Small parts and age.** The spring plungers, screws and diffuser pieces are choking hazards. Not for children.
+- **Small parts and age.** The screws and diffuser pieces are choking hazards. Not for children.
 - **Selling it.** Selling a wearable with a battery brings product-safety, electrical and battery-transport rules (UN 38.3 for the cell), labelling and liability. Get proper advice before any sale.
 - **Real users.** Nobody has tried it. The people it is for need to test it, with their own mobility aids, seating and routines. That matters more than anything above.
 

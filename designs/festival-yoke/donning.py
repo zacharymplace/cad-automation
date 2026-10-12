@@ -99,10 +99,10 @@ def spread_force(spread: float):
 
 
 def slide_on():
-    """Putting a module on: slide the clip along the straight bar; a spring plunger clicks into a dimple."""
+    """Putting a module on: slide the clip along the straight bar; a printed flexure detent clicks into a dimple."""
     import dock
     pocket = build.R["cap_width"] + 2 * 0.3
-    return {"travel": dock.TRAVEL, "bar": dock.BAR_LENGTH, "slack": 0.3, "plunger_n": 5.0, "pocket": pocket}
+    return {"travel": dock.TRAVEL, "bar": dock.BAR_LENGTH, "slack": 0.3, "plunger_n": 3.0, "pocket": pocket}
 
 
 def main():
@@ -120,7 +120,7 @@ def main():
     s = slide_on()
     ok = s["plunger_n"] <= HAND_COMFORT_N
     print(f"\nmodule attach: slide the clip onto the {s['bar']} mm straight bar from its open end ({s['slack']} mm slack each side), with {s['travel']} mm of travel each way")
-    print(f"  push needed: the spring plunger's click, about {s['plunger_n']:.0f} N (assumed), plus a little friction: {'within' if ok else 'ABOVE'} one-handed reach ({HAND_COMFORT_N:.0f} N)")
+    print(f"  push needed: the printed detent's click, about {s['plunger_n']:.0f} N (tongue force about 2 N plus friction), plus a little more: {'within' if ok else 'ABOVE'} one-handed reach ({HAND_COMFORT_N:.0f} N)")
     print("  a module cannot lift straight off (T-slot), so it cannot fall off by accident; it comes off by sliding it out of the open end")
     print("  the old snap-on clip would have needed about 2,000 N per side: replaced")
     print("  open question: a printed 80 mm bar must be straight to within about 0.3 mm or the clip will bind: check in the clip coupon test")

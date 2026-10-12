@@ -51,7 +51,7 @@ def unit_cost(k, price, size_label, lev=None):
     jobs = (0 if lev.get("sheet") else 4) + 1.6 * mods + (0 if lev.get("sheet") else 0)   # build plates per unit; a cut skin needs none
     attend = jobs * 0.12 * tri(20, 28, 40)               # 7 minutes per job at the print operator's rate
     # assembly labour minutes (assumption): deburr, form, glue lip and bars, foam, QA; each module and the electronics add time
-    minutes = 60 + 14 * mods + (75 if has_pod else 0) + 25
+    minutes = 60 + 11 * mods + (75 if has_pod else 0) + 25     # 11 minutes per module: glue the bar, fit the clip, test
     minutes += lev.get("minutes_add", 0) + mods * lev.get("minutes_per_module", 0)
     minutes += 12 if lev.get("sheet") else 0                  # nest and cut the skin, strip it, check the edges
     minutes = minutes * tri(0.7, 1.0, 1.7) * lev.get("minutes", 1.0)
@@ -96,7 +96,6 @@ def cost_levers():
         ("print TPU on a 0.6 mm nozzle at about 5 mm3/s (2.5x faster than my 8 g/h assumption)", {"tpu_speed": 2.5}),
         ("CUT the skin from 2 mm TPU sheet instead of printing it (waterjet or knife; sheet price unknown, assumed)", {"sheet": True}),
         ("print the lip with the skin as one TPU part: no separate lip parts, no lip gluing (needs a redesign of the lip and cover)", {"minutes_add": -15}),
-        ("replace the spring plungers with a printed flexure detent (no hardware, less assembly)", {"part_save_per_module": 3.0, "minutes_per_module": -3}),
         ("ship the skin flat in an envelope (flat-pack design)", {"ship": 0.55}),
         ("a gluing and fitting jig, pegs already locate the bar (assembly time x0.85)", {"minutes": 0.85}),
         ("buy parts at 100+ units (parts x0.7)", {"parts": 0.7}),
@@ -112,7 +111,7 @@ def cost_levers():
             cells.append(((nofee + 0.30) / (1 - 0.029), (nofee + 0.30) / (1 - 0.029 - 0.40)))
         print(f"{label:<122}" + "".join(f"{pct(c[0], 50):>5.0f}/{pct(c[1], 50):<5.0f}" for c in cells))
     # all non-controversial levers combined, with and without cutting the skin
-    safe = {"tpu_speed": 2.5, "minutes_add": -15, "part_save_per_module": 3.0, "minutes_per_module": -3, "ship": 0.55, "minutes": 0.85, "parts": 0.7}
+    safe = {"tpu_speed": 2.5, "minutes_add": -15, "ship": 0.55, "minutes": 0.85, "parts": 0.7}
     for label, lev in (("COMBINED, printed skin (all levers except cutting)", safe), ("COMBINED, cut skin (all levers)", {**safe, "sheet": True}),
                        ("COMBINED, cut skin, plus a lean operation (own printers, cheap labour, community sales)",
                         {**safe, "sheet": True, "wage": 0.5, "machine": 0.5, "cac": 0.3, "returns": 0.5})):

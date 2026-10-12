@@ -92,15 +92,37 @@ def clip_local(angle: float):
     return base.union(top)
 
 
+TONGUE_T, TONGUE_W, TONGUE_L = 2.0, 8.0, 19.0     # flexure tongue in the clip roof: thickness, width, length (free end at y = +1)
+RIB_PRELOAD = 0.4                                  # how far the rib's tip sits below the cap's top face: it rides up out of a dimple by this much
+
+
+def detent(m: cq.Workplane, cap_top: float) -> cq.Workplane:
+    """Printed detent instead of a spring plunger: a thin tongue in the clip roof, cut free on three sides, with a conical
+    rib under its free end. The rib clicks into the dimples in the bar's cap (at 0 and +-10 mm) and the tongue flexes up
+    to let it ride out, like the plunger did. Strain at full deflection is well under 1% in PETG."""
+    roof_bot = cap_top + CLEAR                     # ceiling of the cap pocket
+    tongue_top = roof_bot + TONGUE_T
+    w2, y0, y1 = TONGUE_W / 2, 1.0 - TONGUE_L, 1.0   # tongue spans y0..y1, fixed at y0
+    slot = 1.2
+    # open the roof above the tongue so it has room to flex
+    m = m.cut(cq.Workplane("XY").box(TONGUE_W + 2 * slot, TONGUE_L + slot + 1.2, 40, centered=(True, False, False)).translate((0, y0, tongue_top)))
+    # slits on both sides and across the free end, through the tongue's thickness, leaving it attached at y0
+    for sx in (-1, 1):
+        m = m.cut(cq.Workplane("XY").box(slot, TONGUE_L + slot, TONGUE_T + 0.4, centered=(True, False, False)).translate((sx * (w2 + slot / 2), y0, roof_bot - 0.2)))
+    m = m.cut(cq.Workplane("XY").box(TONGUE_W, slot, TONGUE_T + 0.4, centered=(True, False, False)).translate((0, y1, roof_bot - 0.2)))
+    rib = cq.Solid.makeCone(0.9, 0.2, roof_bot - (cap_top - RIB_PRELOAD), cq.Vector(0, 0, roof_bot + 0.1), cq.Vector(0, 0, -1))
+    return m.union(cq.Workplane("XY").add(rib))
+
+
 def mount(local: cq.Workplane, angle: float) -> cq.Workplane:
-    """Cut the straight T-slot and the spring-plunger hole in a local-frame module, then place it on its bar."""
+    """Cut the straight T-slot and the printed detent tongue in a local-frame module, then place it on its bar."""
     zs, zb, stem_top, cap_top, z_arm = z_levels(angle)
     f = dock.frame(angle)
     sw = R["stem_width"] + 2 * CLEAR
     cw = R["cap_width"] + 2 * CLEAR
     m = local.cut(cq.Workplane("XY").box(sw, 300, stem_top - 0.3 - (zb - 1), centered=(True, True, False)).translate((0, 0, zb - 1)))
     m = m.cut(cq.Workplane("XY").box(cw, 300, cap_top + CLEAR - (stem_top - 0.3), centered=(True, True, False)).translate((0, 0, stem_top - 0.3)))
-    m = m.cut(cq.Workplane("XY").workplane(offset=cap_top).circle(1.25).extrude(z_arm + 10 - cap_top))   # M3 spring plunger, tapped into the roof
+    m = detent(m, cap_top)
     m = dock._place(m, f)
     return m.cut(build.cone(0).translate((0, 0, 0.3)))  # skin is steeper toward the front: trim to 0.3 mm above it
 
@@ -208,7 +230,7 @@ def fan_guard(angle: float = FAN_ANGLE, placed: bool = True) -> cq.Workplane:
 
 
 def clip_coupon(angle: float = CUP_ANGLE) -> cq.Workplane:
-    """Just the clip (no arm, no cradle): a quick fit test for the T-slot and the plunger hole."""
+    """Just the clip (no arm, no cradle): a quick fit test for the T-slot and the printed detent."""
     return mount(clip_local(angle), angle)
 
 
