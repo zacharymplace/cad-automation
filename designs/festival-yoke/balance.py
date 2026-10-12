@@ -9,6 +9,7 @@ import math
 import os
 import subprocess
 import sys
+import tomllib
 
 import build
 import kit
@@ -223,13 +224,18 @@ def tune_all():
             print(f"{name}: failed\n{run.stdout}{run.stderr}")
             continue
         results[name] = json.loads(line[-1])
-    toml = [f"# written by balance.py --tune for size {layout.SIZE}; angles in degrees on the rail\n"]
+    # merge with the sizes already tuned: only this size's tables are replaced
+    path = layout.ROOT / "kits.toml"
+    kept = {k: v for k, v in (tomllib.loads(path.read_text()) if path.exists() else {}).items() if not k.startswith(f"{layout.SIZE}.")}
     for name, r in results.items():
         if r["angles"]:
-            toml.append(f'["{layout.SIZE}.{name}"]')
-            toml.extend(f"{k} = {v}" for k, v in r["angles"].items())
-            toml.append("")
-    (layout.ROOT / "kits.toml").write_text("\n".join(toml))
+            kept[f"{layout.SIZE}.{name}"] = r["angles"]
+    toml = ["# written by balance.py --tune; angles in degrees on the rail, one table per size and kit\n"]
+    for key in sorted(kept):
+        toml.append(f'["{key}"]')
+        toml.extend(f"{k} = {v}" for k, v in kept[key].items())
+        toml.append("")
+    path.write_text("\n".join(toml))
     sx, sy = support()
     print(f"foam seat rectangle: +-{sx:.0f} mm across, +-{sy:.0f} mm front to back; margin = distance the centre of mass has to spare (negative = outside)")
     print(f"{'kit':<9}{'modules':<34}{'printed g':>10}{'full g':>8}{'offset':>8}{'margin':>8}{'light g':>9}{'offset':>8}{'margin':>8}{'torque':>8}")

@@ -24,8 +24,9 @@ Presets in `config.toml`:
 | M | 570 | 380 | 380 | 260 | 40 |
 | L | 580 | 425 | 410 | 280 | 45 |
 | XL | 590 | 450 | 440 | 300 | 51 |
+| XXL | 595 | 480 | 470 | 320 | 57 |
 
-The presets were checked against the ANSUR II survey (SIZING.md): they cover about 98% of adults in that sample, but it is a US Army sample, so treat them as starting points. Neck means the circumference at the base of the neck where a shirt collar sits, not at the Adam's apple. Shoulder width is the one that matters most: the yoke should sit on the shoulders, not hang off them. If you are between sizes, go by shoulder width and neck, not head.
+The presets were checked against the ANSUR II survey (SIZING.md): they cover about 98% of adults in that sample, but it is a US Army sample, so treat them as starting points. XXL is for shoulders around 460-490 mm, which the Army sample barely contains (about 1% of it), so it rests on extrapolation: the dimensions follow the same proportions as the other sizes. Neck means the circumference at the base of the neck where a shirt collar sits, not at the Adam's apple. Shoulder width is the one that matters most: the yoke should sit on the shoulders, not hang off them. If you are between sizes, go by shoulder width and neck, not head.
 
 If your numbers are not near a preset, use your own:
 
@@ -47,7 +48,7 @@ If it floats at the tip, raise `shoulder_drop`. If it sits on the shoulder tip b
 
 ## Printer bed
 
-All parts of S, M and L fit a 220 mm bed. XL needs a bed of about 235 mm; `build.py` prints the smallest square bed that fits every part. Set `bed` under `[print]` to your printer's size and it will flag anything that does not fit.
+All parts of S, M and L fit a 220 mm bed (from L up the lip segments are split in two). XL needs a bed of about 232 mm and XXL about 250 mm, set by the flat skin pieces; `build.py` prints the smallest square bed that fits every part. Set `bed` under `[print]` to your printer's size and it will flag anything that does not fit.
 
 ## Build every size at once
 

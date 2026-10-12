@@ -79,7 +79,7 @@ def main():
         stable = {k: v for k, v in res.items() if v[1] >= 300}      # needs real bed contact, or it is balanced on an edge
         best = min(stable, key=lambda k: stable[k][0]) if stable else "as designed"
         over, contact, dims = res[best]
-        fits = sorted(dims[:2]) <= sorted(bed[:2]) and dims[2] <= bed[2]
+        fits = min(dims[:2]) <= min(bed[:2]) and max(dims[:2]) <= max(bed[:2]) and dims[2] <= bed[2]
         grams = shape.val().Volume() / 1000 * build.P["density_g_cc"] * fill
         hours = grams / RATE[mat]
         rows.append((name, mat, note, best, over, contact, dims, fits, grams, hours))

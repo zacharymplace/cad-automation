@@ -336,9 +336,19 @@ def hoop_segments() -> dict[str, cq.Workplane]:
     lip = lip.cut(build.ring(build.LIP_U, 0.5 - G["lip_width"] / 2, G["lip_width"] / 2 + 0.1, build.snap_z(), build.SNAP_HEIGHT))
     lip = build.safe_cut(lip.cut(build.cone(0)), build.gap())
     out = {}
+    bed = max(build.P["bed"][:2])
     for name, (a0, a1) in SEGMENTS.items():
         seg = lip.intersect(_sector(a0, a1))
-        if seg.vals() and seg.val().Volume() > 5:
+        if not (seg.vals() and seg.val().Volume() > 5):
+            continue
+        bb = seg.val().BoundingBox()
+        if max(bb.xlen, bb.ylen) > bed and a1 - a0 > 60:   # too long for the bed: split in two, off the skin seams
+            mid = (a0 + a1) / 2 + 12
+            for suffix, (b0, b1) in (("a", (a0, mid)), ("b", (mid, a1))):
+                part = lip.intersect(_sector(b0, b1))
+                if part.vals() and part.val().Volume() > 5:
+                    out[f"lip_{name}_{suffix}"] = part
+        else:
             out[f"lip_{name}"] = seg
     for module_name, angle in layout.angles().items():
         out[f"bar_{module_name}"] = dock.bar(angle, sink=0.0)
@@ -352,7 +362,7 @@ def main():
     parts = flat_parts()
     for name, (pat, body) in parts.items():
         bb = body.val().BoundingBox()
-        fits = sorted([bb.xlen, bb.ylen]) <= sorted(bed[:2])
+        fits = max(bb.xlen, bb.ylen) <= max(bed[:2]) and min(bb.xlen, bb.ylen) <= min(bed[:2])
         g = body.val().Volume() / 1000 * build.P["density_g_cc"]
         cq.exporters.export(body, str(build.OUT / f"flat_skin_{name}.stl"))
         print(f"flat_{name:<5}{bb.xlen:6.0f} x {bb.ylen:<6.0f}  {pat.stretch[0]:.3f} / {pat.stretch[1]:.3f}  {g:>8.1f}  {'ok' if fits else 'TOO BIG'}  (support-free: all faces horizontal or vertical)")
@@ -364,7 +374,7 @@ def main():
     for name, seg in hoop_segments().items():
         bb = seg.val().BoundingBox()
         dims = sorted([bb.xlen, bb.ylen])
-        fits = dims <= sorted(bed[:2]) and bb.zlen <= bed[2]
+        fits = dims[0] <= min(bed[:2]) and dims[1] <= max(bed[:2]) and bb.zlen <= bed[2]
         g = seg.val().Volume() / 1000 * build.P["density_g_cc"]
         cq.exporters.export(seg, str(build.OUT / f"hoop_{name}.stl"))
         print(f"hoop_{name:<13}{bb.xlen:5.0f} x {bb.ylen:<4.0f} x {bb.zlen:<4.0f} {g:>6.1f}  {'ok' if fits else 'TOO BIG'}  valid {seg.val().isValid()}")

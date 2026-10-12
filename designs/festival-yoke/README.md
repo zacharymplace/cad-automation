@@ -10,7 +10,7 @@ uv run --no-project --with cadquery view.py      # out/viewer.html (serve: pytho
 Pick a size in `config.toml` (`size = "M"`, or `custom`), or override per run with `FESTIVAL_YOKE_SIZE=L`. Measure the wearer first: see [MEASURING.md](MEASURING.md). Outputs go in `out/<size>/`; `build_all.py` builds S/M/L/XL and prints one comparison table.
 
 ## Sizes
-S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`). All sizes pass the joint and cup-module clash checks. XL needs a ~235 mm bed; the others fit 220 mm. The fit report flags a loose or tight neck opening and a collar too narrow for the rail. It is geometry only, not tested on a body.
+S/M/L/XL/XXL presets and a custom option, driven by five measurements (`sizing.py`). All sizes pass the joint and cup-module clash checks. S, M and L fit a 220 mm bed (the lip segments split in two from L up); XL needs about 232 mm because of its flat skin pieces, and XXL about 250 mm. The fit report flags a loose or tight neck opening and a collar too narrow for the rail. It is geometry only, not tested on a body.
 
 ## v1
 - Sloped 2 mm TPU skin on the trapezius, open front to flex over the head, lightening slots. 4 quarters.
@@ -31,7 +31,7 @@ S/M/L/XL presets and a custom option, driven by five measurements (`sizing.py`).
 - Lithium cells are a fire risk: use a protected cell with a boost board that has its own protection, never wrap cells in the collar, and keep the pod's vents clear. No cell or board has been tested here.
 
 ## Sizing check (`SIZING.md`)
-The S/M/L/XL presets were checked against the ANSUR II survey (4,082 men and 1,986 women, computed from the public CSVs): they cover about 98% of that sample. Changes: the head model now uses the survey's breadth and length ratios (an ellipse fitted to the circumference was too big), the neck presets are now at the base of the neck as the measuring guide says, the L and XL shoulder drops follow the population's 24 degree median slope, and the printed foam seats are gone from the formed model (they are engraved marks plus foam stickers). The survey is a US Army sample with no seated posture, so treat the presets as starting points; an XXL is probably worth adding. Shoulder depth has no survey equivalent and is the least supported number.
+The S/M/L/XL presets were checked against the ANSUR II survey (4,082 men and 1,986 women, computed from the public CSVs): they cover about 98% of that sample. Changes: the head model now uses the survey's breadth and length ratios (an ellipse fitted to the circumference was too big), the neck presets are now at the base of the neck as the measuring guide says, the L and XL shoulder drops follow the population's 24 degree median slope, and the printed foam seats are gone from the formed model (they are engraved marks plus foam stickers). The survey is a US Army sample with no seated posture, so treat the presets as starting points; an XXL has since been added (shoulders 470 mm), the least verified size; it needs a bed of about 250 mm. Shoulder depth has no survey equivalent and is the least supported number.
 
 Along the way the CAD kernel started returning inverted solids for size M's exact opening dimensions. `build.py` now cuts the front gap before rounding the edges (so the gap edges are rounded too) and checks every cut and union (`safe_cut`, `safe_union`), falling back to a compound only where a fuse cannot be done.
 

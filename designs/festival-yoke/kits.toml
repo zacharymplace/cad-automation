@@ -1,7 +1,4 @@
-# written by balance.py --tune for size M; angles in degrees on the rail
-
-["M.glow"]
-pod = 270
+# written by balance.py --tune; angles in degrees on the rail, one table per size and kit
 
 ["M.carry"]
 cup = 40
@@ -22,3 +19,29 @@ fan = 315
 pod = 270
 id = 180
 tube = 0
+
+["M.glow"]
+pod = 270
+
+["XXL.carry"]
+cup = 40
+phone = 170
+id = 0
+pod = 300
+
+["XXL.comfort"]
+dock = 135
+fan = 0
+pod = 285
+
+["XXL.full"]
+cup = 40
+phone = 125
+dock = 225
+fan = 315
+pod = 270
+id = 180
+tube = 0
+
+["XXL.glow"]
+pod = 270

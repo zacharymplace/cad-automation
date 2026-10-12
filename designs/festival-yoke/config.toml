@@ -35,6 +35,13 @@ shoulder_width = 440
 shoulder_depth = 300
 shoulder_drop = 51
 
+[sizes.XXL]
+head_circumference = 595
+neck_circumference = 480
+shoulder_width = 470
+shoulder_depth = 320
+shoulder_drop = 57
+
 [custom]                    # used when size = "custom": your own measurements
 head_circumference = 570
 neck_circumference = 380
