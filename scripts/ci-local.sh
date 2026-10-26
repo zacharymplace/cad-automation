@@ -60,13 +60,21 @@ print("zcad-core:", core.version, zcad_core.__file__)
 
 requirements = set(product.requires or [])
 
+# A file:// reference cannot carry a version range (PEP 508), so the contract is the direct
+# reference plus the installed core being new enough for the APIs cad-automation imports.
 if not any(
-    requirement.startswith("zcad-core<0.2,>=0.1.1")
+    requirement.replace(" ", "").startswith("zcad-core@file:")
     for requirement in requirements
 ):
     raise SystemExit(
-        "cad-automation does not declare the expected "
-        "zcad-core compatibility range"
+        "cad-automation does not declare zcad-core as a local file:// dependency"
+    )
+
+version = tuple(int(part) for part in core.version.split(".")[:2])
+if version < (0, 10):
+    raise SystemExit(
+        f"zcad-core {core.version} is too old; cad-automation needs 0.10.0 or later "
+        "(zcad_core.validation.design_report)"
     )
 
 print("Compatibility contract: PASS")

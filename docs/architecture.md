@@ -15,8 +15,11 @@ The core owns product-independent CAD infrastructure:
 - build metadata
 - STEP and STL export services
 
-The core follows semantic versioning. `cad-automation` currently supports
-`zcad-core` versions `>=0.1.1,<0.2`.
+The core follows semantic versioning. `zcad-core` is not on a package index, so
+`cad-automation` depends on the local checkout (`zcad-core @ file:///Users/zplace/dev/zcad-core`,
+as coffee-cad, mobi-gear and workspace-cad do). It needs `zcad-core` 0.10.0 or later, the first
+release with `zcad_core.validation.design_report`. The old `>=0.1.1,<0.2` range could not be
+installed from any index and no longer matched the code.
 
 ## `cad-automation`
 

@@ -9,7 +9,7 @@ description = "Code-driven parametric CAD generators"
 requires-python = ">=3.11"
 dependencies = [
   "cadquery>=2.8,<3",
-  "zcad-core>=0.1.1,<0.2",
+  "zcad-core @ file:///Users/zplace/dev/zcad-core",
 ]
 
 [project.optional-dependencies]
