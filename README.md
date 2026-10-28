@@ -52,3 +52,27 @@ Bootstrap both editable packages with:
 ./scripts/bootstrap-dev.sh
 ```
 
+
+## Bundle export-binding preflight
+
+Before copying each selected part into a gift bundle, the builder checks any
+recorded `artifacts` bindings using zcad-core's read-only
+`verify_artifact_bindings` API. Both STEP and STL must match their recorded
+SHA-256, byte size and the filenames actually being packaged. Missing, malformed,
+unsafe, unreadable or mismatched bound artifacts stop publication with a
+part-specific error. The local zcad-core checkout must include this verifier
+(commit `c3db1bf` or later) when packaging bound exports.
+
+Legacy export metadata without an `artifacts` field remains supported. The bundle
+guide explicitly labels those original export bindings **not checked**; existing
+bundle-manifest verification still applies. A present but invalid or incomplete
+`artifacts` field is an error, not a legacy fallback. This applies to both fresh
+builds and reused exports; reused exports still do not establish freshness.
+
+The check runs while original artifacts are siblings, before packaging separates
+them into `step/`, `stl/` and `metadata/`. Bundle layout, manifest schema,
+producer/consumer provenance and output-path rewriting are unchanged. Input
+exports are read-only. Preflight failures retain the diagnostic stage and leave
+an existing bundle and ZIP intact; publication rollback behavior is unchanged.
+The preflight is not an atomic snapshot of concurrently edited inputs. Byte
+identity does not establish authenticity, geometric validity or print suitability.

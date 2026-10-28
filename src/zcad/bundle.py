@@ -93,6 +93,29 @@ class BundledPart:
         return f"{self.design_name} ({self.part_name})"
 
 
+def _check_export_bindings(part: BundledPart) -> bool:
+    """Check original sibling bytes before packaging; legacy has no binding claim."""
+    metadata = json.loads(part.metadata_path.read_text(encoding="utf-8"))
+    if "artifacts" not in metadata:
+        return False
+    # Legacy packaging stays usable without loading the optional checking path.
+    from zcad_core.exporters import verify_artifact_bindings
+
+    expected_names = {"step": part.step_path.name, "stl": part.stl_path.name}
+    for check in verify_artifact_bindings(part.metadata_path):
+        if check.status != "matched":
+            raise ValueError(
+                f"Export binding check failed for {part.label} ({check.kind}): "
+                f"{check.status}: {check.reason}"
+            )
+        if check.filename != expected_names[check.kind]:
+            raise ValueError(
+                f"Export binding filename differs from packaged artifact for "
+                f"{part.label} ({check.kind})"
+            )
+    return True
+
+
 def read_design_names(design_dir: Path) -> list[tuple[Path, str, str]]:
     """`(path, name, type)` for every design JSON in the folder."""
     designs = []
@@ -314,6 +337,7 @@ def build_bundle(
         for folder in ("stl", "step", "designs", "metadata"):
             (staged_bundle / folder).mkdir(parents=True)
         parts = []
+        binding_checks = []
         staged_designs = []
         manifest_designs = []
         builder = (build_design or _cli_builder(printer_profile)) if build else None
@@ -349,6 +373,7 @@ def build_bundle(
             for part in current_parts:
                 if part.design_type != design_type:
                     raise ValueError(f"Export type mismatch for {name}")
+                binding_checks.append((part.label, _check_export_bindings(part)))
                 for source, folder in (
                     (part.stl_path, "stl"),
                     (part.step_path, "step"),
@@ -397,6 +422,20 @@ def build_bundle(
                 "`bundle-manifest.json` records design and artifact hashes.\n"
                 "Verify with `zcad bundle-verify <bundle-directory>`.\n"
                 "The manifest does not attest implementation source or physical fit.\n"
+            )
+            handle.write(
+                "\nOriginal export artifact-binding checks (before copying):\n"
+            )
+            for label, matched in binding_checks:
+                result = (
+                    "STEP and STL matched recorded export bindings"
+                    if matched
+                    else "not checked: legacy metadata has no artifact bindings"
+                )
+                handle.write(f"- {label}: {result}.\n")
+            handle.write(
+                "These checks establish byte identity only, not authenticity, "
+                "geometry validity or print suitability.\n"
             )
             if not build:
                 handle.write("Existing exports reused; freshness is unverified.\n")
